@@ -1,0 +1,399 @@
+/* RAGNAROK: TRINITY — Clean Minimal UI */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:#0f0d0b;
+  --bg2:#161310;
+  --line:rgba(255,255,255,0.08);
+  --gold:#c9a84c;
+  --gold-dim:rgba(201,168,76,0.5);
+  --white:#f4ede0;
+  --muted:#8a7d6a;
+  --faint:#4a4035;
+}
+
+/* Base */
+#front-menu{position:fixed;inset:0;z-index:20;overflow:auto;background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;isolation:isolate}
+#front-menu[hidden]{display:none}
+#front-menu[data-screen=home]{overflow:hidden}
+#front-menu button{font-family:inherit;border-radius:0}
+#front-menu button:focus-visible,#front-menu a:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.in-menu .combat-header,.in-menu .match-actions,.in-menu .bottom-hud,.in-menu .combo-counter,.in-menu .form-timers,.in-menu #announcement,.in-menu #ultimate-cutin{visibility:hidden}
+.in-menu .training-only,.in-versus .training-only{display:none}
+.round-wins{color:var(--gold);letter-spacing:5px;font-size:14px}
+.in-versus .fighter-mark>i{display:none}
+
+/* Round call */
+#round-call{position:absolute;left:0;right:0;top:34%;z-index:8;text-align:center;pointer-events:none}
+#round-call[hidden]{display:none}
+#round-call small{display:block;font-size:12px;letter-spacing:4px;color:var(--gold);font-weight:600}
+#round-call strong{display:block;font-family:'Cinzel',serif;font-size:clamp(70px,11vw,145px);line-height:1;font-weight:900;color:var(--white);animation:round-strike .28s ease-out both}
+#round-call[data-phase=ko] strong{color:#e8896a}
+@keyframes round-strike{from{transform:scale(1.25);opacity:0}to{transform:scale(1);opacity:1}}
+
+
+/* ── HOME: COMIC PANEL LAYOUT ── */
+.home-art{position:absolute;inset:0;z-index:-2;background:var(--bg) url(assets/menu/ragnarok-bg.jpg) center/cover no-repeat}
+.home-art::after{content:'';position:absolute;inset:0;background:rgba(10,8,6,.55)}
+.home-art.dim{filter:brightness(.18)}
+.home-art.video-backed{background-image:url(assets/menu/ragnarok-bg.jpg)}
+.home-art.video-backed::before{display:none}
+.menu-grain{display:none}
+.menu-background-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;opacity:0;transition:opacity .25s}
+.menu-background-video.is-playing{opacity:1}
+
+/* Full-screen layout wrapper */
+.home-layout{position:relative;z-index:5;display:flex;flex-direction:column;height:100vh;padding:0 18px 18px;background:var(--bg);overflow:hidden}
+
+/* Header - taller, logo prominent */
+.home-header{display:flex;align-items:center;gap:24px;padding:18px 0 16px;border-bottom:2px solid rgba(201,168,76,.2);margin-bottom:14px;flex-shrink:0}
+.home-logo{display:flex;flex-direction:column;line-height:1;margin-right:16px;position:relative;padding-right:20px}
+.home-logo::after{content:'';position:absolute;right:0;top:0;bottom:0;width:1px;background:rgba(201,168,76,.2)}
+.logo-top{font-family:Cinzel,serif;font-size:32px;font-weight:900;letter-spacing:3px;color:var(--white);line-height:.9}
+.logo-bot{font-family:Cinzel,serif;font-size:13px;font-weight:700;letter-spacing:8px;color:var(--gold);margin-top:6px;display:block}
+.home-tabs{display:flex;gap:3px}
+.home-tabs span{font-size:10px;font-weight:700;letter-spacing:2px;padding:6px 16px;cursor:pointer;border:1px solid transparent;transition:all .15s}
+.home-tabs .tab-active{border-color:var(--gold);color:var(--gold)}
+.home-tabs span:not(.tab-active){color:var(--muted);border-color:var(--line)}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.home-status{font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase}
+/* Fullscreen inside header */
+.home-layout .menu-fullscreen{position:static;width:32px;height:32px}
+
+/* Comic panel grid */
+.home-grid{
+  flex:1;
+  display:grid;
+  grid-template-columns:minmax(230px,300px) 1fr minmax(210px,265px);
+  grid-template-rows:3fr 2fr;
+  gap:10px;
+  min-height:0;
+}
+
+/* Base tile */
+.tile{
+  position:relative;overflow:hidden;
+  border:1px solid rgba(255,255,255,.07);
+  background:var(--bg2);
+  cursor:pointer;
+  display:block;
+  text-align:left;
+  padding:0;
+  transition:border-color .18s;
+}
+.tile:hover{border-color:rgba(201,168,76,.6)}
+.tile:focus-visible{outline:2px solid var(--gold);outline-offset:0}
+
+.tile-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.55;transition:opacity .22s,transform .35s}
+.tile:hover .tile-bg{opacity:.8;transform:scale(1.05)}
+
+.tile-overlay{position:absolute;inset:0;background:linear-gradient(0deg,rgba(10,8,6,.98) 0%,rgba(10,8,6,.75) 30%,transparent 60%)}
+
+.tile-body{position:relative;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;height:100%;padding:18px 20px}
+
+.tile-eyebrow{font-size:9px;letter-spacing:2.5px;color:var(--gold);margin-bottom:6px;display:block;font-weight:700;opacity:.85}
+.tile-title{font-family:Cinzel,serif;font-size:22px;font-weight:700;letter-spacing:2px;color:var(--white);line-height:1;display:block}
+.tile-desc{font-size:10px;letter-spacing:.6px;color:rgba(255,255,255,.5);margin-top:6px;display:block;line-height:1.5}
+
+/* Grid positions */
+.tile-vs{grid-row:1;grid-column:1;border-color:rgba(201,168,76,.3)}
+.tile-vs .tile-title{color:var(--gold);font-size:26px}
+.tile-vs .tile-desc{color:rgba(255,255,255,.6)}
+.tile-vs:hover{border-color:var(--gold);box-shadow:inset 0 0 0 1px rgba(201,168,76,.4)}
+
+.tile-quick{grid-row:2;grid-column:1}
+.tile-quick .tile-title{font-size:20px}
+
+.tile-training{grid-row:1/3;grid-column:2}
+.tile-training .tile-title{font-size:34px;letter-spacing:3px}
+.tile-training .tile-eyebrow{font-size:10px}
+
+/* Settings tile - now with generated rune bg */
+.tile-settings{grid-row:1;grid-column:3}
+.tile-settings .tile-bg{background-image:url(assets/menu/settings-bg.jpg);opacity:.4}
+.tile-settings:hover .tile-bg{opacity:.65}
+.tile-settings .tile-title{font-size:22px;color:var(--gold)}
+.tile-settings .tile-overlay{background:linear-gradient(0deg,rgba(10,8,6,.98) 0%,rgba(10,8,6,.8) 35%,transparent 60%)}
+
+/* Chronicles tile - now with faction champions bg */
+.tile-chronicles{grid-row:2;grid-column:3}
+.tile-chronicles .tile-bg{background-image:url(assets/menu/chronicles-bg.jpg);opacity:.45}
+.tile-chronicles:hover .tile-bg{opacity:.7}
+.tile-chronicles .tile-title{font-size:22px}
+.tile-chronicles .tile-overlay{background:linear-gradient(0deg,rgba(10,8,6,.98) 0%,rgba(10,8,6,.75) 35%,transparent 60%)}
+
+.tile-factions{display:flex;gap:6px;margin-top:10px}
+.tf{font-size:8px;letter-spacing:1.5px;font-weight:700;padding:3px 8px;border:1px solid rgba(201,168,76,.5);color:var(--white)}
+
+/* Hide legacy home elements that may appear in other screens */
+.home-content,.home-caption,.home-footer,.home-panel,.trinity-badge,.title-divider{display:none}
+
+.menu-fullscreen{width:34px;height:34px;padding:0;display:grid;place-items:center;border:1px solid var(--line);background:none;color:var(--muted);cursor:pointer;position:static}
+.menu-fullscreen svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:square}
+.menu-fullscreen:hover{color:var(--gold);border-color:var(--gold-dim)}
+.menu-fullscreen.hinted{border-color:var(--gold)}
+
+/* Select screen */
+.selection-backdrop{position:absolute;inset:0;z-index:-2;background:var(--bg2)}
+.selection-backdrop::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 75%,rgba(201,168,76,.05),transparent 40%),radial-gradient(ellipse at 85% 25%,rgba(168,136,212,.04),transparent 40%)}
+
+.select-header{height:88px;display:flex;align-items:center;gap:20px;padding:0 5%;border-bottom:1px solid var(--line);background:var(--bg2)}
+.menu-back{display:flex;align-items:center;gap:8px;background:none;border:1px solid var(--line);color:var(--white);padding:6px 12px;font-size:13px;cursor:pointer;transition:border-color .12s,color .12s}
+.menu-back:hover{border-color:var(--gold-dim);color:var(--gold)}
+.menu-back span{font-size:9px;font-weight:600;letter-spacing:2px}
+.select-header>div{flex:1}
+.select-header .eyebrow{display:block;margin-bottom:3px}
+.select-header h1{font-family:'Cinzel',serif;font-size:clamp(18px,2.4vw,32px);font-weight:700;line-height:1;margin:0;color:var(--white)}
+.wordmark{font-family:'Cinzel',serif;font-weight:700;font-size:16px;letter-spacing:1px;color:var(--gold);white-space:nowrap}
+.wordmark>span{display:block;font-size:9px;letter-spacing:4px;color:var(--muted);margin-top:2px}
+.wordmark i{display:none}
+
+.selection-steps{display:flex;justify-content:center;align-items:center;gap:10px;padding:13px 0;font-size:10px;letter-spacing:2px;color:var(--faint)}
+.selection-steps span{display:flex;gap:6px;align-items:center}
+.selection-steps>i{height:1px;width:26px;background:var(--line)}
+.selection-steps .current{color:var(--gold)}
+.selection-steps .done{color:var(--gold)}
+
+.select-stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(285px,355px) minmax(0,1fr);height:calc(100vh - 162px);max-width:1540px;margin:0 auto;padding:0 20px;align-items:center;gap:4px}
+#player-preview,#enemy-preview{height:100%;min-height:390px;position:relative}
+.fighter-plinth{position:relative;height:100%}
+.side-tag{position:absolute;top:8%;left:10%;font-size:9px;letter-spacing:2px;font-weight:600;color:var(--gold)}
+.fighter-plinth.enemy .side-tag{left:auto;right:10%;color:var(--muted)}
+.plinth-light{position:absolute;left:10%;right:0;bottom:88px;top:12%;background:linear-gradient(140deg,rgba(201,168,76,.04),transparent);clip-path:polygon(30% 0,100% 0,75% 100%,0 100%)}
+.enemy .plinth-light{background:linear-gradient(220deg,rgba(168,136,212,.04),transparent);transform:scaleX(-1)}
+
+.selection-art{position:absolute;left:50%;bottom:108px;height:clamp(195px,44vh,500px);max-width:130%;object-fit:contain;transform:translateX(-50%);filter:drop-shadow(0 13px 16px rgba(0,0,0,.75));animation:fighter-in .18s ease-out both}
+.enemy .selection-art{transform:translateX(-50%) scaleX(-1)}
+.unknown .selection-art{height:clamp(175px,34vh,350px);opacity:.3}
+@keyframes fighter-in{from{opacity:.15;filter:drop-shadow(0 13px 16px rgba(0,0,0,.75)) brightness(1.6)}to{opacity:1;filter:drop-shadow(0 13px 16px rgba(0,0,0,.75)) brightness(1)}}
+
+.fighter-copy{position:absolute;left:9%;right:0;bottom:5px}
+.enemy .fighter-copy{left:0;right:9%;text-align:right}
+.fighter-copy>span{font-size:9px;font-weight:600;letter-spacing:2px;color:var(--gold)}
+.enemy .fighter-copy>span{color:var(--muted)}
+.fighter-copy h2{font-family:'Cinzel',serif;font-size:clamp(34px,3.8vw,58px);margin:2px 0 0;line-height:.9;color:var(--white)}
+.fighter-copy p{font-size:9px;letter-spacing:3px;font-weight:600;margin:6px 0;color:var(--gold)}
+.fighter-copy small{font-size:11px;color:var(--muted)}
+
+.roster-center{padding-top:5px;position:relative;z-index:2}
+.roster-caption{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.roster-caption strong{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold)}
+.roster-caption>span{font-size:9px;letter-spacing:1px;color:var(--muted)}
+
+.roster-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.roster-tile{aspect-ratio:.83;min-width:0;padding:0;position:relative;overflow:hidden;border:1px solid var(--line);background:#111;transition:border-color .12s;cursor:pointer}
+.roster-tile img{width:100%;height:100%;object-fit:cover;object-position:center 20%;scale:1.06;pointer-events:none;transition:scale .14s}
+.roster-tile>span{position:absolute;bottom:0;left:0;right:0;padding:13px 5px 5px;background:linear-gradient(transparent,rgba(0,0,0,.96));font-size:10px;letter-spacing:1px;font-weight:600;color:var(--white)}
+.roster-tile>b{position:absolute;top:4px;left:4px;background:var(--gold);color:#0a0800;font-size:9px;padding:2px 5px;font-family:'Cinzel',serif}
+.roster-tile>b:empty{display:none}
+.roster-tile.locked{filter:saturate(.15) brightness(.4);border-color:rgba(80,70,50,.15)}
+.roster-tile.locked span{font-size:8px;color:var(--faint)}
+.roster-tile:hover{border-color:rgba(201,168,76,.3)}
+.roster-tile:hover img{scale:1.1}
+.roster-tile.highlight{border:2px solid var(--gold)}
+
+.fighter-moves{height:48px;text-align:center;padding-top:10px}
+.fighter-moves>span{display:block;font-size:9px;color:var(--muted);letter-spacing:1px}
+.fighter-moves b{display:block;font-size:11px;letter-spacing:2px;margin-top:3px;color:var(--gold)}
+
+/* Primary button - solid gold */
+.menu-primary{display:flex;justify-content:space-between;align-items:center;gap:18px;border:none;background:var(--gold);color:#0c0900;font-size:12px;font-weight:700;letter-spacing:2.5px;padding:12px 20px;cursor:pointer;transition:background .12s,transform .12s;font-family:'Inter',sans-serif}
+.menu-primary:hover,.menu-primary:focus-visible{background:#d9b85c;transform:translateY(-1px)}
+.menu-primary b{font-size:16px;line-height:.8;font-weight:400}
+.confirm-fighter{width:100%;margin-top:9px}
+.roster-notice{height:13px;text-align:center;font-size:9px;color:var(--muted);letter-spacing:1px;margin:7px 0 0}
+.menu-primary[aria-disabled=true]{background:rgba(201,168,76,.2);color:var(--faint)}
+.menu-primary:disabled{cursor:wait;opacity:.45}
+
+/* Footer */
+.menu-footer{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:11px 5%;font-size:9px;color:var(--faint);letter-spacing:1px;border-top:1px solid var(--line);background:var(--bg2)}
+.menu-footer kbd{font:600 9px 'Inter';border:1px solid var(--line);padding:2px 5px;color:var(--muted)}
+.menu-footer i{display:inline-block;width:3px;height:3px;margin:0 8px;background:var(--faint);transform:rotate(45deg)}
+
+/* Arena screen */
+.arena-screen-bg,.result-bg{position:absolute;inset:0;z-index:-2;background-size:cover;background-position:center}
+.arena-screen-bg{filter:brightness(.32) saturate(.55)}
+.arena-screen-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(10,8,6,.98) 0%,transparent 55%,rgba(10,8,6,.7) 100%)}
+.arena-content{width:min(940px,88%);margin:18px auto 78px}
+.versus-strip{display:flex;align-items:center;justify-content:center;gap:28px;height:50px}
+.versus-strip>div{display:flex;align-items:center;gap:9px;min-width:155px}
+.versus-strip>div:last-child{justify-content:flex-end;text-align:right}
+.versus-strip img{width:42px;height:42px;object-fit:cover;border:1px solid rgba(201,168,76,.4)}
+.versus-strip span{font-size:9px;letter-spacing:2px;color:var(--muted)}
+.versus-strip strong{display:block;font-size:18px;font-family:'Cinzel',serif;color:var(--white);line-height:1}
+.versus-strip>b{font-size:16px;font-style:italic;color:var(--gold);font-family:'Cinzel',serif}
+
+.arena-window{height:clamp(105px,20vh,240px);margin:14px 0 10px;border:1px solid var(--line);position:relative;background:linear-gradient(0deg,rgba(0,0,0,.9),transparent 70%)}
+.arena-window>div{position:absolute;left:18px;bottom:14px}
+.arena-window small{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.arena-window h2{font-family:'Cinzel',serif;font-size:28px;font-weight:700;line-height:1;margin:3px 0 0;color:var(--white)}
+.arena-number{position:absolute;top:11px;left:14px;font-size:9px;letter-spacing:3px;color:var(--faint)}
+.arena-day{position:absolute;right:14px;bottom:14px;font-size:9px;letter-spacing:1.5px;color:var(--gold)}
+.arena-tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.arena-tile{height:80px;border:1px solid var(--line);padding:0;background:#111;position:relative;overflow:hidden;cursor:pointer;transition:border-color .12s}
+.arena-tile img{width:100%;height:100%;object-fit:cover;opacity:.55;transition:opacity .12s}
+.arena-tile>span{position:absolute;bottom:0;left:0;right:0;padding:11px 6px 5px;background:linear-gradient(transparent,rgba(0,0,0,.93));font-size:10px;font-weight:600;letter-spacing:1px}
+.arena-tile.selected{border:2px solid var(--gold)}
+.arena-tile.selected img{opacity:.95}
+.arena-tile:hover img{opacity:.8}
+.match-options{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 0}
+.difficulty-area .eyebrow{display:block;margin-bottom:7px}
+.difficulty-buttons{display:flex;gap:4px}
+.difficulty-buttons button{min-width:76px;background:none;color:var(--muted);border:1px solid var(--line);padding:6px 9px;font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:background .12s,border-color .12s,color .12s}
+.difficulty-buttons i{display:block;font-style:normal;font-size:8px;letter-spacing:2px;color:var(--faint);margin-top:2px}
+.difficulty-buttons button.selected{background:rgba(201,168,76,.1);color:var(--white);border-color:var(--gold-dim)}
+.difficulty-buttons .selected i{color:var(--gold)}
+.match-rules{text-align:right;font-size:12px;letter-spacing:1px;color:var(--gold)}
+.match-rules b{font-size:12px}
+.match-rules span{display:block;font-size:9px;letter-spacing:1px;color:var(--muted);margin-top:4px}
+.training-note{font-size:13px;color:var(--muted);margin:0;font-style:italic}
+.start-battle{margin-left:auto;min-width:250px}
+.arena-content #setup-error{font-size:10px;color:#e8896a;text-align:right;margin:5px 0 0}
+
+/* About */
+.about-panel{width:min(600px,84%);margin:38px 0 68px 10%;padding:32px 40px;border:1px solid var(--line);border-left:2px solid var(--gold)}
+.about-panel h2{font-family:'Cinzel',serif;font-size:42px;line-height:.95;letter-spacing:1px;margin:13px 0;color:var(--white)}
+.about-panel em{color:var(--gold);font-style:italic}
+.about-panel>p{font-size:14px;line-height:1.7;color:var(--muted);max-width:480px}
+.about-fighters{display:flex;gap:22px;border-top:1px solid var(--line);padding-top:13px;margin-top:13px}
+.about-fighters p{flex:1;font-size:11px;color:var(--muted)}
+.about-fighters b{color:var(--white);display:block;margin-bottom:5px;font-size:11px;letter-spacing:1px}
+.about-fighters span{font-size:12px;color:var(--muted);line-height:1.5}
+.about-stats{display:flex;gap:32px;margin:16px 0;font-size:9px;letter-spacing:1px;color:var(--muted)}
+.about-stats b{display:block;font-family:'Cinzel',serif;font-size:30px;line-height:1;color:var(--gold)}
+.about-panel>small{display:block;font-size:10px;line-height:1.7;color:var(--faint)}
+.about-panel .menu-primary{margin-top:20px;width:100%}
+
+/* Result */
+.result-bg{background:linear-gradient(130deg,#12100a,#0a0d14)}
+.result-layout{display:flex;align-items:center;justify-content:center;gap:6%;height:calc(100vh - 95px);padding:26px 7%}
+.result-fighter{height:min(70vh,620px);max-width:43%;object-fit:contain;filter:drop-shadow(0 16px 20px rgba(0,0,0,.65))}
+.result-copy{width:370px;max-width:47%}
+.result-copy h1{font-family:'Cinzel',serif;font-size:clamp(42px,6vw,84px);letter-spacing:2px;line-height:1;color:var(--gold);margin:9px 0}
+.result-copy>p{font-size:15px;letter-spacing:4px;color:var(--muted)}
+.final-score{display:flex;gap:18px;align-items:center;font-family:'Cinzel',serif;font-size:60px;font-weight:700;line-height:1.2}
+.final-score i{font-size:20px;font-style:normal;color:var(--faint)}
+.result-copy>small{display:block;font-size:10px;color:var(--muted);margin:6px 0 24px}
+.result-copy>.menu-primary{width:100%}
+.result-secondary{display:block;width:100%;margin-top:8px;border:1px solid var(--line);padding:10px;background:none;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:2px;cursor:pointer;transition:border-color .12s,color .12s}
+.result-secondary:hover{border-color:var(--gold-dim);color:var(--white)}
+
+/* Pick animation */
+.roster-tile.picked{animation:pick-tile .3s steps(1,end) 3}
+#player-preview.picked .selection-art,#enemy-preview.picked .selection-art{animation:pick-art .3s steps(1,end) 3}
+#front-menu[data-picking] .roster-tile,#front-menu[data-picking] button{pointer-events:none}
+@keyframes pick-tile{0%{filter:brightness(1.8) sepia(1) saturate(3) hue-rotate(5deg)}50%,100%{filter:none}}
+@keyframes pick-art{0%{filter:brightness(1.5) drop-shadow(0 13px 15px rgba(0,0,0,.75))}50%,100%{filter:drop-shadow(0 13px 15px rgba(0,0,0,.75))}}
+.portrait-image{transform:scale(1.08) scaleX(var(--portrait-direction,1))}
+
+/* Responsive */
+@media(max-width:800px){
+  .home-content{width:66%;margin-left:7%;margin-top:7vh}
+  .home-title h1{font-size:70px}
+  .home-caption{display:none}
+  .build-tag{display:none}
+  .select-header{height:78px;padding:0 4%;gap:12px}
+  .select-header .wordmark{display:none}
+  .select-header h1{font-size:22px}
+  .select-stage{height:auto;min-height:calc(100vh - 150px);grid-template-columns:1fr minmax(238px,325px) 1fr;padding:0 9px;gap:0}
+  #player-preview,#enemy-preview{min-height:415px}
+  .selection-art{height:29vh;max-width:210%;bottom:132px}
+  .fighter-copy{left:0;right:-22px;bottom:36px}
+  .enemy .fighter-copy{left:-22px;right:0}
+  .fighter-copy h2{font-size:26px}
+  .fighter-copy>span,.fighter-copy small{display:none}
+  .side-tag{font-size:8px;left:0;top:12%;max-width:68px}
+  .fighter-plinth.enemy .side-tag{right:0}
+  .roster-caption>span{display:none}
+  .arena-content{width:91%;margin-top:7px}
+  .match-options{align-items:flex-start;gap:10px}
+  .difficulty-buttons button{min-width:54px;padding:6px;font-size:10px}
+  .arena-tile span{font-size:10px}
+  .versus-strip>div{min-width:115px}
+  .start-battle{width:100%}
+  .about-panel{margin:20px auto;width:90%;padding:20px}
+  .about-panel h2{font-size:34px}
+  .result-layout{gap:3%;padding:16px 4%}
+  .result-copy{max-width:53%}
+  .result-copy h1{font-size:46px}
+  .result-fighter{max-width:40%}
+  .menu-footer>span:last-child{display:none}
+}
+@media(max-width:550px){
+  .home-content{width:84%;margin-top:8vh}
+  .home-title h1{font-size:62px}
+  .home-nav button>span:nth-child(2){font-size:13px}
+  .home-title p{font-size:13px}
+  .select-stage{grid-template-columns:1fr 1fr;padding:0 13px;align-items:start}
+  .roster-center{grid-column:1/-1;grid-row:2;padding:0 5px 66px}
+  #player-preview,#enemy-preview{height:23vh;min-height:165px}
+  .selection-art{height:19vh;bottom:2px;max-width:100%}
+  .fighter-copy{left:0;bottom:0;right:auto}
+  .enemy .fighter-copy{right:0;left:auto;bottom:0}
+  .fighter-copy h2{font-size:22px}
+  .roster-grid{gap:4px}
+  .confirm-fighter{margin-top:5px}
+  .menu-footer{position:fixed}
+  .arena-tiles{gap:4px;grid-template-columns:repeat(3,1fr)}
+  .arena-tile{height:62px}
+  .match-options{display:block}
+  .match-rules{text-align:left;margin-top:12px}
+  .difficulty-buttons{width:100%}
+  .result-layout{position:relative;justify-content:flex-end}
+  .result-fighter{position:absolute;left:-10%;opacity:.4;height:60vh;max-width:76%}
+  .result-copy{position:relative;max-width:80%;width:80%}
+  .about-fighters{display:block}
+}
+@media(min-width:1600px){
+  .home-content{margin-top:8vh}
+  .home-nav button{padding:16px 0}
+  .home-title p{margin-bottom:40px}
+  .select-stage{grid-template-columns:1fr 410px 1fr}
+  .roster-tile{aspect-ratio:.94}
+  .selection-art{height:50vh}
+}
+@media(max-height:700px) and (min-width:800px){
+  .home-content{margin-top:0;margin-bottom:46px}
+  .home-title h1{font-size:62px;margin:10px 0}
+  .home-title p{margin-bottom:14px}
+  .home-nav button{padding:9px 0}
+  .home-nav button>span:nth-child(2){font-size:13px}
+  .select-header{height:72px}
+  .selection-steps{padding-top:9px}
+  .select-stage{height:calc(100vh - 135px);grid-template-columns:1fr 285px 1fr}
+  .selection-art{height:38vh;bottom:95px}
+  .fighter-copy h2{font-size:38px}
+  .confirm-fighter{padding:9px 14px;font-size:12px}
+  .arena-window{height:16vh;margin:8px 0}
+  .arena-tile{height:63px}
+  .match-options{padding:9px 0}
+  .about-panel{margin-top:16px;padding:18px 26px}
+  .about-panel h2{font-size:32px}
+}
+@media(max-height:520px){
+  .home-top{padding:9px 7%}
+  .home-content{margin-top:0}
+  .home-title h1{font-size:50px;margin:7px 0 12px}
+  .home-title p,.home-nav small{display:none}
+  .home-nav button{padding:7px 0}
+  .home-caption{bottom:12%}
+  .home-footer{bottom:7px;font-size:8px}
+}
+@media(max-height:420px){
+  .home-title h1{font-size:38px;margin:5px 0 7px}
+  .home-nav button>span:nth-child(2){font-size:12px}
+  .select-header{height:46px;padding:0 3%;gap:10px}
+  .select-header h1{font-size:17px}
+  .selection-steps{padding-top:4px;font-size:9px}
+  .select-stage{height:calc(100vh - 96px)}
+  .fighter-moves{height:25px;padding-top:2px}
+  .confirm-fighter{margin-top:2px;padding:5px 11px;font-size:11px}
+  .selection-art{height:52vh;bottom:54px}
+  .menu-footer{display:none}
+  .versus-strip img{width:27px;height:27px}
+  .versus-strip strong{font-size:15px}
+  .result-fighter{height:min(73vh,270px)}
+  .result-copy h1{font-size:34px}
+}
+@media(prefers-reduced-motion:reduce){#front-menu *,#round-call strong{animation:none!important;transition:none!important}}
+html.touch .menu-footer>span:first-child{visibility:hidden}
