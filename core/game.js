@@ -2602,7 +2602,7 @@
   // Load only the essential shared assets on startup. Character-specific assets are lazy-loaded when each character is first selected or used as an opponent.
   Promise.resolve(window.AETHER_PRELOAD).then(() => Promise.all([
     loadImage('hero', 'assets/mecha/run/sprite-sheet-alpha.webp', true),
-    loadImage('stage', 'assets/stage.webp', true),
+    loadImage('stage', 'assets/stages/stage.webp', true),
     loadImage('drone', 'assets/ui/drone.png', true),
     loadImage('cutin', 'assets/ui/ultimate-cutin.webp', true),
     ...(Rules ? Object.entries(Rules.stages).filter(([id]) => id !== 'bellora').map(([id, s]) => loadImage('stage-' + id, s.image, true)) : []),
