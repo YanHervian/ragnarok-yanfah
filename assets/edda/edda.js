@@ -32,7 +32,13 @@
     a.action={...move(name,index),t:0,fired:false,queued:0};a.state=a.action.name;a.stateTime=0;return true;
   }
   function refund(a) {for(const name of Object.keys(balance.cooldowns))a.cooldowns[name]=Math.max(0,a.cooldowns[name]-balance.cooldowns[name]*balance.basicRefund);}
-  window.Edda={balance,names,combo,stone,counter,tortoise,move,start,refund};
+  window.Edda={
+  audio: {
+    skill1: null,
+    skill2: null,
+    ultimate: 'assets/edda/audio/edda-ultimate.mp3',
+    hit: null
+  },balance,names,combo,stone,counter,tortoise,move,start,refund};
 })();
 
 

@@ -29,7 +29,13 @@
     a.action={...move(name,index),t:0,fired:false,queued:0};a.state=a.action.name;a.stateTime=0;return true;
   }
   function refund(a) {for(const name of Object.keys(balance.cooldowns))a.cooldowns[name]=Math.max(0,a.cooldowns[name]-balance.cooldowns[name]*balance.basicRefund);}
-  window.Naja={balance,names,combo,serpent,move,start,refund};
+  window.Naja={
+  audio: {
+    skill1: null,
+    skill2: null,
+    ultimate: 'assets/naja/audio/naja-ultimate-soraya.mp3',
+    hit: null
+  },balance,names,combo,serpent,move,start,refund};
 })();
 
 

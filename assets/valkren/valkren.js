@@ -78,7 +78,7 @@
         const dmg = balance.ultimateDamage || 60;
         if (s.owner === 'enemy') context.receiveHit(dmg, { freeze: false, knockdown: true, ultContext: true });
         else context.hitDummy(dmg, 400, '#ff0000', a.x, target.y - 80, true, false, 1, 0, true);
-        context.sound('heavy');
+        if (!target.isBlocking) context.sound('heavy');
       }
 
       // Getaran layar: hanya saat efek aktif, memudar halus di 0.5 detik terakhir
@@ -101,5 +101,11 @@
 
   function refund(a) { for (const name of Object.keys(balance.cooldowns)) a.cooldowns[name] = Math.max(0, a.cooldowns[name] - balance.cooldowns[name] * balance.basicRefund); }
 
-  window.Valkren = { balance, names, combo, vfx, ultimate, move, start, refund };
+  window.Valkren = {
+  audio: {
+    skill1: null,
+    skill2: null,
+    ultimate: 'assets/valkren/audio/valkren-ultimate.mp3',
+    hit: null
+  }, balance, names, combo, vfx, ultimate, move, start, refund };
 })();

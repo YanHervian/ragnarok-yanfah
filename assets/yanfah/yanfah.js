@@ -1,35 +1,36 @@
 /* YANFAH moves: player and AI use the same rules. */
 (() => {
   'use strict';
-  const balance = { cooldowns:{skill1:10,skill2:20,ultimate:30}, castTime:.5, passDamage:16, basicRefund:.05 };
-  const names = ['KEYBOARD SMASH','COPY PASTE','PING 999','BLUE SCREEN'];
-  
+  const balance = { cooldowns: { skill1: 10, skill2: 20, ultimate: 30 }, castTime: .5, passDamage: 16, basicRefund: .05 };
+  const names = ['KEYBOARD SMASH', 'COPY PASTE', 'PING 999', 'BLUE SCREEN'];
+
   const combo = [
-    {damage:6,knockback:75,reach:90,duration:.34,hitAt:.5},
-    {damage:8,knockback:100,reach:78,duration:.40,hitAt:.5},
-    {damage:12,knockback:180,reach:115,duration:.50,hitAt:.55}
+    { damage: 6, knockback: 75, reach: 90, duration: .34, hitAt: .5 },
+    { damage: 8, knockback: 100, reach: 78, duration: .40, hitAt: .5 },
+    { damage: 12, knockback: 180, reach: 115, duration: .50, hitAt: .55 }
   ];
-  const murmuration = { cutinDuration:.78, passStart:[.55,.85,1.15], passHeights:[-70,-112,-150], speed:1500, ravens:10, spacing:40, duration:2.4 };
-  function move(name,index=1) {
-    if(name==='attack')return {name:`attack${index}`,type:'attack',index,...combo[index-1]};
-    if(name==='skill1')return {name,type:name,damage:16,duration:.46,knockback:60,projectile:true,speed:840,feathers:[5,5,6],spread:.1,hitAt:.5};
-    if(name==='skill2')return {name,type:name,damage:24,duration:.82,knockback:300,reach:190,area:true,dash:850,hitAt:.60};
-    return {name:'ultimate',type:'yanfah-ult',duration:balance.castTime,damage:0,hitAt:.4};
+  const murmuration = { cutinDuration: .78, passStart: [.55, .85, 1.15], passHeights: [-70, -112, -150], speed: 1500, ravens: 10, spacing: 40, duration: 2.4 };
+  function move(name, index = 1) {
+    if (name === 'attack') return { name: `attack${index}`, type: 'attack', index, ...combo[index - 1] };
+    if (name === 'skill1') return { name, type: name, damage: 16, duration: .46, knockback: 60, projectile: true, speed: 840, feathers: [5, 5, 6], spread: .1, hitAt: .5 };
+    if (name === 'skill2') return { name, type: name, damage: 24, duration: .82, knockback: 300, reach: 190, area: true, dash: 850, hitAt: .60 };
+    return { name: 'ultimate', type: 'yanfah-ult', duration: balance.castTime, damage: 0, hitAt: .4 };
   }
-  function start(a,name,index=1) {
-    if(a.action||a.state==='hurt'||a.state==='down'||a.state==='recover')return false;
-    if(name!=='attack'&&a.cooldowns[name]>0)return false;
-    if(name!=='attack')a.cooldowns[name]=balance.cooldowns[name];
-    a.action={...move(name,index),t:0,fired:false,queued:0};a.state=a.action.name;a.stateTime=0;
+  function start(a, name, index = 1) {
+    if (a.action || a.state === 'hurt' || a.state === 'down' || a.state === 'recover') return false;
+    if (name !== 'attack' && a.cooldowns[name] > 0) return false;
+    if (name !== 'attack') a.cooldowns[name] = balance.cooldowns[name];
+    a.action = { ...move(name, index), t: 0, fired: false, queued: 0 }; a.state = a.action.name; a.stateTime = 0;
     return true;
   }
   const vfx = {
     attacks: [
-      { asset: 'yanfah-glitchhit', size: 200 },
-      { asset: 'yanfah-glitchhit', size: 200 },
-      { asset: 'yanfah-glitchhit', size: 200, slamAsset: 'yanfah-cyberslam', slamSize: 280 }
+      { x: 100, y: -100, size: 75, asset: 'yanfah-meleeswipe', flipX: 1 },
+      { x: 110, y: -120, size: 75, asset: 'yanfah-meleeswipe', flipX: 1, rotation: -45 },
+      { slamAsset: 'yanfah-cyberslam', slamSize: 170, slamX: 5, slamY: -40 }
     ],
-    projectile: { asset: 'yanfah-datacode', speed: 950, size: 140, color: '#00ffff' }
+    projectile: { asset: 'yanfah-datacode', speed: 950, size: 140, color: '#00ffff' },
+    hasJumpSmoke: false
   };
 
   const ultimate = {
@@ -80,9 +81,16 @@
       return s;
     }
   };
-  function refund(a) {for(const name of Object.keys(balance.cooldowns))a.cooldowns[name]=Math.max(0,a.cooldowns[name]-balance.cooldowns[name]*balance.basicRefund);}
+  function refund(a) { for (const name of Object.keys(balance.cooldowns)) a.cooldowns[name] = Math.max(0, a.cooldowns[name] - balance.cooldowns[name] * balance.basicRefund); }
 
-  window.Yanfah={balance,names,combo,murmuration,vfx,ultimate,move,start,refund};
+  window.Yanfah = {
+    audio: {
+      skill1: null,
+      skill2: null,
+      ultimate: 'assets/yanfah/audio/yanfah-ultimate.mp3',
+      hit: null
+    }, balance, names, combo, murmuration, vfx, ultimate, move, start, refund
+  };
 })();
 
 

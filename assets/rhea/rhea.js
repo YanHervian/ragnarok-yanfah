@@ -32,7 +32,13 @@
     a.action={...move(name,index),t:0,fired:false,queued:0};a.state=a.action.name;a.stateTime=0;return true;
   }
   function refund(a) {for(const name of Object.keys(balance.cooldowns))a.cooldowns[name]=Math.max(0,a.cooldowns[name]-balance.cooldowns[name]*balance.basicRefund);}
-  window.Rhea={balance,names,combo,drift,well,orrery,move,start,refund};
+  window.Rhea={
+  audio: {
+    skill1: null,
+    skill2: null,
+    ultimate: 'assets/rhea/audio/rhea-ultimate.mp3',
+    hit: null
+  },balance,names,combo,drift,well,orrery,move,start,refund};
 })();
 
 

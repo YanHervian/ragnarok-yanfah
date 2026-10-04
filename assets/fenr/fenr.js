@@ -34,7 +34,13 @@
     a.action = { ...move(a, name, index), t: 0, fired: false, queued: 0, form: a.form }; a.state = a.action.name; a.stateTime = 0; return true;
   }
   function refund(a) { for (const name of Object.keys(balance.cooldowns)) a.cooldowns[name] = Math.max(0, a.cooldowns[name] - balance.cooldowns[name] * .05); }
-  window.Fenr = { balance, kits, reset, begin, end, advance, move, start, refund };
+  window.Fenr = {
+  audio: {
+    skill1: null,
+    skill2: null,
+    ultimate: 'assets/fenr/audio/fenr-ultimate-holden.mp3',
+    hit: null
+  }, balance, kits, reset, begin, end, advance, move, start, refund };
 })();
 
 

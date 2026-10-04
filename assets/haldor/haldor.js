@@ -31,7 +31,13 @@
     a.action={...move(name,index),t:0,fired:false,queued:0};a.state=a.action.name;a.stateTime=0;return true;
   }
   function refund(a) {for(const name of Object.keys(balance.cooldowns))a.cooldowns[name]=Math.max(0,a.cooldowns[name]-balance.cooldowns[name]*balance.basicRefund);}
-  window.Haldor={balance,names,combo,slag,quake,move,start,refund};
+  window.Haldor={
+  audio: {
+    skill1: null,
+    skill2: null,
+    ultimate: 'assets/haldor/audio/haldor-ultimate.mp3',
+    hit: null
+  },balance,names,combo,slag,quake,move,start,refund};
 })();
 
 

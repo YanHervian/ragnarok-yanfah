@@ -1,6 +1,6 @@
 {
-  "files": 277,
-  "bytes": 33878708,
+  "files": 285,
+  "bytes": 34005788,
   "list": [
     {
       "file": "index.html",
@@ -1109,6 +1109,38 @@
     {
       "file": "sw.js",
       "bytes": 1358
+    },
+    {
+      "file": "assets/audio/sfx/hit_light.mp3",
+      "bytes": 12717
+    },
+    {
+      "file": "assets/audio/sfx/hit_heavy.mp3",
+      "bytes": 20781
+    },
+    {
+      "file": "assets/audio/sfx/block.mp3",
+      "bytes": 12717
+    },
+    {
+      "file": "assets/audio/sfx/whoosh.mp3",
+      "bytes": 12717
+    },
+    {
+      "file": "assets/audio/sfx/jump.mp3",
+      "bytes": 12717
+    },
+    {
+      "file": "assets/audio/sfx/land.mp3",
+      "bytes": 12717
+    },
+    {
+      "file": "assets/audio/sfx/ko_slam.mp3",
+      "bytes": 29997
+    },
+    {
+      "file": "assets/audio/sfx/double_jump.mp3",
+      "bytes": 12717
     }
   ]
 }

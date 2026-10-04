@@ -92,8 +92,26 @@
   const AMIKOM_MUSIC_PATH = 'assets/audio/music/amikom-music.mp3';
   const JAMUR_MUSIC_PATH = 'assets/audio/music/jamur-music.mp3';
   const prefs = { get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (_) { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (_) { } } };
-  let musicOn = prefs.get('aether.music', '1') !== '0', musicVolume = clamp(Number(prefs.get('aether.musicVolume', document.documentElement.classList.contains('touch') ? '5' : '15')) / 100 || 0, 0, 1), music = null;
-  try { if (typeof Audio !== 'undefined') { music = new Audio(); music.loop = true; music.preload = 'none'; music.src = MUSIC_PATH; } } catch (_) { music = null; }
+  if (prefs.get('aether.audioVersion_v4', '0') !== '4') {
+    prefs.set('aether.audioVersion_v4', '4');
+    prefs.set('aether.musicVolume', '80');
+    prefs.set('aether.sfxVolume', '90');
+    prefs.set('aether.voiceVolume', '90');
+  }
+  let musicVolume = clamp(Number(prefs.get('aether.musicVolume', '80')) / 100, 0, 1);
+  let sfxVolume = clamp(Number(prefs.get('aether.sfxVolume', '90')) / 100, 0, 1);
+  let voiceVolume = clamp(Number(prefs.get('aether.voiceVolume', '90')) / 100, 0, 1);
+  let musicOn = musicVolume > 0, music = null;
+  volume = sfxVolume;
+  try {
+    if (typeof Audio !== 'undefined') {
+      music = new Audio();
+      music.loop = true;
+      music.preload = 'auto';
+      music.dataset.targetSrc = MUSIC_PATH;
+      music.src = MUSIC_PATH;
+    }
+  } catch (_) { music = null; }
   function syncMusic() {
     if (!music) return;
     const targetSrc = (!menuOpen && stageId === 'amikom') ? AMIKOM_MUSIC_PATH : ((!menuOpen && stageId === 'jamur') ? JAMUR_MUSIC_PATH : MUSIC_PATH);
@@ -107,21 +125,38 @@
       }
     }
     const speaking = systemAnnouncer?.speaking || (voiceActive && ultimateVoice && !ultimateVoice.paused);
-    music.muted = muted; music.volume = clamp(musicVolume * (speaking ? .55 : 1), 0, 1);
-    const want = musicOn && musicVolume > 0 && !!audio && !document.hidden;
+    const musicMult = typeof window.AUDIO_CONFIG?.music === 'number' ? window.AUDIO_CONFIG.music : 1.0;
+    const masterMult = typeof window.AUDIO_CONFIG?.master === 'number' ? window.AUDIO_CONFIG.master : 1.0;
+    music.muted = muted;
+    music.volume = clamp(musicVolume * musicMult * masterMult * (speaking ? 0.55 : 1.0), 0, 1);
+    const want = musicVolume > 0 && musicMult > 0 && !muted && !document.hidden;
     if (want && music.paused) music.play()?.catch?.(() => { });
     else if (!want && !music.paused) music.pause();
   }
-  const ULTIMATE_VOICE_PATH = 'assets/audio/arco-ultimate-dylan.mp3';
-  const FENR_VOICE_PATH = 'assets/fenr/audio/fenr-ultimate-holden.mp3';
-  const MIRA_VOICE_PATH = 'assets/mira/audio/mira-ultimate-luna.mp3', CORA_VOICE_PATH = 'assets/cora/audio/cora-ultimate-anika.mp3', NAJA_VOICE_PATH = 'assets/naja/audio/naja-ultimate-soraya.mp3', HALDOR_VOICE_PATH = 'assets/haldor/audio/haldor-ultimate.mp3', ZANNI_VOICE_PATH = 'assets/zanni/audio/zanni-ultimate.mp3', ISOLDE_VOICE_PATH = 'assets/isolde/audio/isolde-ultimate.mp3', RHEA_VOICE_PATH = 'assets/rhea/audio/rhea-ultimate.mp3', SOLAN_VOICE_PATH = 'assets/solan/audio/solan-ultimate.mp3', NIB_VOICE_PATH = 'assets/nib/audio/nib-ultimate.mp3', EDDA_VOICE_PATH = 'assets/edda/audio/edda-ultimate.mp3', YANFAH_VOICE_PATH = 'assets/yanfah/audio/yanfah-ultimate.mp3', DHYLA_VOICE_PATH = 'assets/dhyla/audio/dhyla-ultimate.mp3', VALKREN_VOICE_PATH = 'assets/valkren/audio/valkren-ultimate.mp3';
   const VOICE_NAMES = { arco: 'Dylan', fenr: 'Holden', mira: 'Luna', cora: 'Anika', naja: 'Soraya', haldor: 'Gideon', zanni: 'Julian', isolde: 'Vesper', rhea: 'Chloe', solan: 'Xavier', nib: 'Evan', edda: 'Opal', yanfah: 'Hacker', dhyla: 'Dhyla', valkren: 'Valkren' };
   const voiceBank = {};
   let voiceKind = 'arco', voiceName = 'Dylan', voiceActor = null, voiceClock = 0;
   let ultimateVoice = null, voiceActive = false, voiceSerial = 0, voicePlayToken = 0, voiceStarts = 0, voiceError = '';
   try {
     if (typeof Audio !== 'undefined') {
-      for (const [kind, path] of [['arco', ULTIMATE_VOICE_PATH], ...(F ? [['fenr', FENR_VOICE_PATH]] : []), ...(M ? [['mira', MIRA_VOICE_PATH]] : []), ...(C ? [['cora', CORA_VOICE_PATH]] : []), ...(N ? [['naja', NAJA_VOICE_PATH]] : []), ...(HD ? [['haldor', HALDOR_VOICE_PATH]] : []), ...(Z ? [['zanni', ZANNI_VOICE_PATH]] : []), ...(IS ? [['isolde', ISOLDE_VOICE_PATH]] : []), ...(RH ? [['rhea', RHEA_VOICE_PATH]] : []), ...(SO ? [['solan', SOLAN_VOICE_PATH]] : []), ...(NB ? [['nib', NIB_VOICE_PATH]] : []), ...(ED ? [['edda', EDDA_VOICE_PATH]] : []), ...(YF ? [['yanfah', YANFAH_VOICE_PATH]] : []), ...(DH ? [['dhyla', DHYLA_VOICE_PATH]] : []), ...(VK ? [['valkren', VALKREN_VOICE_PATH]] : [])]) {
+      const characters = [
+        ['arco', 'assets/arco/audio/arco-ultimate.mp3'],
+        ...(F ? [['fenr', window.Fenr?.audio?.ultimate || 'assets/fenr/audio/fenr-ultimate-holden.mp3']] : []),
+        ...(M ? [['mira', window.Mira?.audio?.ultimate || 'assets/mira/audio/mira-ultimate-luna.mp3']] : []),
+        ...(C ? [['cora', window.Cora?.audio?.ultimate || 'assets/cora/audio/cora-ultimate-anika.mp3']] : []),
+        ...(N ? [['naja', window.Naja?.audio?.ultimate || 'assets/naja/audio/naja-ultimate-soraya.mp3']] : []),
+        ...(HD ? [['haldor', window.Haldor?.audio?.ultimate || 'assets/haldor/audio/haldor-ultimate.mp3']] : []),
+        ...(Z ? [['zanni', window.Zanni?.audio?.ultimate || 'assets/zanni/audio/zanni-ultimate.mp3']] : []),
+        ...(IS ? [['isolde', window.Isolde?.audio?.ultimate || 'assets/isolde/audio/isolde-ultimate.mp3']] : []),
+        ...(RH ? [['rhea', window.Rhea?.audio?.ultimate || 'assets/rhea/audio/rhea-ultimate.mp3']] : []),
+        ...(SO ? [['solan', window.Solan?.audio?.ultimate || 'assets/solan/audio/solan-ultimate.mp3']] : []),
+        ...(NB ? [['nib', window.Nib?.audio?.ultimate || 'assets/nib/audio/nib-ultimate.mp3']] : []),
+        ...(ED ? [['edda', window.Edda?.audio?.ultimate || 'assets/edda/audio/edda-ultimate.mp3']] : []),
+        ...(YF ? [['yanfah', window.Yanfah?.audio?.ultimate || 'assets/yanfah/audio/yanfah-ultimate.mp3']] : []),
+        ...(DH ? [['dhyla', window.Dhyla?.audio?.ultimate || 'assets/dhyla/audio/dhyla-ultimate.mp3']] : []),
+        ...(VK ? [['valkren', window.Valkren?.audio?.ultimate || 'assets/valkren/audio/valkren-ultimate.mp3']] : [])
+      ];
+      for (const [kind, path] of characters) {
         const media = new Audio(); media.preload = 'auto'; voiceBank[kind] = media;
         media.addEventListener('ended', () => { if (ultimateVoice !== media) return; voiceActive = false; applyAudioMix(); });
         media.addEventListener('error', () => { if (ultimateVoice !== media) return; voiceError = 'audio-load-failed'; voiceActive = false; applyAudioMix(); });
@@ -150,9 +185,17 @@
     return alive && (voiceActor.transformPending > 0 || voiceActor.form === 'wolf');
   }
   function applyAudioMix() {
-    if (master) master.gain.value = muted ? 0 : volume * ((systemAnnouncer?.speaking || (voiceActive && ultimateVoice && !ultimateVoice.paused)) ? .38 : 1);
-    for (const media of Object.values(voiceBank)) { media.muted = muted; media.volume = clamp(volume * 1.25, 0, 1); }
-    systemAnnouncer?.setMix(volume, muted);
+    volume = sfxVolume;
+    const masterMult = typeof window.AUDIO_CONFIG?.master === 'number' ? window.AUDIO_CONFIG.master : 1.0;
+    const voiceMult = typeof window.AUDIO_CONFIG?.voice === 'number' ? window.AUDIO_CONFIG.voice : 1.0;
+    if (master) master.gain.value = muted ? 0 : sfxVolume * masterMult * ((systemAnnouncer?.speaking || (voiceActive && ultimateVoice && !ultimateVoice.paused)) ? .38 : 1);
+    for (const media of Object.values(voiceBank)) { media.muted = muted; media.volume = clamp(voiceVolume * 1.25 * voiceMult * masterMult, 0, 1); }
+    if (typeof sfxPool !== 'undefined') {
+      for (const pool of Object.values(sfxPool)) {
+        for (const el of pool) { el.muted = muted; el.volume = clamp(sfxVolume * masterMult, 0, 1); }
+      }
+    }
+    systemAnnouncer?.setMix(voiceVolume * masterMult, muted);
     syncMusic();
   }
   function stopUltimateVoice() {
@@ -181,47 +224,124 @@
     voiceActive = true; voiceStarts++; voiceError = '';
     syncUltimateVoice();
   }
-  const noiseBuffers = {}; // Pre-generated noise buffers, keyed by duration string
+  const sfxBuffers = {};
+  const sfxPool = {};
+  const SFX_MAP = {
+    hit: 'hit_light',
+    hit_light: 'hit_light',
+    heavy: 'hit_heavy',
+    hit_heavy: 'hit_heavy',
+    block: 'block',
+    defend: 'block',
+    whoosh: 'whoosh',
+    cast: 'whoosh',
+    jump: 'jump',
+    doublejump: 'double_jump',
+    double_jump: 'double_jump',
+    land: 'land',
+    ko: 'ko_slam',
+    ko_slam: 'ko_slam',
+    ultimate: 'hit_heavy'
+  };
+
+  // Pre-create audio element pool for instant, zero-delay HTML5 playback (works offline & on file:///)
+  for (const [id, path] of Object.entries(window.AUDIO_CONFIG?.sfxPaths || {})) {
+    sfxPool[id] = [];
+    for (let i = 0; i < 4; i++) {
+      try {
+        const el = new Audio(path);
+        el.preload = 'auto';
+        sfxPool[id].push(el);
+      } catch (_) { }
+    }
+  }
+
+  function preloadUniversalSfx() {
+    if (!audio) return;
+    for (const [id, path] of Object.entries(window.AUDIO_CONFIG?.sfxPaths || {})) {
+      if (sfxBuffers[id]) continue;
+      fetch(path)
+        .then(r => r.arrayBuffer())
+        .then(buf => audio.decodeAudioData(buf))
+        .then(decoded => { sfxBuffers[id] = decoded; })
+        .catch(() => { });
+    }
+  }
+
   function unlockAudio() {
     try {
       if (!audio) {
         const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
         audio = new AC(); master = audio.createGain(); compressor = audio.createDynamicsCompressor();
         master.connect(compressor); compressor.connect(audio.destination);
-        // Pre-generate noise buffers for all sound types to avoid runtime allocation stutter
-        for (const dur of [0.13, 0.22, 0.26, 0.7]) {
-          const key = dur.toFixed(2);
-          if (!noiseBuffers[key]) {
-            const buf = audio.createBuffer(1, Math.floor(audio.sampleRate * dur), audio.sampleRate);
-            const data = buf.getChannelData(0);
-            for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
-            noiseBuffers[key] = buf;
-          }
-        }
       }
       if (audio.state === 'suspended') audio.resume();
+      preloadUniversalSfx();
       applyAudioMix();
     } catch (_) { /* Audio is optional; gameplay remains usable. */ }
   }
+
+  const frameAudio = new Set();
+
   function sound(type) {
-    if (!audio || audio.state !== 'running' || muted) return;
-    const start = audio.currentTime, heavy = type === 'heavy' || type === 'ultimate';
-    const duration = type === 'ultimate' ? .7 : heavy ? .26 : type === 'cast' ? .22 : .13;
-    const osc = audio.createOscillator(), gain = audio.createGain();
-    osc.type = type === 'jump' || type === 'cast' ? 'sine' : 'triangle';
-    const frequency = ({ hit: 210, heavy: 110, cast: 430, jump: 360, ultimate: 72, step: 75, click: 550 })[type] || 190;
-    osc.frequency.setValueAtTime(frequency, start); osc.frequency.exponentialRampToValueAtTime(type === 'jump' || type === 'cast' ? frequency * 2.5 : frequency * .22, start + duration);
-    gain.gain.setValueAtTime(.001, start); gain.gain.exponentialRampToValueAtTime(heavy ? .32 : .12, start + .008); gain.gain.exponentialRampToValueAtTime(.001, start + duration);
-    osc.connect(gain); gain.connect(master); osc.start(start); osc.stop(start + duration + .02); audioSources++;
-    // Reuse pre-generated noise buffer — avoids allocating + filling a new buffer on the main thread every call
-    if (type !== 'jump' && type !== 'click') {
-      const buf = noiseBuffers[duration.toFixed(2)];
-      if (buf) {
-        const source = audio.createBufferSource(), filter = audio.createBiquadFilter(), noiseGain = audio.createGain();
-        source.buffer = buf; filter.type = 'bandpass'; filter.frequency.value = heavy ? 430 : 1800; filter.Q.value = .7;
-        noiseGain.gain.value = heavy ? .35 : .14; source.connect(filter); filter.connect(noiseGain); noiseGain.connect(master); source.start(start); audioSources++;
+    if (muted) return;
+    frameAudio.add(type);
+  }
+
+  function flushAudioQueue() {
+    if (frameAudio.size === 0) return;
+
+    const resolved = new Set();
+    let hasBlock = false;
+    for (const t of frameAudio) {
+      const id = SFX_MAP[t];
+      if (id) {
+        resolved.add(id);
+        if (id === 'block') hasBlock = true;
       }
     }
+
+    const config = window.AUDIO_CONFIG?.sfx || {};
+    const masterMult = typeof window.AUDIO_CONFIG?.master === 'number' ? window.AUDIO_CONFIG.master : 1.0;
+
+    for (const id of resolved) {
+      if (hasBlock && (id === 'hit_light' || id === 'hit_heavy')) continue;
+      const sfxPaths = window.AUDIO_CONFIG?.sfxPaths || {};
+      if (!sfxPaths[id]) continue;
+
+      const sfxMult = typeof config[id] === 'number' ? config[id] : 1.0;
+      const finalGain = sfxMult * masterMult * sfxVolume;
+
+      if (audio && audio.state === 'running' && sfxBuffers[id]) {
+        try {
+          const src = audio.createBufferSource();
+          src.buffer = sfxBuffers[id];
+          const sfxGain = audio.createGain();
+          sfxGain.gain.setValueAtTime(finalGain, audio.currentTime);
+          src.connect(sfxGain);
+          sfxGain.connect(master);
+          src.start(audio.currentTime);
+          audioSources++;
+          continue;
+        } catch (_) { }
+      }
+
+      try {
+        const pool = sfxPool[id];
+        if (pool && pool.length > 0) {
+          let el = pool.find(a => a.paused || a.ended);
+          if (!el) el = pool.reduce((oldest, cur) => cur.currentTime > oldest.currentTime ? cur : oldest, pool[0]);
+          if (el) {
+            el.volume = clamp(finalGain, 0, 1);
+            el.muted = muted;
+            el.currentTime = 0;
+            el.play()?.catch?.(() => { });
+          }
+        }
+      } catch (_) { }
+    }
+
+    frameAudio.clear();
   }
 
   function menuSound(kind = 'move') {
@@ -244,9 +364,9 @@
     if (!playable().includes(player) || !playable().includes(enemy) || !Object.hasOwn(Rules.stages, stage) || !Object.hasOwn(Rules.difficulties, level) || !['versus', 'training'].includes(mode)) return false;
     if (!images['stage-' + stage]) return false;
     selectedCharacter = player; opponentCharacter = enemy; stageId = stage; difficulty = level; images.stage = images['stage-' + stage]; CONFIG.groundY = Rules.stages[stage].groundY;
-    $('#load-state').classList.remove('hidden'); 
+    $('#load-state').classList.remove('hidden');
     $('#load-message').textContent = 'Memuat karakter...';
-    
+
     Promise.all([
       loadCharacterAssets(player, () => { if (selectedCharacter === player) syncPlayerForm(); }),
       loadCharacterAssets(enemy)
@@ -272,7 +392,7 @@
       if (event.type === 'round-end') {
         clearInput(); stopUltimateVoice(); squad = enemySquad = parade = enemyParade = flock = enemyFlock = serpent = enemySerpent = quake = enemyQuake = finale = enemyFinale = skyfall = enemySkyfall = orrery = enemyOrrery = sunroar = enemySunroar = delivery = enemyDelivery = tortoise = enemyTortoise = null; fenrCutin = null; hero.action = dummy.action = null; projectiles.length = effects.length = 0; hitstop = cinematic = trauma = 0;
         if (hero.hp <= 0) state('down'); else state('idle'); if (currentDummyHP() > 0) { dummy.state = 'idle'; dummy.stateTime = 0; }
-        match.endText = event.doubleKO ? 'DOUBLE K.O.' : event.timeout ? 'TIME UP' : 'K.O.'; announceTimer = 0; sound('heavy');
+        match.endText = event.doubleKO ? 'DOUBLE K.O.' : event.timeout ? 'TIME UP' : 'K.O.'; announceTimer = 0; sound('ko_slam');
         const call = event.doubleKO ? 'double_ko' : event.timeout ? 'time_up' : 'ko';
         const outcome = event.winner === 'draw' ? 'draw' : `${event.winner === 'player' ? selectedCharacter : opponentCharacter}_wins`;
         const speech = window.ANNOUNCER_MANIFEST?.clips;
@@ -307,12 +427,13 @@
     if (second) {
       if (hero.jumps >= 2) return false;
       hero.jumps = 2; hero.vy = -CONFIG.doubleJumpSpeed; hero.grounded = false; state('doublejump');
-      if (selectedCharacter !== 'dhyla' && selectedCharacter !== 'valkren') {
+      if (selectedCharacter !== 'dhyla' && selectedCharacter !== 'valkren' && selectedCharacter !== 'yanfah') {
         effects.push({ type: 'airpulse', x: hero.x, y: hero.y - 8, life: .5, maxLife: .5 });
         spawnParticles(hero.x, hero.y - 7, '#b3fff2', 22, 190);
       }
-      sound('cast');
+      sound('double_jump');
       if (selectedCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: hero.x, y: hero.y - 18, facing: hero.facing, life: .4, maxLife: .4, size: 170 });
+      else if (selectedCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-jumpdust', x: hero.x, y: hero.y - 18, facing: hero.facing, life: .4, maxLife: .4, size: 170 });
       if (selectedCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-boost', x: hero.x, y: hero.y - 18, facing: hero.facing, life: .4, maxLife: .4, size: 170, maxAlpha: 0.8 });
       hero.rollDuration = CONFIG.rollDuration;
       hero.doublePose = hero.rollDuration; hero.airTime = 0; return true;
@@ -321,6 +442,7 @@
     if (!hero.grounded) return jump(true);
     hero.jumps = 1; hero.vy = -CONFIG.jumpSpeed; hero.grounded = false; hero.airTime = 0; state('jump'); dust(hero.x, 12); sound('jump');
     if (selectedCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: hero.x, y: hero.y - 50, facing: hero.facing, life: .4, maxLife: .4, size: 170 });
+    else if (selectedCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-jumpdust', x: hero.x, y: hero.y - 30, facing: hero.facing, life: .4, maxLife: .4, size: 170 });
     if (selectedCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-boost', x: hero.x, y: hero.y - 50, facing: hero.facing, life: .4, maxLife: .4, size: 170, maxAlpha: 0.8 });
     return true;
   }
@@ -359,7 +481,7 @@
       if (!F.start(hero, name)) return false;
       hero.animTime = 0; hero.runDirection = 0;
       if (name === 'ultimate') { showFenrTransformation(hero); clearScreenForUltimate(hero); }
-      sound(name === 'ultimate' ? 'ultimate' : 'cast'); return true;
+      return true;
     }
     if (KITS[selectedCharacter]) {
       if (!canAct() || hero.action || !Object.hasOwn(cooldownMax, name) || (name === 'ultimate' && (parade || flock || serpent || quake || finale || skyfall || orrery || sunroar || delivery || tortoise || activeUlt.player))) return false;
@@ -368,7 +490,7 @@
       hero.animTime = 0; hero.runDirection = 0;
       if (name === 'ultimate') { startSummon(hero); clearScreenForUltimate(hero); }
       // dhyla-warning is spawned when skill2 fires (see dhylaStrike), not at cast
-      sound(name === 'ultimate' ? 'ultimate' : 'cast'); return true;
+      return true;
     }
     // Jangan biarkan Valkren jatuh ke path default Arco (jika VK=null karena manifest belum siap)
     if (selectedCharacter === 'valkren') return false;
@@ -377,7 +499,7 @@
     hero.cooldowns[name] = cooldownMax[name]; hero.runDirection = 0;
     const fallback = { skill1: .66, skill2: .85, ultimate: 1.9 }[name];
     hero.action = { type: name, name, t: 0, duration: name === 'ultimate' ? BALANCE.ultimate.castTime : animationDuration(name, fallback), fired: false, hit: false };
-    state(name); sound(name === 'ultimate' ? 'ultimate' : 'cast');
+    state(name);
     if (name === 'ultimate') { startSquadron(); clearScreenForUltimate(hero); }
     return true;
   }
@@ -420,13 +542,14 @@
     if (Rules) match = Rules.create(match?.mode || 'training');
     resetCombat(); if (match?.mode === 'versus') { announceTimer = 0; emitRoundCue('round', 1); }
   }
-  function hitDummy(damage, power, color, sourceX, impactY, knockdown = false, freezeWorld = true, shake = 1, stunDuration = 0, ultContext = false) {
-    if (menuOpen || (match && match.phase !== 'fight') || dummy.state === 'recover' || (dummy.state === 'down' && dummy.y >= CONFIG.groundY) || dummy.invuln > 0) {
-      if (dummy.invuln > 0 && dummy.state !== 'down' && dummy.state !== 'recover') damageNumbers.push({ x: dummy.x + (Math.random() - 0.5) * 40, y: dummy.y - 120, amount: 'IMMUNE', life: 1.0, maxLife: 1.0, color: '#cccccc' });
+  function hitDummy(damage, power, color, sourceX, impactY, knockdown = false, freezeWorld = true, shake = 1, stunDuration = 0, ultContext = false, hitSound = null, spawnImpact = true) {
+    if (menuOpen || (match && match.phase !== 'fight') || dummy.state === 'recover' || (dummy.state === 'down' && dummy.y >= CONFIG.groundY) || (!ultContext && dummy.invuln > 0)) {
+      if (!ultContext && dummy.invuln > 0 && dummy.state !== 'down' && dummy.state !== 'recover') damageNumbers.push({ x: dummy.x + (Math.random() - 0.5) * 40, y: dummy.y - 120, amount: 'IMMUNE', life: 1.0, maxLife: 1.0, color: '#cccccc' });
       return false;
     }
     if (dummy.action?.guard && shellGuard(dummy)) {
       damageNumbers.push({ x: dummy.x + (Math.random() - 0.5) * 40, y: dummy.y - 120, amount: 'DEFEND', life: 1.2, maxLife: 1.2, color: '#aaddff' });
+      sound('block');
       return false;
     }
 
@@ -439,12 +562,13 @@
       dummy.stateTime = knockdown ? -0.4 : -0.25;
       dummy.vx = 0;
       spawnParticles(dummy.x - dir * 30, impactY, '#aaddff', 10, 180);
-      sound('heavy');
+      sound('block');
       if (opponentCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-guard', x: dummy.x + dummy.facing * 60, y: dummy.y - 70, facing: dummy.facing, life: .3, maxLife: .3, size: 200 });
       if (opponentCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-guard', x: dummy.x + dummy.facing * 40, y: dummy.y - 70, facing: dummy.facing, life: .4, maxLife: .4, size: 130 });
+      if (opponentCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-hexshield', x: dummy.x + dummy.facing * 50, y: dummy.y - 70, facing: dummy.facing, life: .4, maxLife: .4, size: 150 });
       damageNumbers.push({ x: dummy.x + (Math.random() - 0.5) * 40, y: dummy.y - 120, amount: 'DEFEND', life: 1.2, maxLife: 1.2, color: '#aaddff' });
       if (freezeWorld) hitstop = Math.max(hitstop, knockdown ? .06 : .03);
-      return true; // No damage taken
+      return 'blocked'; // No damage taken
     }
     dummy.isBlocking = false;
 
@@ -470,13 +594,15 @@
     if (freezeWorld) hitstop = Math.max(hitstop, damage >= 30 ? .085 : .045);
     trauma = Math.min(1, trauma + (damage >= 30 ? .45 : .18) * shake);
     damageNumbers.push({ x: dummy.x + (random() - .5) * 20, y: impactY - 20, amount: damage, life: .9, maxLife: .9, color });
-    spawnParticles(dummy.x - dir * 21, impactY, color, damage >= 30 ? 22 : 14, damage >= 30 ? 320 : 220);
-    effects.push({ type: 'impact', x: dummy.x - dir * 15, y: impactY, life: .2, maxLife: .2, color, heavy: damage >= 30 });
+    if (spawnImpact) {
+      spawnParticles(dummy.x - dir * 21, impactY, color, damage >= 30 ? 22 : 14, damage >= 30 ? 320 : 220);
+      effects.push({ type: 'impact', x: dummy.x - dir * 15, y: impactY, life: .2, maxLife: .2, color, heavy: damage >= 30 });
+    }
     if (dummy.damage >= BALANCE.dummyMax || knockdown || dummy.stunHits >= 5) {
       dummy.ko = dummy.damage >= BALANCE.dummyMax; dummy.state = 'down'; dummy.downTimer = 0; dummy.stunHits = 0; comboTimer = 0; comboHits = comboDamage = 0; announce(dummy.ko ? 'K.O.' : 'KNOCKDOWN', .9);
       if (ultContext) { dummy.vy = 0; dummy.vx = dir * 800; } else { dummy.vy = isJuggle ? -300 : -420; dummy.vx = dir * 600; dummy.fallDirection = dir; }
     }
-    sound(damage >= 30 ? 'heavy' : 'hit'); return true;
+    sound(hitSound || (damage >= 30 ? 'heavy' : 'hit')); return true;
   }
   function attackRange(index) {
     if (selectedCharacter === 'fenr') return F.move(hero, 'attack', index).reach;
@@ -517,7 +643,7 @@
         hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund);
       }
     }
-    else sound('step');
+    else sound('whoosh');
   }
   function fireSkill(action) {
     if (selectedCharacter === 'fenr') { fenrStrike(hero, action); return; }
@@ -535,8 +661,8 @@
     if (selectedCharacter === 'valkren') { valkrenStrike(hero, action); return; }
     if (selectedCharacter === 'dhyla') { dhylaStrike(hero, action); return; }
     const name = action.type, origin = emitter(name);
-    if (name === 'skill1') { projectiles.push({ x: origin.x, y: origin.y, vx: hero.facing * 920, life: 1.6, facing: hero.facing }); effects.push({ type: 'muzzle', x: origin.x, y: origin.y, life: .25, maxLife: .25 }); spawnParticles(origin.x, origin.y, '#a9f8ef', 12, 140); }
-    if (name === 'skill2') { const x = origin.x; effects.push({ type: 'slam', x, y: CONFIG.groundY - 2, life: .8, maxLife: .8 }); spawnParticles(x, CONFIG.groundY - 8, '#c7eafd', 40, 370); trauma = Math.min(1, trauma + .35); sound('heavy'); if (Math.abs(dummy.x - x) < BALANCE.skill2.radius && dummy.y > CONFIG.groundY - 125) hitDummy(BALANCE.skill2.damage, BALANCE.skill2.knockback, '#bfe9ff', hero.x, dummy.y - 65); }
+    if (name === 'skill1') { projectiles.push({ x: origin.x, y: origin.y, vx: hero.facing * 920, life: 1.6, facing: hero.facing, hitSound: 'hit' }); effects.push({ type: 'muzzle', x: origin.x, y: origin.y, life: .25, maxLife: .25 }); spawnParticles(origin.x, origin.y, '#a9f8ef', 12, 140); }
+    if (name === 'skill2') { const x = origin.x; effects.push({ type: 'slam', x, y: CONFIG.groundY - 2, life: .8, maxLife: .8 }); spawnParticles(x, CONFIG.groundY - 8, '#c7eafd', 40, 370); trauma = Math.min(1, trauma + .35); if (Math.abs(dummy.x - x) < BALANCE.skill2.radius && dummy.y > CONFIG.groundY - 125) hitDummy(BALANCE.skill2.damage, BALANCE.skill2.knockback, '#bfe9ff', hero.x, dummy.y - 65, false, true, 1, 0, false, 'hit'); }
   }
   function startSquadron(actor = hero) {
     const target = actor === hero ? dummy : hero;
@@ -578,10 +704,11 @@
         effects.push({ type: 'drone-laser', owner: s.owner, x: origin.x, y: origin.y, endX: targetX, endY: targetY, life: .65, maxLife: .65, droneId: d.id });
         effects.push({ type: 'muzzle', x: origin.x, y: origin.y, life: .19, maxLife: .19, color: '#fff0be' });
         spawnParticles(origin.x, origin.y, '#a8fff0', 8, 90);
-        trauma = Math.max(trauma, d.id === 3 ? .5 : .23); sound('cast');
+        trauma = Math.max(trauma, d.id === 3 ? .5 : .23);
+
         if (s.targeted && (target.x - s.casterX) * s.facing >= -30) {
-          if (s.owner === 'enemy') window.__game.receiveHit(BALANCE.ultimate.damagePerDrone, { freeze: false, projectile: true });
-          else hitDummy(BALANCE.ultimate.damagePerDrone, d.id === 3 ? BALANCE.ultimate.knockback : 45, '#ffe2a0', s.casterX, targetY, false, false);
+          if (s.owner === 'enemy') window.__game.receiveHit(BALANCE.ultimate.damagePerDrone, { freeze: false, projectile: true, hitSound: 'heavy' });
+          else hitDummy(BALANCE.ultimate.damagePerDrone, d.id === 3 ? BALANCE.ultimate.knockback : 45, '#ffe2a0', s.casterX, targetY, false, false, 1, 0, false, 'heavy');
         }
       }
     }
@@ -641,7 +768,6 @@
         const pod = pods[r.pod % pods.length];
         r.state = 'flying'; r.sx = r.x = actor.x + actor.facing * pod.x; r.sy = r.y = actor.y + pod.y; s.launched++;
         effects.push({ type: 'muzzle', x: r.sx, y: r.sy, life: .16, maxLife: .16, color: '#ffe38a' });
-        if (r.id % 3 === 0) sound('cast');
       }
       if (r.state !== 'flying') continue;
       const u = clamp((s.t - r.launchAt) / (r.impactAt - r.launchAt), 0, 1);
@@ -694,9 +820,10 @@
           spawnParticles(hero.x + hero.facing * 30, hero.y - 70, '#aaddff', 10, 180);
           if (selectedCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-guard', x: hero.x + hero.facing * 60, y: hero.y - 70, facing: hero.facing, life: .3, maxLife: .3, size: 200 });
           if (selectedCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-guard', x: hero.x + hero.facing * 40, y: hero.y - 70, facing: hero.facing, life: .4, maxLife: .4, size: 130 });
+          if (selectedCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-hexshield', x: hero.x + hero.facing * 50, y: hero.y - 70, facing: hero.facing, life: .4, maxLife: .4, size: 150 });
           damageNumbers.push({ x: hero.x + (Math.random() - 0.5) * 40, y: hero.y - 120, amount: 'DEFEND', life: 1.2, maxLife: 1.2, color: '#aaddff' });
-          sound('heavy');
-          return true;
+          sound('block');
+          return 'blocked';
         }
 
         // Apply damage directly
@@ -728,9 +855,10 @@
           spawnParticles(dummy.x - dir * 30, impactY, '#aaddff', 10, 180);
           if (opponentCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-guard', x: dummy.x + dummy.facing * 60, y: dummy.y - 70, facing: dummy.facing, life: .3, maxLife: .3, size: 200 });
           if (opponentCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-guard', x: dummy.x + dummy.facing * 40, y: dummy.y - 70, facing: dummy.facing, life: .4, maxLife: .4, size: 130 });
+          if (opponentCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-hexshield', x: dummy.x + dummy.facing * 50, y: dummy.y - 70, facing: dummy.facing, life: .4, maxLife: .4, size: 150 });
           damageNumbers.push({ x: dummy.x + (Math.random() - 0.5) * 40, y: dummy.y - 120, amount: 'DEFEND', life: 1.2, maxLife: 1.2, color: '#aaddff' });
-          sound('heavy');
-          return true;
+          sound('block');
+          return 'blocked';
         }
 
         // Apply damage directly
@@ -806,7 +934,7 @@
     const target = s.owner === 'enemy' ? hero : dummy, U = C.murmuration, tail = (U.ravens - 1) * U.spacing;
     s.t += dt;
     for (const p of s.passes) {
-      if (p.state === 'waiting' && s.t >= p.at) { p.state = 'flying'; sound('cast'); }
+      if (p.state === 'waiting' && s.t >= p.at) { p.state = 'flying'; }
       if (p.state !== 'flying') continue;
       const old = p.front; p.front += s.facing * U.speed * dt;
       if (!p.hit && (target.x - old) * s.facing >= 0 && (target.x - p.front) * s.facing < 0) {
@@ -912,7 +1040,8 @@
         boomerang: true, range: Math.max(120, s.facing > 0 ? W - 60 - x : x - 60), travel: 0, spin: 16, freeze: false
       });
       effects.push({ type: 'zanni-fx', asset: 'zanni-confetti', x: x + s.facing * 20, y, facing: s.facing, life: .35, maxLife: .35, size: 170 });
-      spawnParticles(x, y, '#e4f36a', 14, 260); sound('cast');
+      spawnParticles(x, y, '#e4f36a', 14, 260);
+
     }
     s.phase = s.t < U.cutinDuration ? 'cutin' : s.throws < U.throws.length ? 'throwing' : 'returning';
     if (s.t >= U.duration && !projectiles.some(p => p.asset === 'zanni-bigring' && p.owner === s.owner)) { if (s.owner === 'enemy') enemyFinale = null; else finale = null; }
@@ -969,7 +1098,8 @@
         asset: 'rhea-planet', size: U.size, color: '#f2c77a', orbit: true, angle: 0, lap: U.lap, rx: U.rx, ry: U.ry, spin: 2, freeze: false
       });
       effects.push({ type: 'rhea-fx', asset: 'rhea-burst', x: a.x + s.facing * U.rx, y: a.y - 90, facing: s.facing, life: .3, maxLife: .3, size: 150 });
-      spawnParticles(a.x, a.y - 90, '#f2c77a', 12, 220); sound('cast');
+      spawnParticles(a.x, a.y - 90, '#f2c77a', 12, 220);
+
     }
     s.phase = s.t < U.cutinDuration ? 'cutin' : s.released < U.releases.length ? 'releasing' : 'orbiting';
     if (s.t >= U.duration && !projectiles.some(p => p.asset === 'rhea-planet' && p.owner === s.owner)) { if (s.owner === 'enemy') enemyOrrery = null; else orrery = null; }
@@ -1027,7 +1157,8 @@
         asset: 'nib-plane', size: U.size, color: '#8fd4ff', homing: true, speedH: U.speed, turn: U.turn, freeze: false
       });
       effects.push({ type: 'nib-fx', asset: 'nib-stamp', x, y, facing: s.facing, life: .3, maxLife: .3, size: 130 });
-      spawnParticles(x, y, '#f4efe2', 10, 200); sound('cast');
+      spawnParticles(x, y, '#f4efe2', 10, 200);
+
     }
     s.phase = s.t < U.cutinDuration ? 'cutin' : s.released < U.releases.length ? 'releasing' : 'flying';
     if (s.t >= U.duration && !projectiles.some(p => p.asset === 'nib-plane' && p.owner === s.owner)) { if (s.owner === 'enemy') enemyDelivery = null; else delivery = null; }
@@ -1045,7 +1176,8 @@
     const U = ED.tortoise; s.t += dt;
     if (!s.spirit && s.t >= U.appear) {
       s.spirit = { type: 'edda-spirit', asset: 'edda-tortoise', x: s.x, y: CONFIG.groundY + 8, facing: s.facing, life: U.duration - U.appear, maxLife: U.duration - U.appear, size: U.size, lift: 0 };
-      effects.push(s.spirit); spawnParticles(s.x, CONFIG.groundY - 20, '#8fe3b4', 24, 260); sound('cast');
+      effects.push(s.spirit); spawnParticles(s.x, CONFIG.groundY - 20, '#8fe3b4', 24, 260);
+
     }
     if (s.spirit) {
       s.x = clamp(s.x + s.facing * U.speed * dt, 60, W - 60); s.spirit.x = s.x;
@@ -1161,7 +1293,7 @@
       hero.smokeDistance += travelled;
       while (hero.smokeDistance >= 30) { hero.smokeDistance -= 30; runSmoke(hero.x, hero.facing); }
     } else hero.smokeDistance = 0;
-    if (!hero.grounded) { if (keys.has('s') && hero.vy > 0 && hero.doublePose <= 0) hero.vy = Math.max(hero.vy, CONFIG.fastFall); hero.vy += CONFIG.gravity * dt; hero.y += hero.vy * dt; if (hero.y >= CONFIG.groundY) { hero.y = CONFIG.groundY; hero.vy = 0; hero.grounded = true; hero.jumps = 0; hero.doublePose = 0; hero.airTime = 0; dust(hero.x, 11); sound('step'); } }
+    if (!hero.grounded) { if (keys.has('s') && hero.vy > 0 && hero.doublePose <= 0) hero.vy = Math.max(hero.vy, CONFIG.fastFall); hero.vy += CONFIG.gravity * dt; hero.y += hero.vy * dt; if (hero.y >= CONFIG.groundY) { hero.y = CONFIG.groundY; hero.vy = 0; hero.grounded = true; hero.jumps = 0; hero.doublePose = 0; hero.airTime = 0; dust(hero.x, 11); sound('land'); } }
     if (hero.y < -200) { hero.y = -200; if (hero.vy < 0) hero.vy = 0; }
     const stride = metrics?.states?.[hero.state]?.stride_estimate || manifest?.metrics?.[hero.state === 'run' ? 'runStride' : 'walkStride'] || manifest?.locomotion?.[hero.state]?.stride_px || (hero.state === 'run' ? 184 : 148);
     hero.walkPhase += Math.abs(hero.vx) * dt / stride;
@@ -1182,8 +1314,8 @@
     // Versus CPU follows the player's post-hurt immunity rule by difficulty, so a mashed chain cannot loop it forever.
     // Its stun lasts 0.5 s there, which still covers every 3-hit chain gap; the training dummy stays open for practice.
     if ((dummy.state === 'hurt' || (dummy.state === 'crouch' && dummy.isBlocking)) && dummy.stateTime > (F && aiEnabled && match?.mode === 'versus' ? .5 : .4)) { dummy.state = dummy.y < CONFIG.groundY ? 'jump' : 'idle'; dummy.stateTime = 0; dummy.isBlocking = false; }
-    if (dummy.state !== 'down' && (dummy.y < CONFIG.groundY || dummy.vy < 0)) { dummy.grounded = false; dummy.vy += CONFIG.gravity * dt; dummy.y += dummy.vy * dt; if (dummy.y >= CONFIG.groundY) { dummy.y = CONFIG.groundY; dummy.vy = 0; dummy.jumps = 0; cpu.doubleAt = 0; dummy.grounded = true; if (dummy.state === 'jump') { dummy.state = 'idle'; dummy.stateTime = 0; } dust(dummy.x, 8); } }
-    if (dummy.state === 'down') { dummy.grounded = false; if (dummy.y < CONFIG.groundY || dummy.vy < 0) { dummy.vy += CONFIG.gravity * dt; dummy.y += dummy.vy * dt; if (dummy.y >= CONFIG.groundY) { dummy.y = CONFIG.groundY; dummy.vy = 0; dummy.grounded = true; dust(dummy.x, 24); trauma = Math.min(1, trauma + .3); } } dummy.downTimer = (dummy.downTimer || 0) + dt; if (dummy.downTimer >= 1.5) { dummy.state = 'recover'; dummy.stateTime = 0; dummy.downTimer = 0; } }
+    if (dummy.state !== 'down' && (dummy.y < CONFIG.groundY || dummy.vy < 0)) { dummy.grounded = false; dummy.vy += CONFIG.gravity * dt; dummy.y += dummy.vy * dt; if (dummy.y >= CONFIG.groundY) { dummy.y = CONFIG.groundY; dummy.vy = 0; dummy.jumps = 0; cpu.doubleAt = 0; dummy.grounded = true; if (dummy.state === 'jump') { dummy.state = 'idle'; dummy.stateTime = 0; } dust(dummy.x, 8); sound('land'); } }
+    if (dummy.state === 'down') { dummy.grounded = false; if (dummy.y < CONFIG.groundY || dummy.vy < 0) { dummy.vy += CONFIG.gravity * dt; dummy.y += dummy.vy * dt; if (dummy.y >= CONFIG.groundY) { dummy.y = CONFIG.groundY; dummy.vy = 0; dummy.grounded = true; dust(dummy.x, 24); trauma = Math.min(1, trauma + .3); sound('land'); } } dummy.downTimer = (dummy.downTimer || 0) + dt; if (dummy.downTimer >= 1.5) { dummy.state = 'recover'; dummy.stateTime = 0; dummy.downTimer = 0; } }
     if (dummy.state === 'recover' && dummy.stateTime > .4) { dummy.state = 'idle'; dummy.stateTime = 0; if (dummy.ko) dummy.damage = 0; dummy.ko = false; dummy.invuln = 0; }
     if (F) updateFenrAI(dt);
     // ABSOLUTE CEILING: Prevent the "mental ke langit" bug from ever pushing characters off screen permanently.
@@ -1221,7 +1353,7 @@
       if (p.gravity && p.y >= CONFIG.groundY - 8) { slagSplash(p); projectiles.splice(i, 1); continue; }
       if (p.landY && p.y >= p.landY) {
         if (p.valkrenEruption) {
-          effects.push({ type: 'valkren-fx', asset: 'valkren-eruption', x: p.x, y: CONFIG.groundY - 160, facing: p.facing, life: .6, maxLife: .6, size: 400 });
+          effects.push({ type: 'valkren-fx', asset: 'valkren-eruption', x: p.x, y: CONFIG.groundY - 120, facing: p.facing, life: .6, maxLife: .6, size: 300 });
           spawnParticles(p.x, p.landY, '#ff5555', 40, 450);
           sound('heavy');
           trauma = Math.min(1, trauma + .4);
@@ -1258,7 +1390,7 @@
       }
       if (p.spent) { if (p.life <= 0) projectiles.splice(i, 1); continue; }
       if (p.owner === 'enemy') {
-        if (Math.min(oldX, p.x) <= hero.x + 28 && Math.max(oldX, p.x) >= hero.x - 28 && Math.abs(p.y - (hero.y - 85)) < (p.tall || 75) && window.__game.receiveHit(p.damage, { projectile: true, freeze: p.freeze, knockdown: false, stun: p.yanfahUltTrigger ? 1.0 : 0 })) {
+        if (Math.min(oldX, p.x) <= hero.x + 28 && Math.max(oldX, p.x) >= hero.x - 28 && Math.abs(p.y - (hero.y - 85)) < (p.tall || 75) && window.__game.receiveHit(p.damage, { projectile: true, freeze: p.freeze, knockdown: false, stun: p.yanfahUltTrigger ? 1.0 : 0, hitSound: p.hitSound || null, ultContext: p.ultContext || p.yanfahUltTrigger || p.valkrenEruption, spawnImpact: p.spawnImpact })) {
           if (p.yanfahUltTrigger) {
             if (hero.isBlocking) {
               if (enemySystemcrash) enemySystemcrash.timeout = 2.0;
@@ -1272,10 +1404,11 @@
           else if (p.boomerang) { p.spent = true; p.returning = true; }
           else if (p.orbit) p.spent = true;
           else {
-            if (p.asset === 'dhyla-projectile') effects.push({ type: 'dhyla-fx', asset: 'dhyla-explosion', x: hero.x, y: p.y, facing: p.facing, life: .4, maxLife: .4, size: 140 });
+            if (p.asset === 'dhyla-projectile') effects.push({ type: 'dhyla-fx', asset: 'dhyla-explosion', x: hero.x + p.facing * 10, y: p.y + 40, facing: p.facing, life: .4, maxLife: .4, size: 180 });
             if (p.asset === 'valkren-skill1') effects.push({ type: 'valkren-fx', asset: 'valkren-explosion', x: hero.x, y: p.y, facing: p.facing, life: .4, maxLife: .4, size: 250 });
+            if (p.asset === 'yanfah-datacode') effects.push({ type: 'yanfah-fx', asset: 'yanfah-cyberslam', x: hero.x, y: p.y, facing: p.facing, rotation: -Math.PI / 2, life: .4, maxLife: .4, size: 140 });
             if (p.valkrenEruption) {
-              effects.push({ type: 'valkren-fx', asset: 'valkren-eruption', x: hero.x, y: CONFIG.groundY - 80, facing: p.facing, life: .6, maxLife: .6, size: 400 });
+              effects.push({ type: 'valkren-fx', asset: 'valkren-eruption', x: hero.x, y: CONFIG.groundY - 120, facing: p.facing, life: .6, maxLife: .6, size: 300 });
               spawnParticles(hero.x, CONFIG.groundY - 10, '#ff5555', 40, 450);
               sound('heavy');
               trauma = Math.min(1, trauma + .4);
@@ -1288,7 +1421,7 @@
       // Swept x interval keeps a high-speed bolt from tunneling through a target.
       if (Math.min(oldX, p.x) <= dummy.x + 30 && Math.max(oldX, p.x) >= dummy.x - 30 && Math.abs(p.y - (dummy.y - (F ? 95 : 68))) < (p.tall || (F ? 90 : 66)) && dummy.state !== 'down' && dummy.state !== 'recover') {
         const dmg = p.yanfahUltTrigger ? 0 : (p.damage ?? BALANCE.skill1.damage);
-        if (hitDummy(dmg, p.knockback ?? BALANCE.skill1.knockback, p.color || '#94ffde', oldX, p.y, false, false, 1, p.yanfahUltTrigger ? 1.0 : 0)) {
+        if (hitDummy(dmg, p.knockback ?? BALANCE.skill1.knockback, p.color || '#94ffde', oldX, p.y, false, false, 1, p.yanfahUltTrigger ? 1.0 : 0, p.ultContext || p.yanfahUltTrigger || p.valkrenEruption, p.hitSound || null, p.spawnImpact)) {
           if (p.yanfahUltTrigger) {
             if (dummy.isBlocking) {
               if (systemcrash) systemcrash.timeout = 2.0;
@@ -1302,10 +1435,11 @@
           else if (p.boomerang) { p.spent = true; p.returning = true; }
           else if (p.orbit) p.spent = true;
           else {
-            if (p.asset === 'dhyla-projectile') effects.push({ type: 'dhyla-fx', asset: 'dhyla-explosion', x: dummy.x, y: p.y, facing: p.facing, life: .4, maxLife: .4, size: 140 });
+            if (p.asset === 'dhyla-projectile') effects.push({ type: 'dhyla-fx', asset: 'dhyla-explosion', x: dummy.x + p.facing * 10, y: p.y + 40, facing: p.facing, life: .4, maxLife: .4, size: 180 });
             if (p.asset === 'valkren-skill1') effects.push({ type: 'valkren-fx', asset: 'valkren-explosion', x: dummy.x, y: p.y, facing: p.facing, life: .4, maxLife: .4, size: 250 });
+            if (p.asset === 'yanfah-datacode') effects.push({ type: 'yanfah-fx', asset: 'yanfah-cyberslam', x: dummy.x, y: p.y, facing: p.facing, rotation: -Math.PI / 2, life: .4, maxLife: .4, size: 160 });
             if (p.valkrenEruption) {
-              effects.push({ type: 'valkren-fx', asset: 'valkren-eruption', x: dummy.x, y: CONFIG.groundY - 80, facing: p.facing, life: .6, maxLife: .6, size: 400 });
+              effects.push({ type: 'valkren-fx', asset: 'valkren-eruption', x: dummy.x, y: CONFIG.groundY - 120, facing: p.facing, life: .6, maxLife: .6, size: 300 });
               spawnParticles(dummy.x, CONFIG.groundY - 10, '#ff5555', 40, 450);
               sound('heavy');
               trauma = Math.min(1, trauma + .4);
@@ -1351,30 +1485,30 @@
   function fenrStrike(actor, move) {
     const enemy = actor === dummy, target = enemy ? hero : dummy, actorMetrics = actor.form === 'wolf' ? window.FENR_WOLF_METRICS : window.FENR_HUMAN_METRICS, origin = actorMetrics?.emitters?.[move.name], fy = actor.y + (origin?.y ?? -(actor.form === 'wolf' ? 120 : 105));
     effects.push({ type: 'fenr-fx', asset: move.fx, x: move.area ? actor.x : actor.x + actor.facing * 65, y: fy, facing: actor.facing, life: .32, maxLife: .32, size: move.area ? move.reach * 2 : 130 });
-    if (move.projectile) { projectiles.push({ x: actor.x + actor.facing * (origin?.x ?? 62), y: fy, vx: actor.facing * 720, life: 1.15, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, asset: 'gale' }); sound('cast'); return; }
+    if (move.projectile) { projectiles.push({ x: actor.x + actor.facing * (origin?.x ?? 62), y: fy, vx: actor.facing * 720, life: 1.15, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, asset: 'gale' }); return; }
     const dx = (target.x - actor.x) * actor.facing, near = move.area ? Math.abs(dx) < move.reach : dx > tB(typeof target !== 'undefined' ? target : dummy) && dx < move.reach + tW(typeof target !== 'undefined' ? target : dummy);
-    if (!near || Math.abs(target.y - actor.y) > 115) { sound('step'); return; }
+    if (!near || Math.abs(target.y - actor.y) > 115) { sound('whoosh'); return; }
     const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, '#ffe6ba', actor.x, fy, false, move.type === 'attack');
     if (connected && move.type === 'attack') { F.refund(actor); if (!enemy) for (const n of Object.keys(rechargePulse)) rechargePulse[n] = .22; }
-    if (connected) sound('hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound('hit');
   }
   function miraStrike(actor, move) {
     const enemy = actor === dummy, target = enemy ? hero : dummy, em = window.MIRA_METRICS?.emitters?.[move.name];
     const ox = actor.x + actor.facing * (em?.x ?? 100), oy = actor.y + (em?.y ?? -125);
     if (move.projectile) {
       projectiles.push({ x: ox, y: oy, vx: actor.facing * move.speed, life: 1.3, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, asset: 'mira-star', color: '#ffe27a' });
-      effects.push({ type: 'muzzle', x: ox, y: oy, life: .2, maxLife: .2, color: '#fff1a8' }); spawnParticles(ox, oy, '#ffe27a', 10, 140); sound('cast'); return;
+      effects.push({ type: 'muzzle', x: ox, y: oy, life: .2, maxLife: .2, color: '#fff1a8' }); spawnParticles(ox, oy, '#ffe27a', 10, 140); return;
     }
     if (move.type === 'attack') effects.push({ type: 'slash', x: actor.x + actor.facing * 62, y: oy + 5, life: .22, maxLife: .22, facing: actor.facing, index: move.index, color: move.index === 3 ? '#ffe27a' : '#f0d2ff' });
     else effects.push({ type: 'mira-fx', asset: 'mira-crash', x: ox, y: oy, facing: actor.facing, life: .3, maxLife: .3, size: 150 });
     const dx = (target.x - actor.x) * actor.facing;
-    if (dx <= tB(typeof target !== 'undefined' ? target : dummy) || dx >= move.reach + tW(typeof target !== 'undefined' ? target : dummy) || Math.abs(target.y - actor.y) > 115) { sound('step'); return; }
+    if (dx <= tB(typeof target !== 'undefined' ? target : dummy) || dx >= move.reach + tW(typeof target !== 'undefined' ? target : dummy) || Math.abs(target.y - actor.y) > 115) { sound('whoosh'); return; }
     const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, '#ffd6f5', actor.x, oy, false, move.type === 'attack');
     if (connected && move.type === 'attack') {
       if (enemy) M.refund(dummy);
       else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund); }
     }
-    if (connected) sound(move.type === 'skill2' ? 'heavy' : 'hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.type === 'skill2' ? 'heavy' : 'hit');
   }
   function coraStrike(actor, move) {
     const enemy = actor === dummy, target = enemy ? hero : dummy, em = window.CORA_METRICS?.emitters?.[move.name];
@@ -1382,18 +1516,18 @@
     if (move.projectile) {
       // The straight feather flies a little faster, so the fan lands as a quick three-hit burst instead of one stacked hit.
       move.feathers.forEach((damage, i) => { const angle = (i - 1) * move.spread, speed = move.speed * (1 - Math.abs(i - 1) * .06); projectiles.push({ x: ox, y: oy, vx: actor.facing * speed * Math.cos(angle), vy: speed * Math.sin(angle), life: 1, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage, knockback: move.knockback, asset: 'cora-feather', size: 74, color: '#c9a2ff' }); });
-      effects.push({ type: 'muzzle', x: ox, y: oy, life: .18, maxLife: .18, color: '#e0c8ff' }); spawnParticles(ox, oy, '#b58cff', 10, 140); sound('cast'); return;
+      effects.push({ type: 'muzzle', x: ox, y: oy, life: .18, maxLife: .18, color: '#e0c8ff' }); spawnParticles(ox, oy, '#b58cff', 10, 140); return;
     }
     if (move.type === 'attack') effects.push({ type: 'slash', x: actor.x + actor.facing * 55, y: hy + 5, life: .22, maxLife: .22, facing: actor.facing, index: move.index, color: move.index === 3 ? '#ffc86b' : '#dcc6ff' });
     else { effects.push({ type: 'cora-fx', asset: 'cora-gust', x: actor.x + actor.facing * 140, y: actor.y - 100, facing: actor.facing, life: .34, maxLife: .34, size: 170 }); spawnParticles(actor.x + actor.facing * 120, actor.y - 100, '#3a2d58', 12, 220); }
     const dx = (target.x - actor.x) * actor.facing, near = move.area ? dx > -30 && dx < move.reach : dx > tB(typeof target !== 'undefined' ? target : dummy) && dx < move.reach + tW(typeof target !== 'undefined' ? target : dummy);
-    if (!near || Math.abs(target.y - actor.y) > 115) { sound('step'); return; }
+    if (!near || Math.abs(target.y - actor.y) > 115) { sound('whoosh'); return; }
     const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, move.area ? '#e8d8ff' : '#e2ccff', actor.x, hy, false, move.type === 'attack');
     if (connected && move.type === 'attack') {
       if (enemy) C.refund(dummy);
       else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund); }
     }
-    if (connected) sound(move.type === 'skill2' ? 'heavy' : 'hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.type === 'skill2' ? 'heavy' : 'hit');
   }
   function najaStrike(actor, move) {
     const enemy = actor === dummy, target = enemy ? hero : dummy, em = window.NAJA_METRICS?.emitters?.[move.name];
@@ -1402,19 +1536,19 @@
       // Sand Fang runs along the floor from her palm slam: any small jump clears it.
       const x = actor.x + actor.facing * (em?.x ?? 90);
       projectiles.push({ x, y: actor.y - 24, vx: actor.facing * move.speed, life: 1.1, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'naja-sandwave', size: 130, color: '#f2c86b' });
-      dust(x, 10); spawnParticles(x, actor.y - 14, '#e8c27a', 10, 160); sound('cast'); return;
+      dust(x, 10); spawnParticles(x, actor.y - 14, '#e8c27a', 10, 160); return;
     }
     // The urumi cracks out to its measured tip; the cyclone spins all the way around her.
     if (move.type === 'attack') effects.push({ type: 'whip', x: actor.x, y: hy, facing: actor.facing, tip: em?.x ?? move.reach + 25, life: .2, maxLife: .2, index: move.index, color: move.index === 3 ? '#ffe7a8' : '#f2d9a0' });
     else { effects.push({ type: 'naja-fx', asset: 'naja-cyclone', x: actor.x, y: actor.y - 72, facing: actor.facing, life: .36, maxLife: .36, size: 270 }); spawnParticles(actor.x, actor.y - 40, '#e3bf78', 16, 260, 'dust'); }
     const dx = (target.x - actor.x) * actor.facing, near = move.around ? Math.abs(dx) < move.reach : dx > tB(typeof target !== 'undefined' ? target : dummy) && dx < move.reach + tW(typeof target !== 'undefined' ? target : dummy);
-    if (!near || Math.abs(target.y - actor.y) > 115) { sound('step'); return; }
+    if (!near || Math.abs(target.y - actor.y) > 115) { sound('whoosh'); return; }
     const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, move.around ? '#ffe7b0' : '#f7dca0', actor.x, hy, false, move.type === 'attack');
     if (connected && move.type === 'attack') {
       if (enemy) N.refund(dummy);
       else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund); }
     }
-    if (connected) sound(move.type === 'skill2' ? 'heavy' : 'hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.type === 'skill2' ? 'heavy' : 'hit');
   }
   function haldorStrike(actor, move) {
     const enemy = actor === dummy, target = enemy ? hero : dummy, em = window.HALDOR_METRICS?.emitters?.[move.name];
@@ -1425,7 +1559,7 @@
       const ahead = (target.x - actor.x) * actor.facing, land = actor.x + actor.facing * clamp(ahead, L.minRange, L.maxRange);
       const g = 2 * (CONFIG.groundY - 8 - y0 + L.rise * L.flight) / (L.flight * L.flight);
       projectiles.push({ x: x0, y: y0, vx: (land - x0) / L.flight, vy: -L.rise, gravity: g, life: L.flight + .4, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'haldor-slag', size: 64, color: '#ffae52', landX: land, landAt: time + L.flight, splash: L.splash });
-      effects.push({ type: 'muzzle', x: x0, y: y0, life: .2, maxLife: .2, color: '#ffb35c' }); spawnParticles(x0, y0, '#ff9a3c', 10, 150); sound('cast'); return;
+      effects.push({ type: 'muzzle', x: x0, y: y0, life: .2, maxLife: .2, color: '#ffb35c' }); spawnParticles(x0, y0, '#ff9a3c', 10, 150); return;
     }
     if (move.type === 'attack') {
       effects.push({ type: 'slash', x: actor.x + actor.facing * 55, y: hy + 5, life: .24, maxLife: .24, facing: actor.facing, index: move.index, color: move.index === 3 ? '#ffd28a' : '#ffb05e' });
@@ -1434,13 +1568,13 @@
     }
     else { effects.push({ type: 'haldor-fx', asset: 'haldor-steam', x: actor.x - actor.facing * 70, y: actor.y - 80, facing: actor.facing, life: .4, maxLife: .4, size: 190 }); spawnParticles(actor.x + actor.facing * 70, actor.y - 90, '#f3ecdf', 12, 220, 'dust'); }
     const dx = (target.x - actor.x) * actor.facing;
-    if (dx <= tB(typeof target !== 'undefined' ? target : dummy) || dx >= move.reach + tW(typeof target !== 'undefined' ? target : dummy) || Math.abs(target.y - actor.y) > 115) { sound('step'); return; }
+    if (dx <= tB(typeof target !== 'undefined' ? target : dummy) || dx >= move.reach + tW(typeof target !== 'undefined' ? target : dummy) || Math.abs(target.y - actor.y) > 115) { sound('whoosh'); return; }
     const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, move.type === 'skill2' ? '#fff1dc' : '#ffc27a', actor.x, hy, false, move.type === 'attack');
     if (connected && move.type === 'attack') {
       if (enemy) HD.refund(dummy);
       else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund); }
     }
-    if (connected) sound(move.type === 'skill2' || move.index === 3 ? 'heavy' : 'hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.type === 'skill2' || move.index === 3 ? 'heavy' : 'hit');
   }
   function zanniStrike(actor, move) {
     const enemy = actor === dummy, target = enemy ? hero : dummy, em = window.ZANNI_METRICS?.emitters?.[move.name];
@@ -1449,13 +1583,13 @@
       // Ring Toss: a bladed ring at hand height flies out ZANNI.ring.range px and comes back to his hand.
       const x = actor.x + actor.facing * (em?.x ?? 90), y = clamp(actor.y + (em?.y ?? -95), actor.y - 130, actor.y - 70);
       projectiles.push({ x, y, vx: actor.facing * move.speed, life: 2.2, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'zanni-ring', size: 70, color: '#e4f36a', boomerang: true, range: Z.ring.range, travel: 0, spin: 18 });
-      effects.push({ type: 'muzzle', x, y, life: .2, maxLife: .2, color: '#e4f36a' }); spawnParticles(x, y, '#e8d27a', 10, 150); sound('cast'); return;
+      effects.push({ type: 'muzzle', x, y, life: .2, maxLife: .2, color: '#e4f36a' }); spawnParticles(x, y, '#e8d27a', 10, 150); return;
     }
     // The scissor lattice telescopes to its measured tip; Spring Snatch reaches 200 px and reels the rival in.
     if (move.type === 'attack') effects.push({ type: 'whip', x: actor.x, y: hy, facing: actor.facing, tip: em?.x ?? move.reach + 20, life: .18, maxLife: .18, index: move.index, color: move.index === 3 ? '#f4f7a0' : '#e4f36a' });
     else effects.push({ type: 'whip', x: actor.x, y: hy, facing: actor.facing, tip: em?.x ?? move.reach, life: .26, maxLife: .26, index: 3, color: '#f2d46a' });
     const dx = (target.x - actor.x) * actor.facing;
-    if (dx <= tB(typeof target !== 'undefined' ? target : dummy) || dx >= move.reach + tW(typeof target !== 'undefined' ? target : dummy) || Math.abs(target.y - actor.y) > 115) { sound('step'); return; }
+    if (dx <= tB(typeof target !== 'undefined' ? target : dummy) || dx >= move.reach + tW(typeof target !== 'undefined' ? target : dummy) || Math.abs(target.y - actor.y) > 115) { sound('whoosh'); return; }
     const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, move.type === 'skill2' ? '#f6f3c8' : '#e9f27a', actor.x, hy, false, move.type === 'attack');
     if (connected && move.pull) {
       // Reel the rival in to `pull` px in front of ZANNI (never pushes a closer rival away).
@@ -1466,7 +1600,7 @@
       if (enemy) Z.refund(dummy);
       else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund); }
     }
-    if (connected) sound(move.type === 'skill2' || move.index === 3 ? 'heavy' : 'hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.type === 'skill2' || move.index === 3 ? 'heavy' : 'hit');
   }
   function isoldeStrike(actor, move) {
     const enemy = actor === dummy, target = enemy ? hero : dummy, em = window.ISOLDE_METRICS?.emitters?.[move.name];
@@ -1475,18 +1609,18 @@
       // Sky Piercer: an ice bolt from the lance point on a rising line (IS.piercer.rise): anti-air, close ground poke.
       const P = IS.piercer, x = actor.x + actor.facing * Math.round((em?.x ?? 140) * .8), y = actor.y - P.y;
       projectiles.push({ x, y, vx: actor.facing * P.speed, vy: -P.speed * P.rise, life: 1.1, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'isolde-piercer', size: 96, color: '#bfe6ff' });
-      effects.push({ type: 'muzzle', x, y, life: .2, maxLife: .2, color: '#dff3ff' }); spawnParticles(x, y, '#dff3ff', 10, 160); sound('cast'); return;
+      effects.push({ type: 'muzzle', x, y, life: .2, maxLife: .2, color: '#dff3ff' }); spawnParticles(x, y, '#dff3ff', 10, 160); return;
     }
     if (move.type === 'attack') effects.push({ type: 'whip', x: actor.x, y: hy, facing: actor.facing, tip: em?.x ?? move.reach + 25, life: .18, maxLife: .18, index: move.index, color: move.index === 3 ? '#eaf7ff' : '#bfe6ff' });
     else effects.push({ type: 'isolde-fx', asset: 'isolde-frost', x: actor.x - actor.facing * 60, y: actor.y - 70, facing: actor.facing, life: .4, maxLife: .4, size: 190 });
     const dx = (target.x - actor.x) * actor.facing;
-    if (dx <= tB(typeof target !== 'undefined' ? target : dummy) || dx >= move.reach + tW(typeof target !== 'undefined' ? target : dummy) || Math.abs(target.y - actor.y) > 115) { sound('step'); return; }
+    if (dx <= tB(typeof target !== 'undefined' ? target : dummy) || dx >= move.reach + tW(typeof target !== 'undefined' ? target : dummy) || Math.abs(target.y - actor.y) > 115) { sound('whoosh'); return; }
     const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, move.type === 'skill2' ? '#eaf7ff' : '#bfe6ff', actor.x, hy, false, move.type === 'attack');
     if (connected && move.type === 'attack') {
       if (enemy) IS.refund(dummy);
       else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund); }
     }
-    if (connected) sound(move.type === 'skill2' || move.index === 3 ? 'heavy' : 'hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.type === 'skill2' || move.index === 3 ? 'heavy' : 'hit');
   }
   function rheaStrike(actor, move) {
     const enemy = actor === dummy, target = enemy ? hero : dummy, em = window.RHEA_METRICS?.emitters?.[move.name];
@@ -1495,25 +1629,23 @@
       // Planet Drift: a slow little planet at chest height that crosses the arena.
       const x = actor.x + actor.facing * (em?.x ?? 80), y = actor.y - 95;
       projectiles.push({ x, y, vx: actor.facing * move.speed, life: RH.drift.life, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'rhea-drift', size: 78, color: '#f2c77a', spin: 3 });
-      effects.push({ type: 'muzzle', x, y, life: .2, maxLife: .2, color: '#f2c77a' }); spawnParticles(x, y, '#f2c77a', 10, 150); sound('cast'); return;
+      effects.push({ type: 'muzzle', x, y, life: .2, maxLife: .2, color: '#f2c77a' }); spawnParticles(x, y, '#f2c77a', 10, 150); return;
     }
     if (move.well) {
       // Gravity Well: a vortex opens RH.well.at px ahead and collapses after RH.well.fuse s.
       const W0 = RH.well, x = clamp(actor.x + actor.facing * W0.at, 40, W - 40);
       projectiles.push({ x, y: CONFIG.groundY - 80, vx: 0, life: W0.fuse, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'rhea-well', size: 170, color: '#e8b0c0', inert: true, radius: W0.radius, spin: -6 });
-      sound('cast'); return;
+      return;
     }
     effects.push({ type: 'whip', x: actor.x, y: hy, facing: actor.facing, tip: em?.x ?? move.reach + 20, life: .18, maxLife: .18, index: move.index, color: move.index === 3 ? '#f7e3b0' : '#f2c77a' });
     const dx = (target.x - actor.x) * actor.facing;
-    if (dx <= tB(typeof target !== 'undefined' ? target : dummy) || dx >= move.reach + tW(typeof target !== 'undefined' ? target : dummy) || Math.abs(target.y - actor.y) > 115) { sound('step'); return; }
+    if (dx <= tB(typeof target !== 'undefined' ? target : dummy) || dx >= move.reach + tW(typeof target !== 'undefined' ? target : dummy) || Math.abs(target.y - actor.y) > 115) { sound('whoosh'); return; }
     const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, '#f2c77a', actor.x, hy, false, true);
     if (connected) {
-      if (p.asset === 'valkren-skill1') effects.push({ type: 'valkren-fx', asset: 'valkren-explosion', x: p.x, y: p.y, facing: p.facing, life: 0.4, maxLife: 0.4, size: 280 });
-
       if (enemy) RH.refund(dummy);
       else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund); }
     }
-    if (connected) sound(move.index === 3 ? 'heavy' : 'hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.index === 3 ? 'heavy' : 'hit');
   }
   function solanStrike(actor, move) {
     const enemy = actor === dummy, target = enemy ? hero : dummy, em = window.SOLAN_METRICS?.emitters?.[move.name];
@@ -1522,7 +1654,7 @@
       // Solar Crescent: a golden crescent wave from the blade edge at chest height, SO.crescent.range px long.
       const x = actor.x + actor.facing * Math.round((em?.x ?? 110) * .7), y = actor.y - 95;
       projectiles.push({ x, y, vx: actor.facing * move.speed, life: move.range / move.speed, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'solan-crescent', size: 150, color: '#ffd36a' });
-      spawnParticles(x, y, '#ffd36a', 10, 160); sound('cast'); return;
+      spawnParticles(x, y, '#ffd36a', 10, 160); return;
     }
     let hitX = null;
     if (move.leap) {
@@ -1534,13 +1666,13 @@
     if (move.type === 'attack' && move.index === 3) { dust(actor.x + actor.facing * (em?.x ?? 110), 12); trauma = Math.min(1, trauma + .15); }
     const dx = (target.x - actor.x) * actor.facing;
     const inside = hitX !== null ? Math.abs(target.x - hitX) < SO.leap.radius && target.y > CONFIG.groundY - 130 : dx > tB(typeof target !== 'undefined' ? target : dummy) && dx < move.reach + tW(typeof target !== 'undefined' ? target : dummy) && Math.abs(target.y - actor.y) <= 115;
-    if (!inside) { sound('step'); return; }
+    if (!inside) { sound('whoosh'); return; }
     const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, move.leap ? '#fff1c8' : '#ffd36a', hitX ?? actor.x, hy, false, true);
     if (connected && move.type === 'attack') {
       if (enemy) SO.refund(dummy);
       else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund); }
     }
-    if (connected) sound(move.leap || move.index === 3 ? 'heavy' : 'hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.leap || move.index === 3 ? 'heavy' : 'hit');
   }
   function nibStrike(actor, move) {
     const enemy = actor === dummy, target = enemy ? hero : dummy, em = window.NIB_METRICS?.emitters?.[move.name];
@@ -1549,11 +1681,11 @@
       // Express Letter: a sealed letter thrown flat at chest height; the fastest projectile, NB.letter.range px long.
       const x = actor.x + actor.facing * Math.round((em?.x ?? 80) * .8), y = actor.y - 90;
       projectiles.push({ x, y, vx: actor.facing * move.speed, life: move.range / move.speed, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'nib-letter', size: 70, color: '#f4efe2' });
-      spawnParticles(x, y, '#f4efe2', 8, 150); sound('cast'); return;
+      spawnParticles(x, y, '#f4efe2', 8, 150); return;
     }
     effects.push({ type: 'whip', x: actor.x, y: hy, facing: actor.facing, tip: em?.x ?? move.reach + 15, life: .14, maxLife: .14, index: move.index || 3, color: move.slip ? '#bfe8ff' : '#8fd4ff' });
     const dx = (target.x - actor.x) * actor.facing;
-    if (dx <= tB(typeof target !== 'undefined' ? target : dummy) || dx >= move.reach + tW(typeof target !== 'undefined' ? target : dummy) || Math.abs(target.y - actor.y) > 115) { sound('step'); return; }
+    if (dx <= tB(typeof target !== 'undefined' ? target : dummy) || dx >= move.reach + tW(typeof target !== 'undefined' ? target : dummy) || Math.abs(target.y - actor.y) > 115) { sound('whoosh'); return; }
     const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, move.slip ? '#bfe8ff' : '#8fd4ff', actor.x, hy, false, true);
     if (connected && move.slip) {
       // Rooftop Slip: slip past the rival and turn around to face them (the dash stops there).
@@ -1564,7 +1696,7 @@
       if (enemy) NB.refund(dummy);
       else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund); }
     }
-    if (connected) sound(move.slip || move.index === 3 ? 'heavy' : 'hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.slip || move.index === 3 ? 'heavy' : 'hit');
   }
 
 
@@ -1595,7 +1727,6 @@
       }
 
       projectiles.push({ x: ox, y: oy, vx: vx, vy: vy, life: 1, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'valkren-skill1', size: 175, color: '#ff0000', tall: 80 });
-      sound('cast');
       return;
     }
 
@@ -1605,7 +1736,6 @@
       projectiles.push({ x: actor.x + actor.facing * -20, y: actor.y - 140, vx: actor.facing * 1200, vy: -3000, life: .6, facing: actor.facing, owner: enemy ? 'enemy' : 'player', asset: 'valkren-skill1', size: 120, spent: true });
       // Tanda peringatan target
       projectiles.push({ x: target.x, y: target.y - 85, vx: 0, vy: 0, life: delay, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'valkren-warning', size: 180, inert: true, isValkrenWarning: true });
-      sound('cast');
       return;
     }
 
@@ -1623,7 +1753,7 @@
     }
 
     const dx = (target.x - actor.x) * actor.facing;
-    if (dx <= tB(target) || dx >= move.reach + tW(target) || Math.abs(target.y - actor.y) > 115) { sound('step'); return; }
+    if (dx <= tB(target) || dx >= move.reach + tW(target) || Math.abs(target.y - actor.y) > 115) { sound('whoosh'); return; }
 
     const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, '#ff0000', actor.x, hy, false, true);
     if (connected && move.type === 'attack') {
@@ -1631,31 +1761,29 @@
       if (enemy) window.Valkren.refund(dummy);
       else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund); }
     }
-    if (connected) sound(move.type === 'skill2' || move.index === 3 ? 'heavy' : 'hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.type === 'skill2' || move.index === 3 ? 'heavy' : 'hit');
   }
   function dhylaStrike(actor, move) {
     if (!move) return;
     const enemy = actor === dummy, target = enemy ? hero : dummy, em = window.DHYLA_METRICS?.emitters?.[move.name];
     const ox = actor.x + actor.facing * (em?.x ?? 50), oy = actor.y + (em?.y ?? -80), hy = clamp(oy, actor.y - 170, actor.y - 30);
-    
+
     if (move.type === 'skill1') {
       const pY = actor.y - (actor.grounded ? 120 : 80);
       // Hanya 1 jamur lurus
       projectiles.push({ x: ox, y: pY, vx: actor.facing * move.speed, vy: 0, life: 1.6, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'dhyla-projectile', size: 100 });
       effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: ox, y: pY, life: .25, maxLife: .25, facing: actor.facing });
-      sound('cast');
       return;
     }
-    
+
     if (move.type === 'skill2') {
       const reach = move.reach || 190;
       // Munculkan warning di tanah
-      effects.push({ type: 'dhyla-fx', asset: 'dhyla-warning', x: ox + actor.facing * reach * 0.5, y: CONFIG.groundY - 10, life: .4, maxLife: .4, size: reach * 2, behind: true });
-      sound('heavy');
+      effects.push({ type: 'dhyla-fx', asset: 'dhyla-warning', x: ox + actor.facing * 10, y: CONFIG.groundY - 20, life: .4, maxLife: .4, size: 280, behind: true });
       const dx = (target.x - ox) * actor.facing;
       if (dx > -50 && dx < reach + 50 && Math.abs(target.y - CONFIG.groundY) < 120) {
         // Jika kena, baru munculkan efek eruption
-        effects.push({ type: 'dhyla-fx', asset: 'dhyla-eruption', x: target.x, y: CONFIG.groundY - 60, life: .6, maxLife: .6, size: 250 });
+        effects.push({ type: 'dhyla-fx', asset: 'dhyla-eruption', x: target.x + actor.facing * 40, y: CONFIG.groundY - 60, life: .6, maxLife: .6, size: 220 });
         if (enemy) window.__game.receiveHit(move.damage);
         else hitDummy(move.damage, move.knockback, '#ffd700', target.x, target.y - 50, false, true);
         if (enemy) window.Dhyla.refund(dummy);
@@ -1663,22 +1791,22 @@
       }
       return;
     }
-    
+
     if (move.type === 'attack') {
       const vfx = window.Dhyla.vfx.attacks[move.index - 1];
       effects.push({ type: 'dhyla-fx', asset: vfx.asset, x: actor.x + actor.facing * vfx.x, y: actor.y + vfx.y, facing: actor.facing * (vfx.flipX || 1), life: .25, maxLife: .25, size: vfx.size });
     }
 
     const dx = (target.x - actor.x) * actor.facing;
-    if (dx <= tB(target) || dx >= move.reach + tW(target) || Math.abs(target.y - actor.y) > 115) { sound('step'); return; }
+    if (dx <= tB(target) || dx >= move.reach + tW(target) || Math.abs(target.y - actor.y) > 115) { sound('whoosh'); return; }
 
     const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, '#ffd700', actor.x, hy, false, true);
     if (connected && move.type === 'attack') {
-      effects.push({ type: 'dhyla-fx', asset: 'dhyla-hit', x: target.x - actor.facing * 10, y: hy, facing: actor.facing, life: .3, maxLife: .3, size: 120 });
+      effects.push({ type: 'dhyla-fx', asset: 'dhyla-hit', x: target.x + actor.facing * 20, y: hy, facing: actor.facing, life: .3, maxLife: .3, size: 160 });
       if (enemy) window.Dhyla.refund(dummy);
       else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * window.Dhyla.balance.basicRefund); }
     }
-    if (connected) sound(move.index === 3 ? 'heavy' : 'hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.index === 3 ? 'heavy' : 'hit');
   }
 
   function yanfahStrike(actor, move) {
@@ -1686,16 +1814,28 @@
     const ox = actor.x + actor.facing * (em?.x ?? 50), oy = actor.y + (em?.y ?? -100), hy = clamp(oy, actor.y - 160, actor.y - 50);
 
     if (move.type === 'attack') {
-      effects.push({ type: 'yanfah-fx', asset: 'yanfah-glitchhit', x: ox, y: oy, facing: actor.facing, life: .3, maxLife: .3, size: 200 });
-      if (move.index === 3) {
-        effects.push({ type: 'yanfah-fx', asset: 'yanfah-cyberslam', x: ox, y: CONFIG.groundY - 30, facing: actor.facing, life: .4, maxLife: .4, size: 280 });
+      const vfx = window.Yanfah?.vfx?.attacks?.[move.index - 1];
+      if (vfx) {
+        if (vfx.asset) {
+          const vx = actor.x + actor.facing * (vfx.x ?? em?.x ?? 50);
+          const vy = actor.y + (vfx.y ?? em?.y ?? -100);
+          effects.push({ type: 'yanfah-fx', asset: vfx.asset, x: vx, y: vy, facing: actor.facing * (vfx.flipX || 1), rotation: vfx.rotation ? (vfx.rotation * Math.PI / 180) : 0, life: .3, maxLife: .3, size: vfx.size });
+        }
+        if (vfx.slamAsset) {
+          const sx = ox + actor.facing * (vfx.slamX || 0);
+          const sy = (CONFIG.groundY - 30) + (vfx.slamY || 0);
+          effects.push({ type: 'yanfah-fx', asset: vfx.slamAsset, x: sx, y: sy, facing: actor.facing, life: .4, maxLife: .4, size: vfx.slamSize || 280 });
+        }
+      } else {
+        effects.push({ type: 'yanfah-fx', asset: 'yanfah-glitchhit', x: ox, y: oy, facing: actor.facing, life: .3, maxLife: .3, size: 200 });
+        if (move.index === 3) {
+          effects.push({ type: 'yanfah-fx', asset: 'yanfah-cyberslam', x: ox, y: CONFIG.groundY - 30, facing: actor.facing, life: .4, maxLife: .4, size: 280 });
+        }
       }
     } else if (move.type === 'skill1') {
-      // Data code beam (projectile) — fires straight, dodgeable
-      projectiles.push({ x: ox, y: oy, vx: actor.facing * 950, vy: 0, life: 1, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'yanfah-datacode', size: 140, color: '#00ffff', tall: 65 });
-      effects.push({ type: 'yanfah-fx', asset: 'yanfah-glitchhit', x: ox, y: oy, facing: actor.facing, life: .18, maxLife: .18, size: 120 });
+      // Data code beam (projectile) - fires straight, dodgeable
+      projectiles.push({ x: ox, y: oy, vx: actor.facing * 950, vy: 0, life: 1, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'yanfah-datacode', size: 140, color: '#00ffff', tall: 65, spawnImpact: false });
       spawnParticles(ox, oy, '#00ffff', 15, 150);
-      sound('cast');
       return;
     } else if (move.type === 'skill2') {
       // Hex shield dash
@@ -1706,18 +1846,19 @@
     const reach = move.reach || 120;
     const near = dx > (tB(typeof target !== 'undefined' ? target : dummy) - 2) && dx < reach + tW(typeof target !== 'undefined' ? target : dummy);
 
-    if (!near || Math.abs(target.y - actor.y) >= 113) { sound('step'); return; }
+    if (!near || Math.abs(target.y - actor.y) >= 113) { if (move.type !== 'skill2') sound('whoosh'); return; }
 
-    const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, '#00ffff', actor.x, hy, false, move.type === 'attack');
+    const connected = enemy ? window.__game.receiveHit(move.damage, { spawnImpact: false }) : hitDummy(move.damage, move.knockback, '#00ffff', actor.x, hy, false, move.type === 'attack', 1, 0, false, null, false);
 
     if (connected && move.type === 'attack') {
+      effects.push({ type: 'yanfah-fx', asset: 'yanfah-glitchhit', x: target.x - actor.facing * 10, y: hy, facing: actor.facing, life: .3, maxLife: .3, size: 150 });
       if (enemy) YF.refund(dummy);
       else for (const name of Object.keys(cooldownMax)) {
         if (hero.cooldowns[name] > 0) rechargePulse[name] = .22;
         hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * YF.balance.basicRefund);
       }
     }
-    if (connected) sound('hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound('hit');
   }
 
 
@@ -1730,18 +1871,18 @@
       // Stone Skip: a flat jade stone flicked low; it skips along the floor (ED.stone) and hits once.
       const x = actor.x + actor.facing * Math.round((em?.x ?? 70) * .8), y = clamp(actor.y + (em?.y ?? -60), actor.y - 60, actor.y - 40);
       projectiles.push({ x, y, vx: actor.facing * move.speed, vy: -ED.stone.rise, skip: true, skipG: ED.stone.gravity, bounces: ED.stone.bounces, hop: ED.stone.hop, life: 3, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'edda-stone', size: 54, color: '#9fe0b8', spin: 14 });
-      spawnParticles(x, y, '#9fe0b8', 8, 150); sound('cast'); return;
+      spawnParticles(x, y, '#9fe0b8', 8, 150); return;
     }
     effects.push({ type: 'whip', x: actor.x, y: hy, facing: actor.facing, tip: em?.x ?? move.reach + 15, life: .14, maxLife: .14, index: move.index || 3, color: '#9fe0b8' });
     if (move.index === 3) effects.push({ type: 'edda-fx', asset: 'edda-ripple', x: actor.x + actor.facing * (em?.x ?? 100), y: CONFIG.groundY - 14, facing: actor.facing, life: .3, maxLife: .3, size: 130 });
     const dx = (target.x - actor.x) * actor.facing;
-    if (dx <= tB(typeof target !== 'undefined' ? target : dummy) || dx >= move.reach + tW(typeof target !== 'undefined' ? target : dummy) || Math.abs(target.y - actor.y) > 115) { sound('step'); return; }
+    if (dx <= tB(typeof target !== 'undefined' ? target : dummy) || dx >= move.reach + tW(typeof target !== 'undefined' ? target : dummy) || Math.abs(target.y - actor.y) > 115) { sound('whoosh'); return; }
     const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, '#9fe0b8', actor.x, hy, false, true);
     if (connected && move.type === 'attack') {
       if (enemy) ED.refund(dummy);
       else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund); }
     }
-    if (connected) sound(move.index === 3 ? 'heavy' : 'hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.index === 3 ? 'heavy' : 'hit');
   }
   function startEnemyAction(name, index = 1) {
     if (opponentCharacter === 'fenr') {
@@ -1780,8 +1921,8 @@
     if (opponentCharacter === 'dhyla') { dhylaStrike(dummy, a); return; }
     if (opponentCharacter === 'valkren') { valkrenStrike(dummy, a); return; }
     const em = window.MECHA_METRICS.emitters[a.name], x = dummy.x + dummy.facing * em.x, y = dummy.y + em.y, dx = (hero.x - dummy.x) * dummy.facing;
-    if (a.type === 'skill1') { projectiles.push({ x, y, vx: dummy.facing * 920, life: 1.6, facing: dummy.facing, owner: 'enemy', damage: 16 }); effects.push({ type: 'muzzle', x, y, life: .25, maxLife: .25 }); sound('cast'); }
-    else if (a.type === 'skill2') { effects.push({ type: 'slam', x, y: CONFIG.groundY - 2, life: .8, maxLife: .8 }); sound('heavy'); if (Math.abs(hero.x - x) < 220 && Math.abs(hero.y - CONFIG.groundY) < 125) window.__game.receiveHit(24); }
+    if (a.type === 'skill1') { projectiles.push({ x, y, vx: dummy.facing * 920, life: 1.6, facing: dummy.facing, owner: 'enemy', damage: 16, hitSound: 'hit' }); effects.push({ type: 'muzzle', x, y, life: .25, maxLife: .25 }); }
+    else if (a.type === 'skill2') { effects.push({ type: 'slam', x, y: CONFIG.groundY - 2, life: .8, maxLife: .8 }); if (Math.abs(hero.x - x) < 220 && Math.abs(hero.y - CONFIG.groundY) < 125) window.__game.receiveHit(24, { hitSound: 'hit' }); }
     else if (a.type === 'attack') {
       effects.push({ type: 'slash', x: dummy.x + dummy.facing * 48, y: y + 5, life: .22, maxLife: .22, facing: dummy.facing, index: a.index, color: '#cffbf0' });
       const reach = Math.max(...window.MECHA_METRICS.states[a.name].frames.map(f => f.bounds.right));
@@ -1830,7 +1971,7 @@
     }
     return null;
   }
-  function cpuJump(double) { dummy.vy = -CONFIG.jumpSpeed; dummy.y -= 1; dummy.jumps = 1; dummy.vx = 0; dummy.state = 'jump'; dummy.stateTime = 0; cpu.doubleAt = double ? time + .16 : 0; if (opponentCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: dummy.x, y: CONFIG.groundY - 10, facing: dummy.facing, life: .4, maxLife: .4, size: 280 }); }
+  function cpuJump(double) { dummy.vy = -CONFIG.jumpSpeed; dummy.y -= 1; dummy.jumps = 1; dummy.vx = 0; dummy.state = 'jump'; dummy.stateTime = 0; cpu.doubleAt = double ? time + .16 : 0; if (opponentCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: dummy.x, y: CONFIG.groundY - 10, facing: dummy.facing, life: .4, maxLife: .4, size: 280 }); else if (opponentCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-jumpdust', x: dummy.x, y: CONFIG.groundY - 10, facing: dummy.facing, life: .4, maxLife: .4, size: 280 }); }
   function cpuStart(name, index = 1) {
     if (!startEnemyAction(name, index)) return false;
     dummy.vx = 0; cpu.plan = null;
@@ -1888,7 +2029,7 @@
     const airborne = dummy.y < CONFIG.groundY || dummy.vy < 0;
     if (!aiEnabled || hero.hp <= 0) { dummy.vx = approach(dummy.vx, 0, dt * 1500); if (!airborne) dummy.state = 'idle'; return; }
     if (airborne) {
-      if (cpu.doubleAt && time >= cpu.doubleAt && dummy.jumps < 2) { dummy.jumps = 2; dummy.vy = -CONFIG.doubleJumpSpeed; cpu.doubleAt = 0; if (opponentCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: dummy.x, y: dummy.y, facing: dummy.facing, life: .4, maxLife: .4, size: 280 }); }
+      if (cpu.doubleAt && time >= cpu.doubleAt && dummy.jumps < 2) { dummy.jumps = 2; dummy.vy = -CONFIG.doubleJumpSpeed; cpu.doubleAt = 0; sound('double_jump'); if (opponentCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: dummy.x, y: dummy.y, facing: dummy.facing, life: .4, maxLife: .4, size: 280 }); else if (opponentCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-jumpdust', x: dummy.x, y: dummy.y, facing: dummy.facing, life: .4, maxLife: .4, size: 280 }); }
       dummy.state = 'jump'; return;
     }
     const dx = hero.x - dummy.x, dist = Math.abs(dx); dummy.facing = dx >= 0 ? 1 : -1;
@@ -2096,6 +2237,9 @@
     const r = list[index], cw = manifest.cell?.width || manifest.cell?.w || r.w, ch = manifest.cell?.height || manifest.cell?.h || r.h;
     const anchorX = manifest.cell?.anchor_x ?? cw / 2, anchorY = manifest.cell?.anchor_y ?? ch - (manifest.cell?.safe_margin_y || 0);
     let spriteScale = pose.scale || 1;
+    if (selectedCharacter === 'dhyla' && hero.state === 'jump') {
+      spriteScale += 0.10;
+    }
     ctx.save(); ctx.translate(Math.round(hero.x), Math.round(hero.y)); ctx.scale(hero.facing * spriteScale, spriteScale); ctx.imageSmoothingEnabled = false;
     if (pose.pivot) { ctx.translate(pose.worldPivot.x, pose.worldPivot.y); ctx.rotate(pose.rotation); ctx.translate(-pose.pivot.x, -pose.pivot.y); }
     ctx.drawImage(images.hero, r.x, r.y, r.w, r.h, -anchorX, -anchorY, r.w, r.h); ctx.restore();
@@ -2121,6 +2265,16 @@
         const size = 130;
         ctx.drawImage(images['fx-dhyla-guard'], -size / 2, -size / 2, size, size);
         ctx.restore();
+      } else if (selectedCharacter === 'yanfah' && images['fx-yanfah-hexshield']) {
+        ctx.save();
+        const offsetX = 50;
+        const offsetY = -70;
+        ctx.translate(Math.round(hero.x + hero.facing * offsetX), Math.round(hero.y + offsetY));
+        ctx.scale(hero.facing, 1);
+        ctx.globalAlpha = 1.0;
+        const size = 150;
+        ctx.drawImage(images['fx-yanfah-hexshield'], -size / 2, -size / 2, size, size);
+        ctx.restore();
       }
     }
   }
@@ -2131,10 +2285,13 @@
     const r = m.frame_layout.rows[pose.state][pose.frame];
     const cw = m.cell?.width || m.cell?.w || r.w, ch = m.cell?.height || m.cell?.h || r.h;
     const anchorX = m.cell?.anchor_x ?? cw / 2, anchorY = m.cell?.anchor_y ?? ch - (m.cell?.safe_margin_y || 0);
-    const spriteScale = pose.scale || 1;
+    let spriteScale = pose.scale || 1;
+    if (opponentCharacter === 'dhyla' && dummy.state === 'jump') {
+      spriteScale += 0.10;
+    }
     ctx.save(); ctx.translate(Math.round(dummy.x), Math.round(dummy.y)); ctx.scale((dummy.facing || -1) * spriteScale, spriteScale); ctx.imageSmoothingEnabled = false;
     ctx.drawImage(img, r.x, r.y, r.w, r.h, -anchorX, -anchorY, r.w, r.h); ctx.restore();
-    
+
     if (dummy.state === 'crouch') {
       const facing = dummy.facing || -1;
       if (opponentCharacter === 'valkren' && images['fx-valkren-guard']) {
@@ -2156,6 +2313,16 @@
         ctx.globalAlpha = 1.0;
         const size = 130;
         ctx.drawImage(images['fx-dhyla-guard'], -size / 2, -size / 2, size, size);
+        ctx.restore();
+      } else if (opponentCharacter === 'yanfah' && images['fx-yanfah-hexshield']) {
+        ctx.save();
+        const offsetX = 50;
+        const offsetY = -70;
+        ctx.translate(Math.round(dummy.x + facing * offsetX), Math.round(dummy.y + offsetY));
+        ctx.scale(facing, 1);
+        ctx.globalAlpha = 1.0;
+        const size = 150;
+        ctx.drawImage(images['fx-yanfah-hexshield'], -size / 2, -size / 2, size, size);
         ctx.restore();
       }
     }
@@ -2223,7 +2390,7 @@
           ctx.globalAlpha = Math.min(1, t * 8, (1 - t) * 8);
           ctx.drawImage(img, -w / 2, -h / 2, w, h);
         } else {
-          ctx.scale(e.facing || 1, 1); const size = e.size * (.75 + t * .4); ctx.drawImage(images['fx-' + e.asset], -size / 2, -size / 2, size, size);
+          ctx.scale(e.facing || 1, 1); if (e.rotation) ctx.rotate(e.rotation); const size = e.size * (.75 + t * .4); ctx.drawImage(images['fx-' + e.asset], -size / 2, -size / 2, size, size);
         }
       }
       // EDDA's tortoise spirit keeps one size; it fades in and out and lifts before each stomp.
@@ -2459,7 +2626,7 @@
   let cutinWarm = [];
   function warmCutins() { cutinWarm = [...new Set([selectedCharacter, opponentCharacter])].map(id => CUTIN_ART[id]).filter(Boolean).map(src => { const im = new Image(); im.decoding = 'async'; im.src = src; return im; }); }
   function setPaused(value) { paused = value; clearInput(); syncUltimateVoice(); $('#pause-btn').textContent = value ? '▶' : 'Ⅱ'; const panel = $('#pause-panel'); if (value && !panel.open) panel.showModal(); if (!value && panel.open) panel.close(); if (!value) canvas.focus({ preventScroll: true }); }
-  function openSettings() { settingsOpen = true; clearInput(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); $('#close-settings').innerHTML = (menuOpen ? 'Kembali ke menu' : 'Kembali ke arena') + ' <span>↗</span>'; $('#settings-panel').showModal(); }
+  function openSettings() { settingsOpen = true; clearInput(); if (typeof syncAudioSliders === 'function') syncAudioSliders(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); $('#close-settings').innerHTML = (menuOpen ? 'Kembali ke menu' : 'Kembali ke arena') + ' <span>↗</span>'; $('#settings-panel').showModal(); }
   function closeSettings() { settingsOpen = false; $('#settings-panel').close(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); canvas.focus({ preventScroll: true }); }
   const handled = new Set(['w', 'a', 's', 'd', ' ', 'i', 'o', 'p', 'escape', 'r']);
   window.addEventListener('keydown', e => {
@@ -2467,23 +2634,97 @@
   });
   window.addEventListener('keyup', e => { if (handled.has(e.key.toLowerCase())) { if (!/INPUT|TEXTAREA|SELECT|BUTTON/.test(e.target.tagName)) e.preventDefault(); release(e.key); } });
   window.addEventListener('blur', clearInput); document.addEventListener('visibilitychange', () => { clearInput(); lastTime = 0; accumulator = 0; if (document.hidden) systemAnnouncer?.clear(); syncUltimateVoice(); syncMusic(); });
-  window.addEventListener('resize', resize); canvas.addEventListener('pointerdown', () => { unlockAudio(); canvas.focus(); });
+  window.addEventListener('resize', resize);
+  const unlockAllAudio = () => {
+    unlockAudio();
+    syncMusic();
+  };
+  window.addEventListener('pointerdown', unlockAllAudio, { passive: true });
+  window.addEventListener('keydown', unlockAllAudio, { passive: true });
+  window.addEventListener('touchstart', unlockAllAudio, { passive: true });
+  canvas.addEventListener('pointerdown', () => { unlockAudio(); canvas.focus(); });
   $('#pause-btn').onclick = () => { unlockAudio(); setPaused(!paused); }; $('#resume-btn').onclick = () => setPaused(false); $('#restart-btn').onclick = reset;
   $('#back-menu').onclick = () => { closeSettings(); setMenuOpen(true); window.FrontEnd?.home(); };
   $('#character-select').onchange = e => selectCharacter(e.target.value);
   $('#ai-toggle').onchange = e => { aiEnabled = e.target.checked; dummy.action = null; dummy.vx = 0; dummy.state = 'idle'; };
   $('#settings-btn').onclick = openSettings; $('#close-settings').onclick = closeSettings;
   $('#settings-panel').addEventListener('cancel', e => { e.preventDefault(); closeSettings(); }); $('#pause-panel').addEventListener('cancel', e => { e.preventDefault(); setPaused(false); });
-  $('#hitbox-toggle').onchange = e => { hitboxes = e.target.checked; }; $('#sound-toggle').onchange = e => { unlockAudio(); muted = !e.target.checked; applyAudioMix(); };
-  $('#music-toggle').checked = musicOn; $('#music-slider').value = String(Math.round(musicVolume * 100)); $('#music-value').value = `${Math.round(musicVolume * 100)}%`;
-  $('#music-toggle').onchange = e => { unlockAudio(); musicOn = e.target.checked; prefs.set('aether.music', musicOn ? '1' : '0'); syncMusic(); };
-  $('#music-slider').oninput = e => { unlockAudio(); musicVolume = clamp(Number(e.target.value) / 100, 0, 1); $('#music-value').value = `${e.target.value}%`; prefs.set('aether.musicVolume', e.target.value); syncMusic(); };
-  $('#volume-slider').oninput = e => { unlockAudio(); volume = Number(e.target.value) / 100; $('#volume-value').value = `${e.target.value}%`; applyAudioMix(); };
-  $('#sound-test').onclick = () => { unlockAudio(); sound('heavy'); }; // Inside the mobile shell the shell owns fullscreen (it also locks landscape); on its own page the game toggles it itself.
+  $('#hitbox-toggle').onchange = e => { hitboxes = e.target.checked; };
+  const syncAudioSliders = () => {
+    const setUI = (sliderId, valId, val) => {
+      const s = $(sliderId), v = $(valId);
+      if (s) s.value = String(Math.round(val * 100));
+      if (v) v.value = `${Math.round(val * 100)}%`;
+    };
+    setUI('#music-slider', '#music-value', musicVolume);
+    setUI('#sfx-slider', '#sfx-value', sfxVolume);
+    setUI('#voice-slider', '#voice-value', voiceVolume);
+  };
+  syncAudioSliders();
+
+  if ($('#music-slider')) {
+    $('#music-slider').oninput = e => {
+      unlockAudio();
+      const val = Number(e.target.value);
+      musicVolume = clamp(val / 100, 0, 1);
+      musicOn = musicVolume > 0;
+      if ($('#music-value')) $('#music-value').value = `${val}%`;
+      prefs.set('aether.musicVolume', String(val));
+      syncMusic();
+    };
+  }
+
+  if ($('#sfx-slider')) {
+    $('#sfx-slider').oninput = e => {
+      unlockAudio();
+      const val = Number(e.target.value);
+      sfxVolume = clamp(val / 100, 0, 1);
+      volume = sfxVolume;
+      if ($('#sfx-value')) $('#sfx-value').value = `${val}%`;
+      prefs.set('aether.sfxVolume', String(val));
+      applyAudioMix();
+    };
+  }
+
+  if ($('#voice-slider')) {
+    $('#voice-slider').oninput = e => {
+      unlockAudio();
+      const val = Number(e.target.value);
+      voiceVolume = clamp(val / 100, 0, 1);
+      if ($('#voice-value')) $('#voice-value').value = `${val}%`;
+      prefs.set('aether.voiceVolume', String(val));
+      applyAudioMix();
+    };
+  }
+
+  if ($('#audio-reset-btn')) {
+    $('#audio-reset-btn').onclick = () => {
+      unlockAudio();
+      musicVolume = 0.80;
+      sfxVolume = 0.90;
+      voiceVolume = 0.90;
+      volume = sfxVolume;
+      musicOn = true;
+      syncAudioSliders();
+      prefs.set('aether.musicVolume', '80');
+      prefs.set('aether.sfxVolume', '90');
+      prefs.set('aether.voiceVolume', '90');
+      applyAudioMix();
+      sound('pick');
+    };
+  }
+
+  $('#sound-test').onclick = () => {
+    unlockAudio();
+    sound('heavy');
+    setTimeout(() => {
+      systemAnnouncer?.play('fight');
+    }, 120);
+  };
   function toggleFullscreen() { if (window.parent !== window) { try { if (window.parent.aetherFullscreen) { window.parent.aetherFullscreen(); return; } } catch (_) { } window.parent.postMessage({ type: 'aether-fullscreen' }, location.origin); return; } if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => { }); else document.exitFullscreen?.(); }
   $('#fullscreen-btn').onclick = toggleFullscreen;
   for (const button of document.querySelectorAll('[data-action]')) button.onclick = () => { unlockAudio(); const name = button.dataset.action; if (name === 'attack') startAttack(); else cast(name); canvas.focus({ preventScroll: true }); };
-  function tick(stamp) { if (lastTime) { const elapsed = Math.min((stamp - lastTime) / 1000, .1); fps += (1 / Math.max(elapsed, .001) - fps) * .05; if (!window.__game?.manual) { accumulator += elapsed; while (accumulator >= 1 / 120) { step(1 / 120); accumulator -= 1 / 120; } } } lastTime = stamp; draw(); requestAnimationFrame(tick); }
+  function tick(stamp) { if (lastTime) { const elapsed = Math.min((stamp - lastTime) / 1000, .1); fps += (1 / Math.max(elapsed, .001) - fps) * .05; if (!window.__game?.manual) { accumulator += elapsed; while (accumulator >= 1 / 120) { step(1 / 120); accumulator -= 1 / 120; } } } lastTime = stamp; draw(); flushAudioQueue(); requestAnimationFrame(tick); }
   // Deterministic QA interface: set manual=true, reset(), press/release(), advance(seconds).
   // Positions represent feet. No networking or persistent state is changed by this interface.
   window.__game = {
@@ -2498,13 +2739,14 @@
     receiveHit(damage = 12, options = {}) {
       if (menuOpen || (match && match.phase !== 'fight') || hero.hp <= 0) return false;
 
-      const invincible = hero.invuln > 0 || (hero.action?.type?.startsWith('skill') || hero.action?.type === 'ultimate') || hero.state === 'recover' || (hero.state === 'down' && hero.y >= CONFIG.groundY);
+      const invincible = (!options.ultContext && hero.invuln > 0) || (!options.ultContext && (hero.action?.type?.startsWith('skill') || hero.action?.type === 'ultimate')) || hero.state === 'recover' || (hero.state === 'down' && hero.y >= CONFIG.groundY);
       if (invincible) {
-        if (hero.state !== 'down' && hero.state !== 'recover') damageNumbers.push({ x: hero.x + (Math.random() - 0.5) * 40, y: hero.y - 120, amount: 'IMMUNE', life: 1.0, maxLife: 1.0, color: '#cccccc' });
+        if (!options.ultContext && hero.state !== 'down' && hero.state !== 'recover') damageNumbers.push({ x: hero.x + (Math.random() - 0.5) * 40, y: hero.y - 120, amount: 'IMMUNE', life: 1.0, maxLife: 1.0, color: '#cccccc' });
         return false;
       }
       if (hero.action?.guard && shellGuard(hero)) {
         damageNumbers.push({ x: hero.x + (Math.random() - 0.5) * 40, y: hero.y - 120, amount: 'DEFEND', life: 1.2, maxLife: 1.2, color: '#aaddff' });
+        sound('block');
         return false;
       }
 
@@ -2517,12 +2759,13 @@
         hero.hurtTime = knockdown ? 0.4 : 0.25; // Block stun
         hero.vx = 0;
         spawnParticles(hero.x + hero.facing * 30, hero.y - 70, '#aaddff', 10, 180);
-        sound('heavy');
+        sound('block');
         if (selectedCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-guard', x: hero.x + hero.facing * 60, y: hero.y - 70, facing: hero.facing, life: .3, maxLife: .3, size: 200 });
         if (selectedCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-guard', x: hero.x + hero.facing * 40, y: hero.y - 70, facing: hero.facing, life: .4, maxLife: .4, size: 130 });
+        if (selectedCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-hexshield', x: hero.x + hero.facing * 50, y: hero.y - 70, facing: hero.facing, life: .4, maxLife: .4, size: 150 });
         damageNumbers.push({ x: hero.x + (Math.random() - 0.5) * 40, y: hero.y - 120, amount: 'DEFEND', life: 1.2, maxLife: 1.2, color: '#aaddff' });
         if (options.freeze !== false) hitstop = knockdown ? .06 : .03;
-        return true; // No damage taken
+        return 'blocked'; // No damage taken
       }
       hero.isBlocking = false;
 
@@ -2551,9 +2794,10 @@
         hero.hurtTime = (options.stun || 0) + .42; hero.vx = hero.facing * -170; state('hurt');
       }
 
-      spawnParticles(hero.x, hero.y - 75, '#ffc694', 14, 200);
+      if (options.spawnImpact !== false) spawnParticles(hero.x, hero.y - 75, '#ffc694', 14, 200);
       if (options.freeze !== false) hitstop = .05;
       trauma = Math.min(1, trauma + .2 * (options.shake ?? 1));
+      sound(options.hitSound || (damage >= 30 ? 'heavy' : 'hit'));
 
       if (!hero.hp) { hero.koTime = 1.7; clearInput(); if (match?.mode !== 'versus') announce('CORE RESTART', 1.7); }
       return true;
@@ -2574,7 +2818,7 @@
     solan: { sprite: ['solan', 'assets/solan/run/sprite-sheet-alpha.webp'], fx: { prefix: 'fx-solan-', dir: 'assets/solan/ui/fx-', names: ['crescent', 'roar', 'impact', 'sunburst'] } },
     nib: { sprite: ['nib', 'assets/nib/run/sprite-sheet-alpha.webp'], fx: { prefix: 'fx-nib-', dir: 'assets/nib/ui/fx-', names: ['letter', 'plane', 'slip', 'stamp'] } },
     edda: { sprite: ['edda', 'assets/edda/run/sprite-sheet-alpha.webp'], fx: { prefix: 'fx-edda-', dir: 'assets/edda/ui/fx-', names: ['stone', 'ripple', 'shell', 'tortoise', 'stomp'] } },
-    yanfah: { sprite: ['yanfah', 'assets/yanfah/run/sprite-sheet-alpha.webp?v=6'], fx: { prefix: 'fx-yanfah-', dir: 'assets/yanfah/ui/fx-', names: ['glitchhit', 'cyberslam', 'datacode', 'hexshield', 'systemcrash'] } },
+    yanfah: { sprite: ['yanfah', 'assets/yanfah/run/sprite-sheet-alpha.webp?v=6'], fx: { prefix: 'fx-yanfah-', dir: 'assets/yanfah/ui/fx-', names: ['glitchhit', 'cyberslam', 'datacode', 'hexshield', 'systemcrash', 'jumpdust', 'meleeswipe'] } },
     dhyla: { sprite: ['dhyla', 'assets/dhyla/run/sprite-sheet-alpha.webp?v=6'], fx: { prefix: 'fx-dhyla-', dir: 'assets/dhyla/ui/fx-', names: ['hit', 'projectile', 'explosion', 'warning', 'eruption', 'ultenv', 'slash', 'guard', 'dust', 'ultaura'] } },
     valkren: { sprite: ['valkren', 'assets/valkren/run/sprite-sheet-alpha.webp'], fx: { prefix: 'fx-valkren-', dir: 'assets/valkren/ui/fx-', names: ['slash', 'skill1', 'explosion', 'warning', 'eruption', 'ultaura', 'ultenv', 'guard', 'boost', 'meleeswipe'] } },
   };
@@ -2582,12 +2826,12 @@
   function loadCharacterAssets(id, onDone) {
     if (!CHARACTER_ASSETS[id]) { onDone?.(); return Promise.resolve(); }
     if (loadingChars.has(id)) return loadingChars.get(id).then(onDone);
-    
+
     const def = CHARACTER_ASSETS[id];
     // Check if already fully loaded
     const spriteKey = def.sprite[0];
     if (images[spriteKey] && def.fx.names.every(n => images[def.fx.prefix + n])) { onDone?.(); return Promise.resolve(); }
-    
+
     const tasks = [
       loadImage(def.sprite[0], def.sprite[1], false),
       ...(def.extra || []).map(([k, u]) => loadImage(k, u, false)),

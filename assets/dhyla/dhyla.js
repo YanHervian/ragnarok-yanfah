@@ -1,7 +1,7 @@
 /* DHYLA moves: player and AI use the same rules. */
 (() => {
   'use strict';
-  const balance = { cooldowns:{skill1:10,skill2:20,ultimate:30}, castTime: .5, passDamage: 16, basicRefund: .05 };
+  const balance = { cooldowns: { skill1: 10, skill2: 20, ultimate: 30 }, castTime: .5, passDamage: 16, basicRefund: .05 };
   const names = ['GETOK JAMUR', 'TIMPUK JAMUR', 'JAMUR TANAH', 'AZAB JAMUR'];
 
   const combo = [
@@ -53,7 +53,7 @@
       // 1. Aura instan saat ditekan
       if (s.t >= 0 && !s.auraSpawned) {
         s.auraSpawned = true;
-        s.auraFx = { type: 'dhyla-fx', asset: 'dhyla-ultaura', x: a.x, y: a.y - 70, facing: a.facing, life: 2.6, maxLife: 2.6, size: 230, bindTo: a, offsetX: 0, offsetY: -70, behind: true };
+        s.auraFx = { type: 'dhyla-fx', asset: 'dhyla-ultaura', x: a.x, y: a.y - 70, facing: a.facing, life: 2.6, maxLife: 2.6, size: 300, bindTo: a, offsetX: 0, offsetY: -70, behind: true };
         context.effects.push(s.auraFx);
       }
 
@@ -68,7 +68,7 @@
       if (s.envFx && !s.hit) {
         // Terus ikuti (nempel) pergerakan target supaya tidak bisa kabur
         s.envFx.x = target.x;
-        
+
         if (s.envFx.y > context.groundY - 70) {
           s.envFx.y -= 2500 * dt; // Kecepatan melesat naik dari tanah (2500px/detik)
           if (s.envFx.y <= context.groundY - 70) {
@@ -83,7 +83,7 @@
             const dmg = balance.ultimateDamage || 48;
             if (s.owner === 'enemy') context.receiveHit(dmg, { freeze: false, knockdown: true, ultContext: true });
             else context.hitDummy(dmg, 280, '#ffd700', a.x, target.y - 80, true, false, 1, 0, true);
-            context.sound('heavy');
+            if (!target.isBlocking) context.sound('heavy');
           }
         }
       }
@@ -98,7 +98,14 @@
   };
   function refund(a) { for (const name of Object.keys(balance.cooldowns)) a.cooldowns[name] = Math.max(0, a.cooldowns[name] - balance.cooldowns[name] * balance.basicRefund); }
 
-  window.Dhyla = { balance, names, combo, murmuration, vfx, ultimate, move, start, refund };
+  window.Dhyla = {
+    audio: {
+      skill1: null,
+      skill2: null,
+      ultimate: 'assets/dhyla/audio/dhyla-ultimate.mp3',
+      hit: null
+    }, balance, names, combo, murmuration, vfx, ultimate, move, start, refund
+  };
 })();
 
 
