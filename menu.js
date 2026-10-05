@@ -172,11 +172,36 @@
     
     modal.querySelector('.dlc-btn-clear').onclick = async () => {
       if (isDownloading) return;
-      if (window.confirm('Hapus semua aset tambahan yang sudah diunduh? (Hanya menyisakan Arco dan map Amikom)')) {
+      
+      const confirmModal = document.createElement('div');
+      confirmModal.className = 'dlc-modal';
+      confirmModal.innerHTML = `
+        <div class="dlc-modal-content">
+          <h2 style="color: #ff5555;">KONFIRMASI HAPUS</h2>
+          <p>Hapus semua aset tambahan yang sudah diunduh? (Hanya menyisakan Arco dan map Amikom)</p>
+          <div class="dlc-actions" style="margin-top: 24px;">
+            <button class="dlc-btn-cancel" id="btn-no">BATAL</button>
+            <button class="dlc-btn-clear" id="btn-yes">HAPUS ASET</button>
+          </div>
+        </div>
+      `;
+      root.appendChild(confirmModal);
+      
+      confirmModal.querySelector('#btn-no').onclick = () => confirmModal.remove();
+      confirmModal.querySelector('#btn-yes').onclick = async () => {
+        confirmModal.querySelector('#btn-yes').textContent = 'MENGHAPUS...';
+        confirmModal.querySelector('#btn-yes').style.pointerEvents = 'none';
+        
         if (window.clearDLCCache) await window.clearDLCCache();
-        window.alert('Data berhasil dihapus! Halaman akan dimuat ulang.');
-        location.reload();
-      }
+        
+        confirmModal.innerHTML = `
+          <div class="dlc-modal-content">
+            <h2 style="color: #3dd2a6;">BERHASIL</h2>
+            <p>Data berhasil dihapus! Memuat ulang arena...</p>
+          </div>
+        `;
+        setTimeout(() => location.reload(), 1500);
+      };
     };
 
     modal.querySelector('.dlc-btn-download').onclick = async () => {
