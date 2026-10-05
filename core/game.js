@@ -2939,7 +2939,14 @@
     Promise.all(startTasks).then(() => {
       if (F) syncPlayerForm();
       ready = results.every(Boolean) && (!F || (!!window.FENR_HUMAN_MANIFEST && !!window.FENR_WOLF_MANIFEST)) && !!manifest && frames('idle').length > 0;
-      if (ready) { $('#load-state').classList.add('hidden'); announce('TRAINING READY', 1.65); }
+      if (ready) { 
+        $('#load-state').classList.add('hidden'); 
+        announce('TRAINING READY', 1.65); 
+        // Silently preload all characters in the background to make matches start instantly
+        setTimeout(() => {
+          Object.keys(CHARACTER_ASSETS).forEach(id => loadCharacterAssets(id));
+        }, 500);
+      }
       else { $('#load-state').classList.add('error'); $('#load-message').textContent = 'Aset arena belum lengkap. Periksa atlas/manifest karakter, stage.webp, drone.png, dan ultimate-cutin.webp, lalu muat ulang.'; }
       window.FrontEnd?.assetsReady(ready);
     });

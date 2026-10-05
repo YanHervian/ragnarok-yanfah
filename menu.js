@@ -35,7 +35,16 @@
   if (fullscreenHint) try { const d = window.parent !== window ? window.parent.document : document; d.addEventListener('fullscreenchange', () => { if (d.fullscreenElement) dismissFullscreenHint(); }); } catch (_) { }
   // Warm the small roster portraits so the grid appears at once. The large select art and arena pictures are fetched when
   // shown and then come from the browser cache; holding all of them decoded would waste a phone's image memory.
-  const warm = opened.map(id => info(id).portrait).filter(Boolean).map(src => { const im = new Image(); im.decoding = 'async'; im.src = src; return im; });
+  const warm = [];
+  opened.forEach(id => {
+    const f = info(id);
+    if (!f) return;
+    [f.portrait, f.art, f.cutin || `assets/${id}/ui/cutin.webp`].filter(Boolean).forEach(src => {
+      const im = new Image(); im.src = src; 
+      im.decode().catch(()=>{}); // force background decoding
+      warm.push(im);
+    });
+  });
   const totalSlots = Math.max(24, Math.ceil(opened.length / 12) * 12);
   const roster = [...opened, ...Array.from({ length: totalSlots - opened.length }, (_, i) => 'locked-' + i)];
   // lockIn: the pending step change while a confirmed fighter flashes 3 times (PICK_FLASH s each); input waits for it.
