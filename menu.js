@@ -146,6 +146,7 @@
         <div class="dlc-status-text">Siap mengunduh...</div>
         <div class="dlc-actions">
           <button class="dlc-btn-cancel">TUTUP</button>
+          <button class="dlc-btn-clear">HAPUS ASET</button>
           <button class="dlc-btn-download menu-primary">UNDUH SEMUA</button>
         </div>
       </div>
@@ -168,6 +169,16 @@
     updateUI('dl-prog-maps', mapsTotal ? mapsDownloaded / mapsTotal : 1);
 
     modal.querySelector('.dlc-btn-cancel').onclick = () => { if (!isDownloading) modal.remove(); };
+    
+    modal.querySelector('.dlc-btn-clear').onclick = async () => {
+      if (isDownloading) return;
+      if (confirm('Hapus semua aset tambahan yang sudah diunduh? (Hanya menyisakan Arco dan map Amikom)')) {
+        if (window.clearDLCCache) await window.clearDLCCache();
+        alert('Data berhasil dihapus! Halaman akan dimuat ulang.');
+        location.reload();
+      }
+    };
+
     modal.querySelector('.dlc-btn-download').onclick = async () => {
       if (charsDownloaded === charsTotal && mapsDownloaded === mapsTotal) {
         modal.querySelector('.dlc-status-text').textContent = 'Semua aset sudah diunduh!';

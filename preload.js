@@ -70,7 +70,33 @@
   }
   window.AETHER_PRELOAD = run().catch(() => {}).then(finish);
 
-  // DLC Downloader
+  // DLC Downloader & Manager
+  window.clearDLCCache = async function() {
+    if (!secure || !('caches' in window)) return false;
+    const cache = await caches.open('aether-assets').catch(() => null);
+    if (!cache) return false;
+    
+    // We only keep the files in AETHER_PRECACHE.files (Core files)
+    const keep = new Set(list.files.map(f => new URL(f[0], location.href).href));
+    keep.add(new URL(INDEX, location.href).href);
+    
+    let deletedCount = 0;
+    const keys = await cache.keys();
+    for (const req of keys) {
+      if (!keep.has(req.url)) {
+        await cache.delete(req);
+        deletedCount++;
+      }
+    }
+    
+    // Reset index memory for deleted items
+    let index = {};
+    try { const hit = await cache.match(INDEX); if (hit) index = await hit.json(); } catch (_) {}
+    for (const url of Object.keys(index)) if (!keep.has(url)) delete index[url];
+    await cache.put(INDEX, new Response(JSON.stringify(index), { headers: { 'Content-Type': 'application/json' } }));
+    
+    return deletedCount > 0;
+  };
   window.downloadDLC = async function(dlcId, onProgress) {
     const dlc = self.AETHER_DLC && self.AETHER_DLC[dlcId];
     if (!dlc || !secure || !('caches' in window)) return true; // fallback
