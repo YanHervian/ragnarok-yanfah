@@ -77,22 +77,25 @@
     if (!cache) return false;
     
     // We only keep the files in AETHER_PRECACHE.files (Core files)
-    const keep = new Set(list.files.map(f => new URL(f[0], location.href).href));
-    keep.add(new URL(INDEX, location.href).href);
+    const keepPaths = new Set(list.files.map(f => f[0]));
+    const keepUrls = new Set(list.files.map(f => new URL(f[0], location.href).href));
+    keepUrls.add(new URL(INDEX, location.href).href);
     
     let deletedCount = 0;
     const keys = await cache.keys();
     for (const req of keys) {
-      if (!keep.has(req.url)) {
+      if (!keepUrls.has(req.url)) {
         await cache.delete(req);
         deletedCount++;
       }
     }
     
-    // Reset index memory for deleted items
+    // Reset index memory for deleted items (index uses the relative path f[0] as keys)
     let index = {};
     try { const hit = await cache.match(INDEX); if (hit) index = await hit.json(); } catch (_) {}
-    for (const url of Object.keys(index)) if (!keep.has(url)) delete index[url];
+    for (const path of Object.keys(index)) {
+      if (!keepPaths.has(path)) delete index[path];
+    }
     await cache.put(INDEX, new Response(JSON.stringify(index), { headers: { 'Content-Type': 'application/json' } }));
     
     return deletedCount > 0;
