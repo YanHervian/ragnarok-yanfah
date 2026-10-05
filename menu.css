@@ -2521,11 +2521,11 @@ html.touch .menu-footer>span:first-child {
 }
 
 .dlc-modal-content {
-  background: linear-gradient(145deg, rgba(22, 25, 45, 0.9), rgba(12, 14, 28, 0.95));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, rgba(16, 20, 34, 0.95), rgba(8, 10, 18, 0.98));
+  border: 1px solid rgba(61, 210, 166, 0.15);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.8), inset 0 0 30px rgba(61, 210, 166, 0.05);
   padding: 40px;
-  width: 480px;
+  width: 520px;
   max-width: 90vw;
   display: flex;
   flex-direction: column;
@@ -2534,17 +2534,18 @@ html.touch .menu-footer>span:first-child {
   opacity: 0;
   animation: dlc-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
   position: relative;
-  overflow: hidden;
+  clip-path: polygon(0 20px, 20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
 }
 
 .dlc-modal-content::before {
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
+  left: 20px;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--accent, #3dd2a6), transparent);
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent, #3dd2a6), transparent);
+  box-shadow: 0 0 10px var(--accent, #3dd2a6);
 }
 
 @keyframes dlc-slide-up {
@@ -2553,12 +2554,12 @@ html.touch .menu-footer>span:first-child {
 
 .dlc-modal h2 {
   font-family: 'Chaos', sans-serif;
-  font-size: 28px;
-  letter-spacing: 2px;
+  font-size: 32px;
+  letter-spacing: 3px;
   color: #fff;
   text-align: center;
   margin: 0;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  text-shadow: 0 0 15px rgba(255,255,255,0.4), 0 0 30px rgba(61, 210, 166, 0.3);
 }
 
 .dlc-modal p {
@@ -2601,20 +2602,21 @@ html.touch .menu-footer>span:first-child {
 }
 
 .dlc-multi-bar, .dlc-progress-bar {
-  height: 6px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 3px;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 4px;
   overflow: hidden;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
   position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .dlc-multi-fill, .dlc-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent, #3dd2a6), color-mix(in srgb, var(--accent, #3dd2a6) 80%, white));
-  border-radius: 3px;
-  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--accent, #3dd2a6) 50%, transparent);
+  background: linear-gradient(90deg, var(--accent, #3dd2a6), color-mix(in srgb, var(--accent, #3dd2a6) 60%, white));
+  border-radius: 4px;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--accent, #3dd2a6) 60%, transparent);
 }
 
 .dlc-multi-fill::after, .dlc-progress-fill::after {
@@ -2646,34 +2648,50 @@ html.touch .menu-footer>span:first-child {
   margin-top: 8px;
 }
 
-.dlc-btn-cancel, .dlc-btn-clear {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.dlc-btn-cancel, .dlc-btn-clear, .dlc-btn-download {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: #fff;
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 1px;
-  padding: 12px 24px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 2px;
+  padding: 14px 28px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  clip-path: polygon(0 10px, 10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+  text-transform: uppercase;
 }
 
 .dlc-btn-cancel:hover {
   background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
 }
 
 .dlc-btn-clear {
-  border-color: rgba(255, 68, 68, 0.4);
-  color: #ff4444;
+  border-color: rgba(255, 68, 68, 0.5);
+  color: #ff5555;
+  background: rgba(255, 68, 68, 0.05);
 }
 .dlc-btn-clear:hover {
-  background: rgba(255, 68, 68, 0.1);
-  border-color: #ff4444;
+  background: rgba(255, 68, 68, 0.15);
+  border-color: #ff6666;
+  color: #ff7777;
+  box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
+  transform: translateY(-2px);
 }
 
 .dlc-btn-download {
-  min-width: 140px;
+  min-width: 160px;
+  background: var(--accent, #3dd2a6);
+  color: #000;
+  border: none;
+}
+.dlc-btn-download:hover {
+  background: #4ef0c2;
+  box-shadow: 0 0 25px rgba(61, 210, 166, 0.6);
+  transform: translateY(-2px) scale(1.02);
 }
 
 .dlc-icon-badge {
