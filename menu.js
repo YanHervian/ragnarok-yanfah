@@ -120,7 +120,7 @@
           const cutin = new Image(); cutin.src = f.cutin || `assets/${id}/ui/cutin.webp`; cutin.decode().catch(()=>{});
         }
       } else {
-        alert('Gagal mengunduh aset. Periksa memori dan koneksi Anda.');
+        window.alert('Gagal mengunduh aset. Periksa memori dan koneksi Anda.');
       }
     };
   }
@@ -172,9 +172,9 @@
     
     modal.querySelector('.dlc-btn-clear').onclick = async () => {
       if (isDownloading) return;
-      if (confirm('Hapus semua aset tambahan yang sudah diunduh? (Hanya menyisakan Arco dan map Amikom)')) {
+      if (window.confirm('Hapus semua aset tambahan yang sudah diunduh? (Hanya menyisakan Arco dan map Amikom)')) {
         if (window.clearDLCCache) await window.clearDLCCache();
-        alert('Data berhasil dihapus! Halaman akan dimuat ulang.');
+        window.alert('Data berhasil dihapus! Halaman akan dimuat ulang.');
         location.reload();
       }
     };
@@ -234,7 +234,7 @@
         modal.querySelector('.dlc-btn-cancel').textContent = 'TUTUP';
         render();
       } else {
-        alert('Gagal mengunduh sebagian aset. Periksa koneksi internet Anda.');
+        window.alert('Gagal mengunduh sebagian aset. Periksa koneksi internet Anda.');
         modal.querySelector('.dlc-actions').style.display = 'flex';
       }
     };
