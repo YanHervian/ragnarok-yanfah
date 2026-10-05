@@ -54,33 +54,39 @@
 
   // DLC Status Tracker
   const dlcStatus = {};
+  const charList = Object.keys(fighters).filter(c => c !== 'arco');
+  const mapList = ['jamur', 'valkren']; // Using stage IDs
   let isDownloading = false;
+
   async function checkAllDLCs() {
     if (!window.isDLCDownloaded) {
       opened.forEach(id => dlcStatus[id] = true);
-      dlcStatus['maps'] = true;
+      mapList.forEach(id => dlcStatus['map_' + id] = true);
       return;
     }
     for (const id of opened) {
       if (id === 'arco' || !fighters[id]) dlcStatus[id] = true;
       else dlcStatus[id] = await window.isDLCDownloaded(id);
     }
-    dlcStatus['maps'] = await window.isDLCDownloaded('maps');
+    for (const map of mapList) {
+      dlcStatus['map_' + map] = await window.isDLCDownloaded('map_' + map);
+    }
     if (screen === 'select' || screen === 'home') render();
   }
   checkAllDLCs();
 
-  async function showDownloadModal(id) {
+  async function showDownloadModal(id, isMap = false) {
     if (isDownloading) return;
-    const f = info(id);
-    if (!f || !window.downloadDLC) return;
+    const name = isMap ? MatchRules.stages[id]?.name : info(id)?.name;
+    const dlcId = isMap ? 'map_' + id : id;
+    if (!name || !window.downloadDLC) return;
     
     const modal = document.createElement('div');
     modal.className = 'dlc-modal';
     modal.innerHTML = `
       <div class="dlc-modal-content">
-        <h2>UNDUH KARAKTER</h2>
-        <p>Aset <strong>${f.name}</strong> belum tersedia di perangkat Anda. Ingin mengunduhnya sekarang?</p>
+        <h2>${isMap ? 'UNDUH MAP' : 'UNDUH KARAKTER'}</h2>
+        <p>Aset <strong>${name}</strong> belum tersedia di perangkat Anda. Ingin mengunduhnya sekarang?</p>
         <div class="dlc-progress-bar"><div class="dlc-progress-fill" style="width:0%"></div></div>
         <div class="dlc-status-text">Menunggu...</div>
         <div class="dlc-actions">
@@ -98,7 +104,7 @@
       modal.querySelector('.dlc-status-text').textContent = 'Mengunduh aset... 0%';
       const fill = modal.querySelector('.dlc-progress-fill');
       
-      const success = await window.downloadDLC(id, (p) => {
+      const success = await window.downloadDLC(dlcId, (p) => {
         fill.style.width = (p * 100) + '%';
         modal.querySelector('.dlc-status-text').textContent = 'Mengunduh aset... ' + Math.floor(p * 100) + '%';
       });
@@ -106,12 +112,15 @@
       isDownloading = false;
       modal.remove();
       if (success) {
-        dlcStatus[id] = true;
+        dlcStatus[dlcId] = true;
         render();
-        const im = new Image(); im.src = f.art; im.decode().catch(()=>{});
-        const cutin = new Image(); cutin.src = f.cutin || `assets/${id}/ui/cutin.webp`; cutin.decode().catch(()=>{});
+        if (!isMap) {
+          const f = info(id);
+          const im = new Image(); im.src = f.art; im.decode().catch(()=>{});
+          const cutin = new Image(); cutin.src = f.cutin || \`assets/\${id}/ui/cutin.webp\`; cutin.decode().catch(()=>{});
+        }
       } else {
-        alert('Gagal mengunduh karakter. Periksa memori dan koneksi Anda.');
+        alert('Gagal mengunduh aset. Periksa memori dan koneksi Anda.');
       }
     };
   }
@@ -150,15 +159,17 @@
     };
 
     // Calculate current status for initial render
-    let charsTotal = 0, charsDownloaded = 0;
-    const charList = Object.keys(fighters).filter(c => c !== 'arco');
-    charList.forEach(c => { charsTotal++; if (dlcStatus[c]) charsDownloaded++; });
+    let charsTotal = charList.length, charsDownloaded = 0;
+    charList.forEach(c => { if (dlcStatus[c]) charsDownloaded++; });
+    let mapsTotal = mapList.length, mapsDownloaded = 0;
+    mapList.forEach(m => { if (dlcStatus['map_' + m]) mapsDownloaded++; });
+    
     updateUI('dl-prog-chars', charsTotal ? charsDownloaded / charsTotal : 1);
-    updateUI('dl-prog-maps', dlcStatus['maps'] ? 1 : 0);
+    updateUI('dl-prog-maps', mapsTotal ? mapsDownloaded / mapsTotal : 1);
 
     modal.querySelector('.dlc-btn-cancel').onclick = () => { if (!isDownloading) modal.remove(); };
     modal.querySelector('.dlc-btn-download').onclick = async () => {
-      if (charsDownloaded === charsTotal && dlcStatus['maps']) {
+      if (charsDownloaded === charsTotal && mapsDownloaded === mapsTotal) {
         modal.querySelector('.dlc-status-text').textContent = 'Semua aset sudah diunduh!';
         return;
       }
@@ -170,7 +181,7 @@
       for (let i = 0; i < charList.length; i++) {
         const c = charList[i];
         if (dlcStatus[c]) continue;
-        modal.querySelector('.dlc-status-text').textContent = `Mengunduh Karakter: ${info(c).name}...`;
+        modal.querySelector('.dlc-status-text').textContent = \`Mengunduh Karakter: \${info(c).name}...\`;
         const res = await window.downloadDLC(c, (p) => {
           const overallPct = (charsDownloaded + p) / charsTotal;
           updateUI('dl-prog-chars', overallPct);
@@ -185,16 +196,22 @@
       }
 
       // Download Maps
-      if (success && !dlcStatus['maps']) {
-        modal.querySelector('.dlc-status-text').textContent = 'Mengunduh Arena Maps...';
-        const res = await window.downloadDLC('maps', (p) => {
-          updateUI('dl-prog-maps', p);
-        });
-        if (res) {
-          dlcStatus['maps'] = true;
-          updateUI('dl-prog-maps', 1);
-        } else {
-          success = false;
+      if (success && mapsDownloaded < mapsTotal) {
+        for (let i = 0; i < mapList.length; i++) {
+          const m = mapList[i];
+          if (dlcStatus['map_' + m]) continue;
+          modal.querySelector('.dlc-status-text').textContent = \`Mengunduh Map: \${MatchRules.stages[m].name}...\`;
+          const res = await window.downloadDLC('map_' + m, (p) => {
+            const overallPct = (mapsDownloaded + p) / mapsTotal;
+            updateUI('dl-prog-maps', overallPct);
+          });
+          if (res) {
+            dlcStatus['map_' + m] = true;
+            mapsDownloaded++;
+            updateUI('dl-prog-maps', mapsDownloaded / mapsTotal);
+          } else {
+            success = false; break;
+          }
         }
       }
 
@@ -406,9 +423,10 @@
               <div class="home-dl-progress">
                 <div class="home-dl-fill" style="width: ${(() => {
                   if (!window.isDLCDownloaded) return 100;
-                  let total = 1, done = dlcStatus['maps'] ? 1 : 0;
-                  const chars = Object.keys(fighters).filter(c => c !== 'arco');
-                  chars.forEach(c => { total++; if (dlcStatus[c]) done++; });
+                  let total = charList.length + mapList.length;
+                  let done = 0;
+                  charList.forEach(c => { if (dlcStatus[c]) done++; });
+                  mapList.forEach(m => { if (dlcStatus['map_' + m]) done++; });
                   return Math.floor((done / total) * 100);
                 })()}%"></div>
               </div>
@@ -479,7 +497,7 @@
               </div>
               <div class="arena-map-rail" role="group" aria-label="Pilih arena">
                 ${stages.map(([id, a], i) => {
-                  const mapDL = dlcStatus['maps'] !== false || id === 'amikom';
+                  const mapDL = id === 'amikom' || dlcStatus['map_' + id] !== false;
                   return `<button class="arena-tile ${id === stage ? 'selected' : ''} ${!mapDL ? 'needs-dl' : ''}" data-stage="${id}" aria-pressed="${id === stage}">
                   <span class="arena-tile-number">${String(i + 1).padStart(2, '0')}</span>
                   <img src="${a.image}" alt="${a.name}">
@@ -541,9 +559,9 @@
   }
   function back() { if (lockIn) return; game.stopAnnouncer(); sfx('back', true); if (screen === 'arena') { screen = 'select'; step = 1; hover = enemy; } else if (screen === 'select' && step === 1) { step = 0; hover = player; } else screen = 'home'; if (screen === 'select') rosterPage = Math.floor(roster.indexOf(hover) / 12); render(); }
   function start() { 
-    if (!dlcStatus['maps'] && stage !== 'amikom') {
+    if (stage !== 'amikom' && dlcStatus['map_' + stage] === false) {
       sfx('locked', true);
-      showGlobalDownloadManager();
+      showDownloadModal(stage, true);
       return;
     }
     if (game.startMatch({ player, enemy, stage, level, mode })) { document.querySelector('#arena').focus(); } else { const error = root.querySelector('#setup-error'); if (error) error.textContent = 'Aset belum siap. Tunggu sebentar lalu coba lagi.'; sfx('locked', true); } 
@@ -558,7 +576,7 @@
     if (cmd === 'versus' || cmd === 'training') { mode = cmd; screen = 'select'; step = 0; player = 'arco'; hover = 'arco'; rosterPage = 0; render(); }
     if (cmd === 'quicktraining') {
       const chars = Object.keys(fighters).filter(c => dlcStatus[c] !== false);
-      const stages = Object.keys(MatchRules?.stages || {}).filter(s => s === 'amikom' || dlcStatus['maps'] !== false);
+      const stages = Object.keys(MatchRules?.stages || {}).filter(s => s === 'amikom' || dlcStatus['map_' + s] !== false);
       const rStage = stages[Math.floor(Math.random() * stages.length)] || 'amikom';
       const rPlayer = chars[Math.floor(Math.random() * chars.length)] || 'arco';
       let rEnemy;
