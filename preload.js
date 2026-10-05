@@ -54,13 +54,98 @@
     await Promise.all(Array.from({ length: 6 }, worker));
     if (cache) {
       // Forget files from older deploys, then store the hash index for the next visit.
+      // Make sure we DON'T delete DLC files that were downloaded on demand!
       const keep = new Set(list.files.map(f => new URL(f[0], location.href).href));
+      if (self.AETHER_DLC) {
+        Object.values(self.AETHER_DLC).forEach(dlc => {
+          dlc.files.forEach(f => keep.add(new URL(f[0], location.href).href));
+        });
+      }
       keep.add(new URL(INDEX, location.href).href);
       for (const req of await cache.keys()) if (!keep.has(req.url)) await cache.delete(req);
-      for (const url of Object.keys(index)) if (!list.files.some(f => f[0] === url)) delete index[url];
+      for (const url of Object.keys(index)) if (!keep.has(url)) delete index[url];
       await cache.put(INDEX, new Response(JSON.stringify(index), { headers: { 'Content-Type': 'application/json' } }));
     }
     downloading = false; got = list.total; paint();
   }
   window.AETHER_PRELOAD = run().catch(() => {}).then(finish);
+
+  // DLC Downloader
+  window.downloadDLC = async function(dlcId, onProgress) {
+    const dlc = self.AETHER_DLC && self.AETHER_DLC[dlcId];
+    if (!dlc || !secure || !('caches' in window)) return true; // fallback
+    const cache = await caches.open('aether-assets').catch(() => null);
+    if (!cache) return true;
+    
+    let got = 0;
+    const todo = [];
+    
+    for (const [url, bytes, hash] of dlc.files) {
+      if (await cache.match(url)) {
+        got += bytes;
+      } else {
+        todo.push([url, bytes, hash]);
+      }
+    }
+    
+    if (todo.length === 0) {
+      if (onProgress) onProgress(1);
+      return true;
+    }
+    if (onProgress) onProgress(got / dlc.total);
+    
+    let next = 0;
+    async function worker() {
+      while (next < todo.length) {
+        const [url, bytes, hash] = todo[next++];
+        let seen = 0;
+        try {
+          const res = await fetch(url, { cache: 'no-cache' });
+          if (!res.ok) throw new Error(String(res.status));
+          const chunks = [], reader = res.body && res.body.getReader ? res.body.getReader() : null;
+          if (reader) {
+            for (;;) { 
+              const { done, value } = await reader.read(); 
+              if (done) break; 
+              chunks.push(value); 
+              seen += value.byteLength; 
+              got += value.byteLength; 
+              if (onProgress) onProgress(Math.min(1, got / Math.max(1, dlc.total))); 
+            }
+          } else { 
+            const buf = new Uint8Array(await res.arrayBuffer()); 
+            chunks.push(buf); 
+            seen = buf.byteLength; 
+            got += seen; 
+          }
+          const type = res.headers.get('Content-Type') || '';
+          await cache.put(url, new Response(new Blob(chunks, { type }), { headers: { 'Content-Type': type } }));
+        } catch (_) {
+          throw new Error('Download failed');
+        }
+        got += Math.max(0, bytes - seen);
+        if (onProgress) onProgress(Math.min(1, got / Math.max(1, dlc.total)));
+      }
+    }
+    
+    try {
+      await Promise.all(Array.from({ length: 4 }, worker));
+      if (onProgress) onProgress(1);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  window.isDLCDownloaded = async function(dlcId) {
+    const dlc = self.AETHER_DLC && self.AETHER_DLC[dlcId];
+    if (!dlc || !secure || !('caches' in window)) return true;
+    const cache = await caches.open('aether-assets').catch(() => null);
+    if (!cache) return true;
+    
+    for (const [url] of dlc.files) {
+      if (!(await cache.match(url))) return false;
+    }
+    return true;
+  };
 })();
