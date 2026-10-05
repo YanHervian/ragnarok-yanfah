@@ -91,7 +91,7 @@
         <div class="dlc-status-text">Menunggu...</div>
         <div class="dlc-actions">
           <button class="dlc-btn-cancel">BATAL</button>
-          <button class="dlc-btn-download menu-primary">UNDUH</button>
+          <button class="dlc-btn-download">UNDUH</button>
         </div>
       </div>
     `;
@@ -147,7 +147,7 @@
         <div class="dlc-actions">
           <button class="dlc-btn-cancel">TUTUP</button>
           <button class="dlc-btn-clear">HAPUS ASET</button>
-          <button class="dlc-btn-download menu-primary">UNDUH SEMUA</button>
+          <button class="dlc-btn-download">UNDUH SEMUA</button>
         </div>
       </div>
     `;

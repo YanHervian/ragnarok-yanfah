@@ -2683,7 +2683,6 @@ html.touch .menu-footer>span:first-child {
 }
 
 .dlc-btn-download {
-  min-width: 160px;
   background: var(--accent, #3dd2a6);
   color: #000;
   border: none;
