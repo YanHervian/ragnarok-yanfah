@@ -51,6 +51,167 @@
   const PICK_FLASH = .3; let lockIn = null, lockTicks = [];
   let screen = 'home', step = 0, mode = 'versus', player = 'arco', enemy = 'fenr', hover = 'arco', stage = 'amikom', level = 'medium', result = null, interacted = false, lastSound = 0;
   let rosterPage = 0;
+
+  // DLC Status Tracker
+  const dlcStatus = {};
+  let isDownloading = false;
+  async function checkAllDLCs() {
+    if (!window.isDLCDownloaded) {
+      opened.forEach(id => dlcStatus[id] = true);
+      dlcStatus['maps'] = true;
+      return;
+    }
+    for (const id of opened) {
+      if (id === 'arco' || !fighters[id]) dlcStatus[id] = true;
+      else dlcStatus[id] = await window.isDLCDownloaded(id);
+    }
+    dlcStatus['maps'] = await window.isDLCDownloaded('maps');
+    if (screen === 'select' || screen === 'home') render();
+  }
+  checkAllDLCs();
+
+  async function showDownloadModal(id) {
+    if (isDownloading) return;
+    const f = info(id);
+    if (!f || !window.downloadDLC) return;
+    
+    const modal = document.createElement('div');
+    modal.className = 'dlc-modal';
+    modal.innerHTML = `
+      <div class="dlc-modal-content">
+        <h2>UNDUH KARAKTER</h2>
+        <p>Aset <strong>${f.name}</strong> belum tersedia di perangkat Anda. Ingin mengunduhnya sekarang?</p>
+        <div class="dlc-progress-bar"><div class="dlc-progress-fill" style="width:0%"></div></div>
+        <div class="dlc-status-text">Menunggu...</div>
+        <div class="dlc-actions">
+          <button class="dlc-btn-cancel">BATAL</button>
+          <button class="dlc-btn-download menu-primary">UNDUH</button>
+        </div>
+      </div>
+    `;
+    root.appendChild(modal);
+    
+    modal.querySelector('.dlc-btn-cancel').onclick = () => { if (!isDownloading) modal.remove(); };
+    modal.querySelector('.dlc-btn-download').onclick = async () => {
+      isDownloading = true;
+      modal.querySelector('.dlc-actions').style.display = 'none';
+      modal.querySelector('.dlc-status-text').textContent = 'Mengunduh aset... 0%';
+      const fill = modal.querySelector('.dlc-progress-fill');
+      
+      const success = await window.downloadDLC(id, (p) => {
+        fill.style.width = (p * 100) + '%';
+        modal.querySelector('.dlc-status-text').textContent = 'Mengunduh aset... ' + Math.floor(p * 100) + '%';
+      });
+      
+      isDownloading = false;
+      modal.remove();
+      if (success) {
+        dlcStatus[id] = true;
+        render();
+        const im = new Image(); im.src = f.art; im.decode().catch(()=>{});
+        const cutin = new Image(); cutin.src = f.cutin || `assets/${id}/ui/cutin.webp`; cutin.decode().catch(()=>{});
+      } else {
+        alert('Gagal mengunduh karakter. Periksa memori dan koneksi Anda.');
+      }
+    };
+  }
+
+  async function showGlobalDownloadManager() {
+    if (isDownloading || !window.downloadDLC) return;
+    const modal = document.createElement('div');
+    modal.className = 'dlc-modal';
+    modal.innerHTML = `
+      <div class="dlc-modal-content">
+        <h2>AETHER DOWNLOAD MANAGER</h2>
+        <p>Unduh semua aset karakter dan map tambahan agar tidak perlu loading di tengah permainan.</p>
+        <div class="dlc-multi-progress">
+          <div class="dlc-multi-item" id="dl-prog-chars">
+            <div class="dlc-multi-label"><span>Karakter</span><span class="pct">0%</span></div>
+            <div class="dlc-multi-bar"><div class="dlc-multi-fill" style="width:0%"></div></div>
+          </div>
+          <div class="dlc-multi-item" id="dl-prog-maps">
+            <div class="dlc-multi-label"><span>Arena Map</span><span class="pct">0%</span></div>
+            <div class="dlc-multi-bar"><div class="dlc-multi-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="dlc-status-text">Siap mengunduh...</div>
+        <div class="dlc-actions">
+          <button class="dlc-btn-cancel">TUTUP</button>
+          <button class="dlc-btn-download menu-primary">UNDUH SEMUA</button>
+        </div>
+      </div>
+    `;
+    root.appendChild(modal);
+
+    const updateUI = (id, pct) => {
+      const el = modal.querySelector('#' + id);
+      el.querySelector('.pct').textContent = Math.floor(pct * 100) + '%';
+      el.querySelector('.dlc-multi-fill').style.width = (pct * 100) + '%';
+    };
+
+    // Calculate current status for initial render
+    let charsTotal = 0, charsDownloaded = 0;
+    const charList = Object.keys(fighters).filter(c => c !== 'arco');
+    charList.forEach(c => { charsTotal++; if (dlcStatus[c]) charsDownloaded++; });
+    updateUI('dl-prog-chars', charsTotal ? charsDownloaded / charsTotal : 1);
+    updateUI('dl-prog-maps', dlcStatus['maps'] ? 1 : 0);
+
+    modal.querySelector('.dlc-btn-cancel').onclick = () => { if (!isDownloading) modal.remove(); };
+    modal.querySelector('.dlc-btn-download').onclick = async () => {
+      if (charsDownloaded === charsTotal && dlcStatus['maps']) {
+        modal.querySelector('.dlc-status-text').textContent = 'Semua aset sudah diunduh!';
+        return;
+      }
+      isDownloading = true;
+      modal.querySelector('.dlc-actions').style.display = 'none';
+
+      let success = true;
+      // Download Characters
+      for (let i = 0; i < charList.length; i++) {
+        const c = charList[i];
+        if (dlcStatus[c]) continue;
+        modal.querySelector('.dlc-status-text').textContent = \`Mengunduh Karakter: \${info(c).name}...\`;
+        const res = await window.downloadDLC(c, (p) => {
+          const overallPct = (charsDownloaded + p) / charsTotal;
+          updateUI('dl-prog-chars', overallPct);
+        });
+        if (res) {
+          dlcStatus[c] = true;
+          charsDownloaded++;
+          updateUI('dl-prog-chars', charsDownloaded / charsTotal);
+        } else {
+          success = false; break;
+        }
+      }
+
+      // Download Maps
+      if (success && !dlcStatus['maps']) {
+        modal.querySelector('.dlc-status-text').textContent = 'Mengunduh Arena Maps...';
+        const res = await window.downloadDLC('maps', (p) => {
+          updateUI('dl-prog-maps', p);
+        });
+        if (res) {
+          dlcStatus['maps'] = true;
+          updateUI('dl-prog-maps', 1);
+        } else {
+          success = false;
+        }
+      }
+
+      isDownloading = false;
+      if (success) {
+        modal.querySelector('.dlc-status-text').textContent = 'Download Selesai! Semua aset telah tersedia.';
+        modal.querySelector('.dlc-actions').style.display = 'flex';
+        modal.querySelector('.dlc-btn-download').style.display = 'none';
+        modal.querySelector('.dlc-btn-cancel').textContent = 'TUTUP';
+        render();
+      } else {
+        alert('Gagal mengunduh sebagian aset. Periksa koneksi internet Anda.');
+        modal.querySelector('.dlc-actions').style.display = 'flex';
+      }
+    };
+  }
+
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
   let backgroundEnabled = false, backgroundVideo = null, videoPlayToken = 0;
   const backgroundToggle = document.querySelector('#menu-video-toggle');
@@ -236,6 +397,23 @@
                 <span class="home-challenge-prog-text">0 / 1</span>
               </div>
             </div>
+            
+            <div class="home-dl-manager" onclick="showGlobalDownloadManager()">
+              <div class="home-dl-header">
+                <span>DOWNLOAD MANAGER</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              </div>
+              <div class="home-dl-progress">
+                <div class="home-dl-fill" style="width: ${(() => {
+                  if (!window.isDLCDownloaded) return 100;
+                  let total = 1, done = dlcStatus['maps'] ? 1 : 0;
+                  const chars = Object.keys(fighters).filter(c => c !== 'arco');
+                  chars.forEach(c => { total++; if (dlcStatus[c]) done++; });
+                  return Math.floor((done / total) * 100);
+                })()}%"></div>
+              </div>
+            </div>
+
           </div>
         </aside>
 
@@ -252,7 +430,11 @@
         </footer>
       </div>`;
     } else if (screen === 'select') {
-      root.innerHTML = `<div class="selection-backdrop"></div>${navHeader(step === 0 ? 'SELECT YOUR FIGHTER' : 'SELECT YOUR RIVAL', mode === 'versus' ? 'VERSUS COMPUTER' : 'TRAINING ROOM')}<div class="select-stage"><div id="player-preview">${fighterPanel(step === 0 ? hover : player, 'player')}</div><div class="roster-center"><div class="selection-steps"><span class="${step === 0 ? 'current' : 'done'}">01 <b>PLAYER</b></span><i></i><span class="${step === 1 ? 'current' : ''}">02 <b>RIVAL</b></span><i></i><span>03 <b>ARENA</b></span></div><div class="roster-caption"><strong>${step === 0 ? 'PLAYER 1' : 'CPU'}</strong></div><div class="roster-grid" role="group" aria-label="Roster karakter">${roster.slice(rosterPage * 12, rosterPage * 12 + 12).map((id, i) => { const f = info(id); return `<button class="roster-tile ${id === hover ? 'highlight' : ''} ${!f ? 'locked' : ''} ${soon(id) ? 'soon' : ''}" data-fighter="${id}" aria-label="${f ? f.name + ' — ' + f.race + (soon(id) ? ', belum bisa dimainkan' : '') : 'Slot ' + (i + 1) + ' terkunci'}" aria-disabled="${!fighters[id]}"><img class="${f ? 'portrait-image' : ''}" data-portrait-side="${step === 1 ? 'enemy' : 'player'}" src="${f?.portrait || 'assets/menu/locked.svg'}" alt=""><span class="roster-name-tag">${f?.name || 'LOCKED'}</span><b>${step === 1 && id === player ? 'P1' : ''}</b></button>`; }).join('')}</div><div class="roster-controls-wrapper"><div class="roster-pagination"><button class="page-btn" data-cmd="prev-page">&lt;&lt;</button><span class="page-label">PAGE ${rosterPage + 1}</span><button class="page-btn" data-cmd="next-page">&gt;&gt;</button></div><div id="fighter-moves" class="fighter-moves"></div><button class="menu-primary confirm-fighter" data-cmd="confirm">${step === 0 ? 'CONFIRM FIGHTER' : 'CONFIRM RIVAL'} <b>&rarr;</b></button><p id="roster-notice" class="roster-notice" role="status"></p></div></div><div id="enemy-preview">${fighterPanel(step === 1 ? hover : null, 'enemy')}</div></div>${footer()}`;
+      root.innerHTML = `<div class="selection-backdrop"></div>${navHeader(step === 0 ? 'SELECT YOUR FIGHTER' : 'SELECT YOUR RIVAL', mode === 'versus' ? 'VERSUS COMPUTER' : 'TRAINING ROOM')}<div class="select-stage"><div id="player-preview">${fighterPanel(step === 0 ? hover : player, 'player')}</div><div class="roster-center"><div class="selection-steps"><span class="${step === 0 ? 'current' : 'done'}">01 <b>PLAYER</b></span><i></i><span class="${step === 1 ? 'current' : ''}">02 <b>RIVAL</b></span><i></i><span>03 <b>ARENA</b></span></div><div class="roster-caption"><strong>${step === 0 ? 'PLAYER 1' : 'CPU'}</strong></div><div class="roster-grid" role="group" aria-label="Roster karakter">${roster.slice(rosterPage * 12, rosterPage * 12 + 12).map((id, i) => { 
+        const f = info(id); 
+        const needsDL = f && dlcStatus[id] === false && fighters[id];
+        return `<button class="roster-tile ${id === hover ? 'highlight' : ''} ${!f ? 'locked' : ''} ${soon(id) ? 'soon' : ''} ${needsDL ? 'needs-dl' : ''}" data-fighter="${id}" aria-label="${f ? f.name + ' — ' + f.race + (soon(id) ? ', belum bisa dimainkan' : '') : 'Slot ' + (i + 1) + ' terkunci'}" aria-disabled="${!fighters[id]}"><img class="${f ? 'portrait-image' : ''}" data-portrait-side="${step === 1 ? 'enemy' : 'player'}" src="${f?.portrait || 'assets/menu/locked.svg'}" alt="">${needsDL ? '<div class="dlc-icon-badge"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg></div>' : ''}<span class="roster-name-tag">${f?.name || 'LOCKED'}</span><b>${step === 1 && id === player ? 'P1' : ''}</b></button>`; 
+      }).join('')}</div><div class="roster-controls-wrapper"><div class="roster-pagination"><button class="page-btn" data-cmd="prev-page">&lt;&lt;</button><span class="page-label">PAGE ${rosterPage + 1}</span><button class="page-btn" data-cmd="next-page">&gt;&gt;</button></div><div id="fighter-moves" class="fighter-moves"></div><button class="menu-primary confirm-fighter" data-cmd="confirm">${step === 0 ? 'CONFIRM FIGHTER' : 'CONFIRM RIVAL'} <b>&rarr;</b></button><p id="roster-notice" class="roster-notice" role="status"></p></div></div><div id="enemy-preview">${fighterPanel(step === 1 ? hover : null, 'enemy')}</div></div>${footer()}`;
       updatePreview(false);
     } else if (screen === 'arena') {
       const stages = Object.entries(MatchRules.stages);
@@ -296,12 +478,16 @@
                 <span>${stageCount} MAPS</span>
               </div>
               <div class="arena-map-rail" role="group" aria-label="Pilih arena">
-                ${stages.map(([id, a], i) => `<button class="arena-tile ${id === stage ? 'selected' : ''}" data-stage="${id}" aria-pressed="${id === stage}">
+                ${stages.map(([id, a], i) => {
+                  const mapDL = dlcStatus['maps'] !== false || id === 'amikom';
+                  return `<button class="arena-tile ${id === stage ? 'selected' : ''} ${!mapDL ? 'needs-dl' : ''}" data-stage="${id}" aria-pressed="${id === stage}">
                   <span class="arena-tile-number">${String(i + 1).padStart(2, '0')}</span>
                   <img src="${a.image}" alt="${a.name}">
+                  ${!mapDL ? '<div class="dlc-icon-badge"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg></div>' : ''}
                   <span class="arena-tile-info"><b>${a.name}</b><small>${a.tag || 'BATTLEFIELD'}</small></span>
                   <span class="arena-tile-check">✓</span>
-                </button>`).join('')}
+                </button>`;
+                }).join('')}
               </div>
             </aside>
           </section>
@@ -332,7 +518,14 @@
   }
   function focusFighter(id) { if (hover === id || lockIn) return; hover = id; updatePreview(); }
   function confirm() {
-    if (lockIn) return; if (!fighters[hover]) { sfx('locked', true); root.querySelector('#roster-notice').textContent = soon(hover) ? showcase[hover].name + ' belum bisa dimainkan.' : 'Karakter ini belum terbuka.'; return; }
+    if (lockIn) return; 
+    const needsDL = fighters[hover] && dlcStatus[hover] === false;
+    if (needsDL) {
+      sfx('locked', true);
+      showDownloadModal(hover);
+      return;
+    }
+    if (!fighters[hover]) { sfx('locked', true); root.querySelector('#roster-notice').textContent = soon(hover) ? showcase[hover].name + ' belum bisa dimainkan.' : 'Karakter ini belum terbuka.'; return; }
     // The pick flashes 3 times (tile and big art) with a lock-in chime before the next step, so the screen does not jump.
     sfx('pick', true); game.announceSelection(hover); root.dataset.picking = 'true';
     root.querySelector(`[data-fighter="${hover}"]`)?.classList.add('picked'); root.querySelector(step === 0 ? '#player-preview' : '#enemy-preview')?.classList.add('picked');
@@ -347,7 +540,14 @@
     lockIn = setTimeout(() => { lockIn = null; delete root.dataset.picking; if (step === 0) { player = hover; step = 1; hover = 'arco'; } else { enemy = hover; screen = 'arena'; step = 2; } rosterPage = Math.floor(roster.indexOf(hover) / 12); render(); }, transitionDelay);
   }
   function back() { if (lockIn) return; game.stopAnnouncer(); sfx('back', true); if (screen === 'arena') { screen = 'select'; step = 1; hover = enemy; } else if (screen === 'select' && step === 1) { step = 0; hover = player; } else screen = 'home'; if (screen === 'select') rosterPage = Math.floor(roster.indexOf(hover) / 12); render(); }
-  function start() { if (game.startMatch({ player, enemy, stage, level, mode })) { document.querySelector('#arena').focus(); } else { const error = root.querySelector('#setup-error'); if (error) error.textContent = 'Aset belum siap. Tunggu sebentar lalu coba lagi.'; sfx('locked', true); } }
+  function start() { 
+    if (!dlcStatus['maps'] && stage !== 'amikom') {
+      sfx('locked', true);
+      showGlobalDownloadManager();
+      return;
+    }
+    if (game.startMatch({ player, enemy, stage, level, mode })) { document.querySelector('#arena').focus(); } else { const error = root.querySelector('#setup-error'); if (error) error.textContent = 'Aset belum siap. Tunggu sebentar lalu coba lagi.'; sfx('locked', true); } 
+  }
   function command(cmd) {
     if (lockIn) return;
     if (cmd === 'fullscreen') { sfx('move', true); dismissFullscreenHint(); game.toggleFullscreen?.(); return; }
@@ -357,12 +557,12 @@
     sfx('confirm', true);
     if (cmd === 'versus' || cmd === 'training') { mode = cmd; screen = 'select'; step = 0; player = 'arco'; hover = 'arco'; rosterPage = 0; render(); }
     if (cmd === 'quicktraining') {
-      const chars = Object.keys(fighters);
-      const stages = Object.keys(MatchRules?.stages || {});
+      const chars = Object.keys(fighters).filter(c => dlcStatus[c] !== false);
+      const stages = Object.keys(MatchRules?.stages || {}).filter(s => s === 'amikom' || dlcStatus['maps'] !== false);
       const rStage = stages[Math.floor(Math.random() * stages.length)] || 'amikom';
-      const rPlayer = chars[Math.floor(Math.random() * chars.length)];
+      const rPlayer = chars[Math.floor(Math.random() * chars.length)] || 'arco';
       let rEnemy;
-      do { rEnemy = chars[Math.floor(Math.random() * chars.length)]; } while (rEnemy === rPlayer && chars.length > 1);
+      do { rEnemy = chars[Math.floor(Math.random() * chars.length)] || 'arco'; } while (rEnemy === rPlayer && chars.length > 1);
       if (game.startMatch({ player: rPlayer, enemy: rEnemy, stage: rStage, level: 'medium', mode: 'training' })) { document.querySelector('#arena').focus(); }
       else { sfx('locked', true); }
     }
