@@ -177,7 +177,7 @@
       confirmModal.className = 'dlc-modal';
       confirmModal.innerHTML = `
         <div class="dlc-modal-content">
-          <h2 style="color: #ff5555;">KONFIRMASI HAPUS</h2>
+          <h2>KONFIRMASI HAPUS</h2>
           <p>Hapus semua aset tambahan yang sudah diunduh? (Hanya menyisakan Arco dan map Amikom)</p>
           <div class="dlc-actions" style="margin-top: 24px;">
             <button class="dlc-btn-cancel" id="btn-no">BATAL</button>
