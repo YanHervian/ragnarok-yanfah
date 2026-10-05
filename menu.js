@@ -116,7 +116,7 @@
     };
   }
 
-  async function showGlobalDownloadManager() {
+  window.showGlobalDownloadManager = async function() {
     if (isDownloading || !window.downloadDLC) return;
     const modal = document.createElement('div');
     modal.className = 'dlc-modal';
