@@ -170,7 +170,7 @@
       for (let i = 0; i < charList.length; i++) {
         const c = charList[i];
         if (dlcStatus[c]) continue;
-        modal.querySelector('.dlc-status-text').textContent = \`Mengunduh Karakter: \${info(c).name}...\`;
+        modal.querySelector('.dlc-status-text').textContent = `Mengunduh Karakter: ${info(c).name}...`;
         const res = await window.downloadDLC(c, (p) => {
           const overallPct = (charsDownloaded + p) / charsTotal;
           updateUI('dl-prog-chars', overallPct);
