@@ -41,6 +41,23 @@ window.AUDIO_CONFIG = {
     ko_slam: 100.0     // Suara bantingan keras saat musuh/pemain K.O. (ko_slam.mp3)
   },
 
+  // Volume Spesifik Skill Karakter (Multiplier tambahan per karakter)
+  skills: {
+    dhyla: {
+      skill1: 1.1, // Tembakan jamur
+      skill2: 2.0  // Rambatan jamur akar
+    },
+    yanfah: {
+      skill1: 1.0, // Proyektil data (Copy Paste)
+      skill2: 1.0  // Shield digital (Ping 999)
+    },
+    // Tambahkan karakter lain di sini nanti, contoh:
+    valkren: {
+      skill1: 1.0, // Tembakan Plasma
+      skill2: 1.0  // Hantaman Bumi (Orbital Strike)
+    }
+  },
+
   // Volume Kategori Global
   master: 1.0,          // Pengali volume keseluruhan SFX (1.0 = normal)
   voice: 1.0,           // Pengali volume suara ultimate karakter (cut-in voice)

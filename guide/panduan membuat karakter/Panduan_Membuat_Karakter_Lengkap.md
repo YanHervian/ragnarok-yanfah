@@ -182,6 +182,19 @@ Copy-Item "$base\run\manifest.js" "$base\manifest.js"
     if (name !== 'attack') a.cooldowns[name] = balance.cooldowns[name];
     a.action = { ...move(name, index), t: 0, fired: false, queued: 0 };
     a.state = a.action.name; a.stateTime = 0;
+    
+    // Play SFX Skill
+    if ((name === 'skill1' || name === 'skill2') && window.[NamaClass].audio[name]) {
+      try {
+        const el = new Audio(window.[NamaClass].audio[name]);
+        const masterMult = typeof window.AUDIO_CONFIG?.master === 'number' ? window.AUDIO_CONFIG.master : 1.0;
+        const skillMult = typeof window.AUDIO_CONFIG?.skills?.[nama]?.[name] === 'number' ? window.AUDIO_CONFIG.skills.[nama][name] : 1.0;
+        const sfxVolumeConfig = Number(localStorage.getItem('aether.sfxVolume') || 90) / 100;
+        el.volume = Math.max(0, Math.min(1, sfxVolumeConfig * masterMult * skillMult));
+        el.play().catch(()=>{});
+      } catch (e) {}
+    }
+
     return true;
   }
   const vfx = {
@@ -304,16 +317,33 @@ Copy-Item "$base\run\manifest.js" "$base\manifest.js"
 > - `ultimate` wajib diisi path mp3
 > - Jika developer sediakan sfx skill, isi pathnya di sini, tidak perlu sentuh game.js
 
-### AI: Daftarkan ke `index.html`
+### AI: Daftarkan ke `index.html` & `menu.js` (Layar Pemilihan Karakter)
 
+**1. Daftarkan Script di `index.html` (Sebelum `</body>`):**
 ```html
-<!-- Tambah di <select id="character-select"> -->
-<option value="[nama]">[NAMA]  -  [Tipe: Mecha/Demi-Human/Divine]</option>
-
-<!-- Tambah 2 script sebelum </body> -->
 <script src="assets/[nama]/manifest.js?v=1"></script>
 <script src="assets/[nama]/[nama].js?v=1"></script>
 ```
+
+**2. Daftarkan UI di `menu.js`:**
+Cari variabel `const fighters = { ... }` di dalam `menu.js`, lalu tambahkan karakter baru di dalamnya:
+```javascript
+...(window.[NamaClass] && window.[NAMA]_MANIFEST ? { 
+  [nama]: { 
+    name: '[NAMA]', 
+    tag: 'THE [JULUKAN]', 
+    race: '[RAS: MECHA / DEMI-HUMAN]', 
+    portrait: 'assets/[nama]/ui/portrait.webp', 
+    art: 'assets/menu/[nama]-select.webp', 
+    detail: '[Deskripsi singkat karakter]', 
+    basic: '[NAMA SERANGAN DASAR]', 
+    ultimate: '[NAMA ULTIMATE]', 
+    style: '[Deskripsi gaya main singkat]', 
+    color: '#[KodeWarnaHex]' // <--- Warna aksen UI untuk karakter ini
+  } 
+} : {}),
+```
+*(Catatan: pastikan gambar `assets/menu/[nama]-select.webp` juga kamu persiapkan. Ini adalah art seluruh badan yang tampil di menu.)*
 
 ### AI: Daftarkan ke `core/game.js` — 7 Entry Wajib
 
@@ -679,11 +709,27 @@ audio: {
 
 Tidak perlu sentuh `game.js` sama sekali untuk audio. Engine membaca otomatis dari blok `audio` ini.
 
+### AI: Daftar Pengaturan Volume Skill di `core/audio-config.js`
+
+Jika karakter menggunakan SFX untuk skill 1 dan skill 2, AI **wajib** mendaftarkannya di `core/audio-config.js` agar volumenya bisa diatur secara spesifik:
+
+```js
+// Cari bagian:
+  skills: {
+// Tambahkan karakter baru ke dalamnya:
+    [nama]: {
+      skill1: 1.0,
+      skill2: 1.0
+    },
+```
+
 ### Checklist Tahap 4
 
 - [ ] 3 file MP3 wajib ada di `audio/` dengan nama yang benar
 - [ ] Blok `audio` di `[nama].js` sudah diisi path yang benar
 - [ ] Jika ada sfx skill, path sudah diupdate di blok `audio`
+- [ ] Logika `new Audio` di dalam `function start()` sudah diterapkan
+- [ ] Volume skill terdaftar di `core/audio-config.js`
 - [ ] Cache di-bump + hard refresh
 
 ---

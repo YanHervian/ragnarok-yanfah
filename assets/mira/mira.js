@@ -1,21 +1,31 @@
 /* Shared MIRA moves (pilot girl + lilac robot): player and AI use the same rules. */
 (() => {
   'use strict';
-  const balance = { cooldowns:{skill1:10,skill2:20,ultimate:30}, castTime:.5, rockets:12, rocketDamage:4, basicRefund:.05 };
+  const getBal = () => window.GAME_BALANCE?.mira;
+  const atkSpd = () => getBal()?.movement?.attackSpeed ?? 1.0;
+
+  const balance = { 
+    get cooldowns() { 
+      return { skill1: getBal()?.skill1?.cooldown ?? 10, skill2: getBal()?.skill2?.cooldown ?? 20, ultimate: getBal()?.ultimate?.cooldown ?? 30 };
+    }, 
+    castTime:.5, rockets:12, 
+    get rocketDamage() { return (getBal()?.ultimate?.damage ?? 45) / 12; }, 
+    basicRefund:.05 
+  };
   const names = ['MITTEN CHAIN','STAR POPPER','CANDY CRASH','ROCKET PARADE'];
   // Reach follows the measured fist emitters of the 182 px atlas (assets/mira/emitters.json): jab 98, hook 80, hammer 56 px.
   const combo = [
-    {damage:6,knockback:75,reach:100,duration:.36,hitAt:.5},
-    {damage:8,knockback:100,reach:85,duration:.42,hitAt:.5},
-    {damage:12,knockback:180,reach:82,duration:.52,hitAt:.55}
+    {get damage() { return getBal()?.combo[0] ?? 6; },knockback:75,reach:100,get duration() { return .36 * atkSpd(); },hitAt:.5},
+    {get damage() { return getBal()?.combo[1] ?? 8; },knockback:100,reach:85,get duration() { return .42 * atkSpd(); },hitAt:.5},
+    {get damage() { return getBal()?.combo[2] ?? 12; },knockback:180,reach:82,get duration() { return .52 * atkSpd(); },hitAt:.55}
   ];
   // Rocket Parade timeline (seconds from cast). Launches stream from alternating pods; impacts ripple 0.032 s
   // apart so all 12 land inside one hurt window (player invulnerability only starts after hurt ends).
   const parade = { cutinDuration:.78, launchStart:.40, launchGap:.05, impactStart:1.40, impactGap:.032, duration:2.3 };
   function move(name,index=1) {
     if(name==='attack')return {name:`attack${index}`,type:'attack',index,...combo[index-1]};
-    if(name==='skill1')return {name,type:name,damage:16,duration:.48,knockback:140,projectile:true,speed:760,hitAt:.5};
-    if(name==='skill2')return {name,type:name,damage:24,duration:.68,knockback:220,reach:128,dash:240,hitAt:.56};
+    if(name==='skill1')return {name,type:name,damage:getBal()?.skill1?.damage ?? 16,duration:.48,knockback:140,projectile:true,speed:760,hitAt:.5};
+    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.68,knockback:220,reach:128,dash:240,hitAt:.56};
     return {name:'ultimate',type:'ultimate',duration:balance.castTime,damage:0,hitAt:1};
   }
   function start(a,name,index=1) {

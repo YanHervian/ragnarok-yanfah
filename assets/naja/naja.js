@@ -1,14 +1,24 @@
 /* Shared NAJA moves (cobra demi-human, urumi whip-sword): player and AI use the same rules. */
 (() => {
   'use strict';
-  const balance = { cooldowns:{skill1:10,skill2:20,ultimate:30}, castTime:.5, biteDamage:16, basicRefund:.05 };
+  const getBal = () => window.GAME_BALANCE?.naja;
+  const atkSpd = () => getBal()?.movement?.attackSpeed ?? 1.0;
+
+  const balance = { 
+    get cooldowns() {
+      return { skill1: getBal()?.skill1?.cooldown ?? 10, skill2: getBal()?.skill2?.cooldown ?? 20, ultimate: getBal()?.ultimate?.cooldown ?? 30 };
+    }, 
+    castTime:.5, 
+    get biteDamage() { return (getBal()?.ultimate?.damage ?? 48) / 3; }, 
+    basicRefund:.05 
+  };
   const names = ['VIPER LASH','SAND FANG','URUMI CYCLONE','DUNE SERPENT'];
   // The urumi gives NAJA the longest basic reach in the roster (tips measured at 161/161/196 px; the hit reach sits
   // inside the tip); the chain is a touch slower to compensate.
   const combo = [
-    {damage:6,knockback:75,reach:135,duration:.38,hitAt:.5},
-    {damage:8,knockback:100,reach:130,duration:.44,hitAt:.5},
-    {damage:12,knockback:180,reach:160,duration:.56,hitAt:.55}
+    {get damage() { return getBal()?.combo[0] ?? 6; },knockback:75,reach:135,get duration() { return .38 * atkSpd(); },hitAt:.5},
+    {get damage() { return getBal()?.combo[1] ?? 8; },knockback:100,reach:130,get duration() { return .44 * atkSpd(); },hitAt:.5},
+    {get damage() { return getBal()?.combo[2] ?? 12; },knockback:180,reach:160,get duration() { return .56 * atkSpd(); },hitAt:.55}
   ];
   // Dune Serpent: a sand ripple leaves her palm at `follow` s, chases the rival at `speed` px/s (faster than a run) and
   // locks `telegraph` s before each strike, then a giant sand cobra erupts there. Three strikes x 16 (48). The column
@@ -17,9 +27,9 @@
   function move(name,index=1) {
     if(name==='attack')return {name:`attack${index}`,type:'attack',index,...combo[index-1]};
     // Sand Fang: a low sand wave along the floor, 16 like other I skills. Any small jump clears it.
-    if(name==='skill1')return {name,type:name,damage:16,duration:.5,knockback:120,projectile:true,ground:true,speed:620,hitAt:.55};
+    if(name==='skill1')return {name,type:name,damage:getBal()?.skill1?.damage ?? 16,duration:.5,knockback:120,projectile:true,ground:true,speed:620,hitAt:.55};
     // Urumi Cyclone: the blade spins all the way around her and hits in front and behind.
-    if(name==='skill2')return {name,type:name,damage:24,duration:.66,knockback:260,reach:150,area:true,around:true,hitAt:.55};
+    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.66,knockback:260,reach:150,area:true,around:true,hitAt:.55};
     return {name:'ultimate',type:'ultimate',duration:balance.castTime,damage:0,hitAt:1};
   }
   function start(a,name,index=1) {

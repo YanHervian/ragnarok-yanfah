@@ -1,10 +1,22 @@
 /* Shared FENR moves and transformation state: player and AI use the same rules. */
 (() => {
   'use strict';
-  const balance = { duration: 12, ultimateCooldown: 30, castTime: .62, cooldowns:{skill1:10,skill2:20,ultimate:30} };
+  const getBal = () => window.GAME_BALANCE?.fenr;
+  const atkSpd = () => getBal()?.movement?.attackSpeed ?? 1.0;
+
+  const balance = { 
+    duration: 12, ultimateCooldown: 30, castTime: .62, 
+    get cooldowns() {
+      return {
+        skill1: getBal()?.skill1?.cooldown ?? 10,
+        skill2: getBal()?.skill2?.cooldown ?? 20,
+        ultimate: getBal()?.ultimate?.cooldown ?? 30
+      };
+    }
+  };
   const kits = {
-    human: { names: ['RANGER CHAIN', 'GALE CLAW', 'RANGER RUSH', 'FERAL AWAKENING'], combo: [6, 8, 12], reach: [96, 108, 130], skill1: 16, skill2: 24 },
-    wolf: { names: ['SAVAGE CHAIN', 'FANG POUNCE', 'MOON HOWL', 'FERAL AWAKENING'], combo: [7, 9, 13], reach: [116, 130, 145], skill1: 18, skill2: 22 }
+    human: { names: ['RANGER CHAIN', 'GALE CLAW', 'RANGER RUSH', 'FERAL AWAKENING'], get combo() { return getBal()?.combo ?? [6, 8, 12]; }, reach: [96, 108, 130], get skill1() { return getBal()?.skill1?.damage ?? 16; }, get skill2() { return getBal()?.skill2?.damage ?? 24; } },
+    wolf: { names: ['SAVAGE CHAIN', 'FANG POUNCE', 'MOON HOWL', 'FERAL AWAKENING'], get combo() { const c = getBal()?.combo ?? [6, 8, 12]; return [c[0]+1, c[1]+1, c[2]+1]; }, reach: [116, 130, 145], get skill1() { return (getBal()?.skill1?.damage ?? 16) + 2; }, get skill2() { return (getBal()?.skill2?.damage ?? 24) - 2; } }
   };
   function reset(a) { Object.assign(a, { form: 'human', formTime: 0, transformPending: 0, transformElapsed: 99, formChanges: 0 }); }
   function begin(a) {
@@ -22,7 +34,7 @@
   }
   function move(a, name, index = 1) {
     const wolf = a.form === 'wolf', kit = kits[wolf ? 'wolf' : 'human'];
-    if (name === 'attack') return { name: `attack${index}`, type: 'attack', index, damage: kit.combo[index - 1], reach: kit.reach[index - 1], duration: [.38, .44, .55][index - 1], knockback: 80 + index * 25, fx: wolf ? 'bite' : 'claw', hitAt: .5 };
+    if (name === 'attack') return { name: `attack${index}`, type: 'attack', index, damage: kit.combo[index - 1], reach: kit.reach[index - 1], duration: [.38, .44, .55][index - 1] * atkSpd(), knockback: 80 + index * 25, fx: wolf ? 'bite' : 'claw', hitAt: .5 };
     if (name === 'skill1') return { name, type: name, damage: kit.skill1, reach: wolf ? 175 : 600, duration: wolf ? .66 : .48, knockback: 150, fx: wolf ? 'bite' : 'gale', projectile: !wolf, dash: wolf ? 230 : 0, hitAt: wolf ? .58 : .5 };
     if (name === 'skill2') return { name, type: name, damage: kit.skill2, reach: wolf ? 205 : 155, duration: wolf ? .85 : .68, knockback: 190, fx: wolf ? 'howl' : 'rush', area: wolf, dash: wolf ? 0 : 190, hitAt: .56 };
     return { name: 'ultimate', type: 'ultimate', duration: balance.castTime, damage: 0, hitAt: 1 };

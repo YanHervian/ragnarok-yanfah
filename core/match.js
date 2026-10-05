@@ -12,14 +12,9 @@
     excellent:{label:'Excellent',speed:1.32,recovery:.12,reaction:.08,combo:3,skillEvery:1,ultimateAfter:3.5,aggression:.97,evade:.92,punish:.95,antiAir:.9,ender:1,mistakes:0,wake:.02,immunity:.9,comboCap:4,defendChance:.9}
   };
   const stages={
-    bellora:{name:'Bellora Courtyard',short:'BELLORA',subtitle:'COURTYARD',image:'assets/stages/stage.webp',groundY:599,tag:'The city of aether',time:'SUNNY DAYLIGHT'},
-    amikom:{name:'Amikom Arena',short:'AMIKOM',subtitle:'ARENA',image:'assets/stages/amikom-arena.webp',groundY:599,tag:'Creative IT Campus',time:'SUNNY DAYLIGHT'},
-    jamur:{name:'Jamur Arena',short:'JAMUR',subtitle:'ARENA',image:'assets/stages/jamur-arena.webp',groundY:599,tag:'The Fungal Domain',time:'SUNNY DAYLIGHT'},
-    sunspire:{name:'Sunspire Terrace',short:'SUNSPIRE',subtitle:'TERRACE',image:'assets/stages/sunspire.webp',groundY:599,tag:'Above the kingdom',time:'SUNNY DAYLIGHT'},
-    harbor:{name:'Azure Harbor',short:'AZURE',subtitle:'HARBOR',image:'assets/stages/azure-harbor.webp',groundY:599,tag:'Where the tides meet',time:'SUNNY DAYLIGHT'},
-    // groundY measured on the 1280x720 floor band (elderwood 560-655, moonrise 570-705); see docs/stage-background.md.
-    elderwood:{name:'Elderwood Glade',short:'ELDERWOOD',subtitle:'GLADE',image:'assets/stages/elderwood.webp',groundY:606,tag:'Where the old trees whisper',time:'DAPPLED SUNLIGHT'},
-    moonrise:{name:'Moonrise Bastion',short:'MOONRISE',subtitle:'BASTION',image:'assets/stages/moonrise.webp',groundY:618,tag:'Under the full moon',time:'FULL MOON NIGHT'}
+    amikom:{name:'Amikom Arena',short:'AMIKOM',subtitle:'ARENA',image:'assets/stages/amikom-arena-wide.webp',groundY:599,tag:'Creative IT Campus',time:'SUNNY DAYLIGHT'},
+    jamur:{name:'Jamur Arena',short:'JAMUR',subtitle:'ARENA',image:'assets/stages/jamur-arena-wide.png',groundY:599,tag:'The Fungal Domain',time:'SUNNY DAYLIGHT'},
+    valkren:{name:'Valkren Arena',short:'VALKREN',subtitle:'ARENA',image:'assets/stages/valkren-map.webp',groundY:599,tag:'The Final Showdown',time:'SUNNY DAYLIGHT'}
   };
   function introTiming(m){const clips=window.ANNOUNCER_MANIFEST?.clips;m.fightAt=Math.max(1.05,(clips?.['round_'+m.round]?.duration||0)+.12);m.introDuration=Math.max(1.85,m.fightAt+(clips?.fight?.duration||0)+.10);}
   function create(mode='training') {const m={mode,phase:mode==='versus'?'intro':'fight',round:1,playerWins:0,enemyWins:0,seconds:90,phaseTime:0,fightCue:false,lastWinner:null,winner:null,koDuration:2.2};introTiming(m);return m;}

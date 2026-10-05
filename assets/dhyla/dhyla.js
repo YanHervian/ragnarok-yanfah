@@ -1,19 +1,32 @@
 /* DHYLA moves: player and AI use the same rules. */
 (() => {
   'use strict';
-  const balance = { cooldowns: { skill1: 10, skill2: 20, ultimate: 30 }, castTime: .5, passDamage: 16, basicRefund: .05 };
+  const getBal = () => window.GAME_BALANCE?.dhyla;
+  const atkSpd = () => getBal()?.movement?.attackSpeed ?? 1.0;
+
+  const balance = { 
+    get cooldowns() { 
+      return { 
+        skill1: getBal()?.skill1?.cooldown ?? 10, 
+        skill2: getBal()?.skill2?.cooldown ?? 20, 
+        ultimate: getBal()?.ultimate?.cooldown ?? 30 
+      }; 
+    }, 
+    castTime: .5, basicRefund: .05 
+  };
   const names = ['GETOK JAMUR', 'TIMPUK JAMUR', 'JAMUR TANAH', 'AZAB JAMUR'];
 
   const combo = [
-    { damage: 6, knockback: 75, reach: 90, duration: .34, hitAt: .5 },
-    { damage: 8, knockback: 100, reach: 78, duration: .40, hitAt: .5 },
-    { damage: 12, knockback: 180, reach: 115, duration: .50, hitAt: .55 }
+    { get damage() { return getBal()?.combo[0] ?? 6; }, knockback: 75, reach: 90, get duration() { return .34 * atkSpd(); }, hitAt: .5 },
+    { get damage() { return getBal()?.combo[1] ?? 8; }, knockback: 100, reach: 78, get duration() { return .40 * atkSpd(); }, hitAt: .5 },
+    { get damage() { return getBal()?.combo[2] ?? 12; }, knockback: 180, reach: 115, get duration() { return .50 * atkSpd(); }, hitAt: .55 }
   ];
   const murmuration = { cutinDuration: .78, passStart: [.55, .85, 1.15], passHeights: [-70, -112, -150], speed: 1500, ravens: 10, spacing: 40, duration: 2.4 };
+  
   function move(name, index = 1) {
     if (name === 'attack') return { name: `attack${index}`, type: 'attack', index, ...combo[index - 1] };
-    if (name === 'skill1') return { name, type: name, damage: 16, duration: .46, knockback: 60, projectile: true, speed: 840, feathers: [5, 5, 6], spread: .1, hitAt: .5 };
-    if (name === 'skill2') return { name, type: name, damage: 24, duration: .45, knockback: 300, reach: 190, area: true, dash: 850, hitAt: .75 };
+    if (name === 'skill1') return { name, type: name, damage: getBal()?.skill1?.damage ?? 16, duration: .46, knockback: 60, projectile: true, speed: 840, feathers: [5, 5, 6], spread: .1, hitAt: .5 };
+    if (name === 'skill2') return { name, type: name, damage: getBal()?.skill2?.damage ?? 24, duration: .45, knockback: 300, reach: 190, area: true, dash: 850, hitAt: .75 };
     return { name: 'ultimate', type: 'dhyla-ult', duration: balance.castTime, damage: 0, hitAt: .4 };
   }
   function start(a, name, index = 1) {
@@ -21,6 +34,28 @@
     if (name !== 'attack' && a.cooldowns[name] > 0) return false;
     if (name !== 'attack') a.cooldowns[name] = balance.cooldowns[name];
     a.action = { ...move(name, index), t: 0, fired: false, queued: 0 }; a.state = a.action.name; a.stateTime = 0;
+    
+    if (name === 'skill1' && window.Dhyla.audio.skill1) {
+      try {
+        const el = new Audio(window.Dhyla.audio.skill1);
+        const masterMult = typeof window.AUDIO_CONFIG?.master === 'number' ? window.AUDIO_CONFIG.master : 1.0;
+        const skillMult = typeof window.AUDIO_CONFIG?.skills?.dhyla?.skill1 === 'number' ? window.AUDIO_CONFIG.skills.dhyla.skill1 : 1.0;
+        const sfxVolumeConfig = Number(localStorage.getItem('aether.sfxVolume') || 90) / 100;
+        el.volume = Math.max(0, Math.min(1, sfxVolumeConfig * masterMult * skillMult));
+        el.play().catch(()=>{});
+      } catch (e) {}
+    }
+    if (name === 'skill2' && window.Dhyla.audio.skill2) {
+      try {
+        const el = new Audio(window.Dhyla.audio.skill2);
+        const masterMult = typeof window.AUDIO_CONFIG?.master === 'number' ? window.AUDIO_CONFIG.master : 1.0;
+        const skillMult = typeof window.AUDIO_CONFIG?.skills?.dhyla?.skill2 === 'number' ? window.AUDIO_CONFIG.skills.dhyla.skill2 : 1.0;
+        const sfxVolumeConfig = Number(localStorage.getItem('aether.sfxVolume') || 90) / 100;
+        el.volume = Math.max(0, Math.min(1, sfxVolumeConfig * masterMult * skillMult));
+        el.play().catch(()=>{});
+      } catch (e) {}
+    }
+
     return true;
   }
   const vfx = {
@@ -80,7 +115,7 @@
             if (target.hurtTime !== undefined) target.hurtTime = 0;
             context.spawnParticles(target.x, context.groundY - 60, '#ffd700', 40, 450);
             context.addTrauma(.7);
-            const dmg = balance.ultimateDamage || 48;
+            const dmg = getBal()?.ultimate?.damage ?? 48;
             if (s.owner === 'enemy') context.receiveHit(dmg, { freeze: false, knockdown: true, ultContext: true });
             else context.hitDummy(dmg, 280, '#ffd700', a.x, target.y - 80, true, false, 1, 0, true);
             if (!target.isBlocking) context.sound('heavy');
@@ -100,8 +135,8 @@
 
   window.Dhyla = {
     audio: {
-      skill1: null,
-      skill2: null,
+      skill1: 'assets/dhyla/audio/dhyla-skill1.mp3',
+      skill2: 'assets/dhyla/audio/dhyla-skill2.mp3',
       ultimate: 'assets/dhyla/audio/dhyla-ultimate.mp3',
       hit: null
     }, balance, names, combo, murmuration, vfx, ultimate, move, start, refund

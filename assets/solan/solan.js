@@ -1,14 +1,24 @@
 /* Shared SOLAN moves (lion demi-human powerhouse, greatsword and roar): player and AI use the same rules. */
 (() => {
   'use strict';
-  const balance = { cooldowns:{skill1:10,skill2:20,ultimate:30}, castTime:.5, roarDamage:16, basicRefund:.05 };
+  const getBal = () => window.GAME_BALANCE?.solan;
+  const atkSpd = () => getBal()?.movement?.attackSpeed ?? 1.0;
+
+  const balance = { 
+    get cooldowns() {
+      return { skill1: getBal()?.skill1?.cooldown ?? 10, skill2: getBal()?.skill2?.cooldown ?? 20, ultimate: getBal()?.ultimate?.cooldown ?? 30 };
+    }, 
+    castTime:.5, 
+    get roarDamage() { return (getBal()?.ultimate?.damage ?? 48) / 3; }, 
+    basicRefund:.05 
+  };
   const names = ['SUNBLADE','SOLAR CRESCENT','LEONINE LEAP','SUNMANE ROAR'];
   // Heavy greatsword chain: a little quicker than HALDOR's hammer, with big knockback. Reach sits inside the measured
   // blade tip (149/95/74 px in emitters.json; the cleave ends on the floor close in front of him).
   const combo = [
-    {damage:6,knockback:90,reach:130,duration:.4,hitAt:.5},
-    {damage:8,knockback:120,reach:100,duration:.46,hitAt:.5},
-    {damage:12,knockback:230,reach:95,duration:.6,hitAt:.58}
+    {get damage() { return getBal()?.combo[0] ?? 6; },knockback:90,reach:130,get duration() { return .4 * atkSpd(); },hitAt:.5},
+    {get damage() { return getBal()?.combo[1] ?? 8; },knockback:120,reach:100,get duration() { return .46 * atkSpd(); },hitAt:.5},
+    {get damage() { return getBal()?.combo[2] ?? 12; },knockback:230,reach:95,get duration() { return .6 * atkSpd(); },hitAt:.58}
   ];
   // Solar Crescent: a golden crescent slash wave at chest height, `range` px long.
   const crescent = { speed:700, range:480 };
@@ -21,8 +31,8 @@
   const roar = { cutinDuration:.78, roars:[.8,1.18,1.56], speed:520, range:480, tall:190, size:210, duration:2.6 };
   function move(name,index=1) {
     if(name==='attack')return {name:`attack${index}`,type:'attack',index,...combo[index-1]};
-    if(name==='skill1')return {name,type:name,damage:16,duration:.52,knockback:140,projectile:true,speed:crescent.speed,range:crescent.range,hitAt:.55};
-    if(name==='skill2')return {name,type:name,damage:24,duration:.74,knockback:280,reach:leap.ahead+leap.radius,dash:leap.dash,leap:true,hitAt:.6};
+    if(name==='skill1')return {name,type:name,damage:getBal()?.skill1?.damage ?? 16,duration:.52,knockback:140,projectile:true,speed:crescent.speed,range:crescent.range,hitAt:.55};
+    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.74,knockback:280,reach:leap.ahead+leap.radius,dash:leap.dash,leap:true,hitAt:.6};
     return {name:'ultimate',type:'ultimate',duration:balance.castTime,damage:0,hitAt:1};
   }
   function start(a,name,index=1) {

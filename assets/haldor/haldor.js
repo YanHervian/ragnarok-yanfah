@@ -1,14 +1,24 @@
 /* Shared HALDOR moves (forge-master mecha, anvil hammer): player and AI use the same rules. */
 (() => {
   'use strict';
-  const balance = { cooldowns:{skill1:10,skill2:20,ultimate:30}, castTime:.5, quakeDamage:16, basicRefund:.05 };
+  const getBal = () => window.GAME_BALANCE?.haldor;
+  const atkSpd = () => getBal()?.movement?.attackSpeed ?? 1.0;
+
+  const balance = { 
+    get cooldowns() {
+      return { skill1: getBal()?.skill1?.cooldown ?? 10, skill2: getBal()?.skill2?.cooldown ?? 20, ultimate: getBal()?.ultimate?.cooldown ?? 30 };
+    }, 
+    castTime:.5, 
+    get quakeDamage() { return (getBal()?.ultimate?.damage ?? 48) / 3; }, 
+    basicRefund:.05 
+  };
   const names = ['FORGE CHAIN','SLAG SHOT','STEAM RAM','FORGE QUAKE'];
   // The heavy tank: the slowest chain in the roster, with the biggest knockback on every link. Reach follows the measured
   // hammer head (131 px hook, 83 px uppercut, 85 px floor smash in emitters.json): short range, heavy hits.
   const combo = [
-    {damage:6,knockback:95,reach:112,duration:.42,hitAt:.5},
-    {damage:8,knockback:125,reach:90,duration:.48,hitAt:.5},
-    {damage:12,knockback:235,reach:95,duration:.62,hitAt:.58}
+    {get damage() { return getBal()?.combo[0] ?? 6; },knockback:95,reach:112,get duration() { return .42 * atkSpd(); },hitAt:.5},
+    {get damage() { return getBal()?.combo[1] ?? 8; },knockback:125,reach:90,get duration() { return .48 * atkSpd(); },hitAt:.5},
+    {get damage() { return getBal()?.combo[2] ?? 12; },knockback:235,reach:95,get duration() { return .62 * atkSpd(); },hitAt:.58}
   ];
   // Slag Shot: a molten slag ball lobbed in an arc that lands where the rival stood at the throw (180-560 px),
   // hitting on contact in flight or with a small splash where it lands. Stepping away after the throw dodges it.
@@ -19,9 +29,9 @@
   const quake = { cutinDuration:.78, slams:[.8,1.18,1.56], speed:760, duration:2.2 };
   function move(name,index=1) {
     if(name==='attack')return {name:`attack${index}`,type:'attack',index,...combo[index-1]};
-    if(name==='skill1')return {name,type:name,damage:16,duration:.56,knockback:150,projectile:true,lob:true,speed:(slag.minRange+slag.maxRange)/2/slag.flight,hitAt:.55};
+    if(name==='skill1')return {name,type:name,damage:getBal()?.skill1?.damage ?? 16,duration:.56,knockback:150,projectile:true,lob:true,speed:(slag.minRange+slag.maxRange)/2/slag.flight,hitAt:.55};
     // Steam Ram: a piston-boosted shoulder charge; the biggest knockback in his kit.
-    if(name==='skill2')return {name,type:name,damage:24,duration:.7,knockback:320,reach:118,dash:340,hitAt:.6};
+    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.7,knockback:320,reach:118,dash:340,hitAt:.6};
     return {name:'ultimate',type:'ultimate',duration:balance.castTime,damage:0,hitAt:1};
   }
   function start(a,name,index=1) {

@@ -1,14 +1,24 @@
 /* Shared NIB moves (mouse demi-human courier, twin batons): player and AI use the same rules. */
 (() => {
   'use strict';
-  const balance = { cooldowns:{skill1:10,skill2:20,ultimate:30}, castTime:.5, planeDamage:16, basicRefund:.05 };
+  const getBal = () => window.GAME_BALANCE?.nib;
+  const atkSpd = () => getBal()?.movement?.attackSpeed ?? 1.0;
+
+  const balance = { 
+    get cooldowns() {
+      return { skill1: getBal()?.skill1?.cooldown ?? 10, skill2: getBal()?.skill2?.cooldown ?? 20, ultimate: getBal()?.ultimate?.cooldown ?? 30 };
+    }, 
+    castTime:.5, 
+    get planeDamage() { return (getBal()?.ultimate?.damage ?? 48) / 3; }, 
+    basicRefund:.05 
+  };
   const names = ['BATON FLURRY','EXPRESS LETTER','ROOFTOP SLIP','SPECIAL DELIVERY'];
   // The fastest chain in the roster with the shortest reach (baton tips measured at 107/80/101 px in emitters.json);
   // small knockback keeps him close.
   const combo = [
-    {damage:6,knockback:55,reach:95,duration:.3,hitAt:.5},
-    {damage:8,knockback:75,reach:75,duration:.34,hitAt:.5},
-    {damage:12,knockback:170,reach:95,duration:.46,hitAt:.55}
+    {get damage() { return getBal()?.combo[0] ?? 6; },knockback:55,reach:95,get duration() { return .3 * atkSpd(); },hitAt:.5},
+    {get damage() { return getBal()?.combo[1] ?? 8; },knockback:75,reach:75,get duration() { return .34 * atkSpd(); },hitAt:.5},
+    {get damage() { return getBal()?.combo[2] ?? 12; },knockback:170,reach:95,get duration() { return .46 * atkSpd(); },hitAt:.55}
   ];
   // Express Letter: the fastest projectile in the roster, but it only flies `range` px.
   const letter = { speed:1100, range:400 };
@@ -20,8 +30,8 @@
   const delivery = { cutinDuration:.78, releases:[.8,1.18,1.56], speed:620, turn:3.2, life:2.2, size:96, duration:2.6 };
   function move(name,index=1) {
     if(name==='attack')return {name:`attack${index}`,type:'attack',index,...combo[index-1]};
-    if(name==='skill1')return {name,type:name,damage:16,duration:.45,knockback:110,projectile:true,speed:letter.speed,range:letter.range,hitAt:.55};
-    if(name==='skill2')return {name,type:name,damage:24,duration:.6,knockback:160,reach:100,dash:slip.dash,slip:true,hitAt:.45};
+    if(name==='skill1')return {name,type:name,damage:getBal()?.skill1?.damage ?? 16,duration:.45,knockback:110,projectile:true,speed:letter.speed,range:letter.range,hitAt:.55};
+    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.6,knockback:160,reach:100,dash:slip.dash,slip:true,hitAt:.45};
     return {name:'ultimate',type:'ultimate',duration:balance.castTime,damage:0,hitAt:1};
   }
   function start(a,name,index=1) {

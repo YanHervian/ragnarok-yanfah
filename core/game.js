@@ -9,12 +9,18 @@
   const canvas = document.querySelector('#arena'), ctx = canvas.getContext('2d', { alpha: false });
   const $ = s => document.querySelector(s);
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const stageW = () => images.stage ? Math.max(W, images.stage.width) : W;
   const approach = (v, target, amount) => v < target ? Math.min(target, v + amount) : Math.max(target, v - amount);
+  const _bal = () => window.GAME_BALANCE?.arco;
   const BALANCE = {
-    combo: [{ damage: 6, knockback: 75 }, { damage: 8, knockback: 100 }, { damage: 12, knockback: 180 }],
-    skill1: { damage: 16, cooldown: 10, knockback: 140 },
-    skill2: { damage: 24, cooldown: 20, knockback: 220, radius: 220 },
-    ultimate: { damagePerDrone: 12, cooldown: 30, castTime: .50, knockback: 190 },
+    get combo() { return [
+      { damage: _bal()?.combo[0] ?? 6, knockback: 75 },
+      { damage: _bal()?.combo[1] ?? 8, knockback: 100 },
+      { damage: _bal()?.combo[2] ?? 12, knockback: 180 }
+    ]; },
+    get skill1() { return { damage: _bal()?.skill1?.damage ?? 16, cooldown: _bal()?.skill1?.cooldown ?? 10, knockback: 140 }; },
+    get skill2() { return { damage: _bal()?.skill2?.damage ?? 24, cooldown: _bal()?.skill2?.cooldown ?? 20, knockback: 220, radius: 220 }; },
+    get ultimate() { return { damagePerDrone: (_bal()?.ultimate?.damage ?? 48)/4, cooldown: _bal()?.ultimate?.cooldown ?? 30, castTime: .50, knockback: 190 }; },
     dummyMax: 400, heroMax: 400, hpPerBar: 100, basicCooldownRefund: .05
   };
   const cooldownMax = { skill1: BALANCE.skill1.cooldown, skill2: BALANCE.skill2.cooldown, ultimate: BALANCE.ultimate.cooldown };
@@ -25,7 +31,7 @@
   let manifest = window.MECHA_MANIFEST || window.SPRITE_MANIFEST || null, metrics = window.MECHA_METRICS || null;
   let selectedCharacter = 'arco', aiEnabled = !!F, fenrCutin = null, hudIdentity = '';
   const Rules = window.MatchRules;
-  let opponentCharacter = 'fenr', difficulty = 'medium', stageId = 'bellora', menuOpen = !!window.FRONTEND_ENABLED;
+  let opponentCharacter = 'fenr', difficulty = 'medium', stageId = 'amikom', menuOpen = !!window.FRONTEND_ENABLED;
   let match = Rules?.create('training') || null, roundAnnouncer = null;
   const roundCues = [];
   let ready = false, paused = false, settingsOpen = false, hitboxes = false, muted = false, volume = .45;
@@ -360,7 +366,7 @@
   function playable() { return ['arco', 'fenr', ...Object.keys(KITS)]; }
   function startMatch(options = {}) {
     if (!ready || !Rules) return false;
-    const { player = 'arco', enemy = 'fenr', stage = 'bellora', level = 'medium', mode = 'versus' } = options;
+    const { player = 'arco', enemy = 'fenr', stage = 'amikom', level = 'medium', mode = 'versus' } = options;
     if (!playable().includes(player) || !playable().includes(enemy) || !Object.hasOwn(Rules.stages, stage) || !Object.hasOwn(Rules.difficulties, level) || !['versus', 'training'].includes(mode)) return false;
     if (!images['stage-' + stage]) return false;
     selectedCharacter = player; opponentCharacter = enemy; stageId = stage; difficulty = level; images.stage = images['stage-' + stage]; CONFIG.groundY = Rules.stages[stage].groundY;
@@ -530,12 +536,12 @@
   function resetCombat() {
     systemAnnouncer?.clear();
     stopUltimateVoice();
-    Object.assign(hero, { x: 350, y: CONFIG.groundY, vx: 0, vy: 0, facing: 1, grounded: true, jumps: 0, state: 'idle', animTime: 0, walkPhase: 0, smokeDistance: 0, action: null, runDirection: 0, hp: BALANCE.heroMax, koTime: 0, invuln: 0, hurtTime: 0, doublePose: 0, rollDuration: CONFIG.rollDuration, rollBuffer: null, airTime: 0, cooldowns: { skill1: 0, skill2: 0, ultimate: 0 } });
-    Object.assign(dummy, { x: 915, y: CONFIG.groundY, vx: 0, vy: 0, state: 'idle', stateTime: 0, damage: 0, ko: false, flash: 0, invuln: 0, angle: 0 });
+    Object.assign(hero, { x: stageW() / 2 - 290, y: CONFIG.groundY, vx: 0, vy: 0, facing: 1, grounded: true, jumps: 0, state: 'idle', animTime: 0, walkPhase: 0, smokeDistance: 0, action: null, runDirection: 0, hp: BALANCE.heroMax, koTime: 0, invuln: 0, hurtTime: 0, doublePose: 0, rollDuration: CONFIG.rollDuration, rollBuffer: null, airTime: 0, cooldowns: { skill1: 0, skill2: 0, ultimate: 0 } });
+    Object.assign(dummy, { x: stageW() / 2 + 275, y: CONFIG.groundY, vx: 0, vy: 0, state: 'idle', stateTime: 0, damage: 0, ko: false, flash: 0, invuln: 0, angle: 0 });
     if (F) { F.reset(hero); F.reset(dummy); Object.assign(dummy, { facing: -1, action: null, cooldowns: { skill1: 0, skill2: 0, ultimate: 0 }, aiThink: .4, aiTime: 0, aiChain: 0, walkPhase: 0, jumps: 0 }); cpu = { seen: new WeakMap(), decided: new WeakSet(), read: null, heroActionAt: 0, heroAction: null, airborne: false, airAt: 0, antiAirRead: false, plan: null, doubleAt: 0 }; syncPlayerForm(); }
     fenrCutin = null; hudIdentity = '';
     particles.length = effects.length = projectiles.length = damageNumbers.length = 0; totalDamage = comboHits = bestCombo = comboDamage = comboTimer = hitstop = trauma = cinematic = 0; clearInput(); setPaused(false); announce('TRAINING READY', 1.25);
-    squad = null; enemySquad = null; parade = null; enemyParade = null; flock = null; enemyFlock = null; serpent = null; enemySerpent = null; quake = null; enemyQuake = null; finale = null; enemyFinale = null; skyfall = null; enemySkyfall = null; orrery = null; enemyOrrery = null; sunroar = null; enemySunroar = null; delivery = null; enemyDelivery = null; tortoise = null; enemyTortoise = null; systemcrash = null; enemySystemcrash = null; activeUlt.player = null; activeUlt.enemy = null; camX = W / 2; camY = H / 2; camZoom = 1;
+    squad = null; enemySquad = null; parade = null; enemyParade = null; flock = null; enemyFlock = null; serpent = null; enemySerpent = null; quake = null; enemyQuake = null; finale = null; enemyFinale = null; skyfall = null; enemySkyfall = null; orrery = null; enemyOrrery = null; sunroar = null; enemySunroar = null; delivery = null; enemyDelivery = null; tortoise = null; enemyTortoise = null; systemcrash = null; enemySystemcrash = null; activeUlt.player = null; activeUlt.enemy = null; camX = stageW() / 2; camY = H / 2; camZoom = 1;
     for (const name of Object.keys(rechargePulse)) rechargePulse[name] = 0;
   }
   function reset() {
@@ -587,7 +593,19 @@
     const cap = F && aiEnabled && match?.mode === 'versus' ? cpuProfile().comboCap : 0;
     dummy.stunHits = comboHits;
     if (cap && dummy.stunHits >= cap) dummy.invuln = .5 + cpuProfile().immunity;
-    dummy.flash = 0; dummy.vx = dir * power; dummy.stateTime = -stunDuration; dummy.state = isJuggle ? 'down' : 'hurt';
+    dummy.flash = 0; dummy.stateTime = -stunDuration; dummy.state = isJuggle ? 'down' : 'hurt';
+    // Efek pentalan/mundur (knockback hurt): 
+    // Skill 1 (damage 15-19) -> 300
+    // Skill 2 (damage >= 20) -> 600
+    // Gunakan damage untuk menentukan jarak terpental (knockback), abaikan parameter lama
+    let pushback = power;
+    if (!ultContext && !knockdown) {
+      if (damage >= 30) pushback = 900;
+      else if (damage >= 20) pushback = 600;
+      else if (damage >= 15) pushback = 300;
+      else pushback = 0; // hurt biasa, tidak terpental jauh
+    }
+    dummy.vx = dir * pushback;
     if (isJuggle) dummy.vy = -300; // Juggle pop
     dummy.action = null;
     if (F && dummy.transformPending > 0) F.end(dummy);
@@ -598,9 +616,11 @@
       spawnParticles(dummy.x - dir * 21, impactY, color, damage >= 30 ? 22 : 14, damage >= 30 ? 320 : 220);
       effects.push({ type: 'impact', x: dummy.x - dir * 15, y: impactY, life: .2, maxLife: .2, color, heavy: damage >= 30 });
     }
-    if (dummy.damage >= BALANCE.dummyMax || knockdown || dummy.stunHits >= 5) {
+    if (dummy.damage >= BALANCE.dummyMax || knockdown || dummy.stunHits >= 6) {
       dummy.ko = dummy.damage >= BALANCE.dummyMax; dummy.state = 'down'; dummy.downTimer = 0; dummy.stunHits = 0; comboTimer = 0; comboHits = comboDamage = 0; announce(dummy.ko ? 'K.O.' : 'KNOCKDOWN', .9);
-      if (ultContext) { dummy.vy = 0; dummy.vx = dir * 800; } else { dummy.vy = isJuggle ? -300 : -420; dummy.vx = dir * 600; dummy.fallDirection = dir; }
+      // dummy.vx mengatur jarak pentalan musuh. Aslinya 600, kita naikkan jadi 900
+      // Jika kena Ultimate (ultContext), jarak pentalannya jadi 1100
+      if (ultContext) { dummy.vy = 0; dummy.vx = dir * 1100; } else { dummy.vy = isJuggle ? -300 : -420; dummy.vx = dir * 900; dummy.fallDirection = dir; }
     }
     sound(hitSound || (damage >= 30 ? 'heavy' : 'hit')); return true;
   }
@@ -670,7 +690,7 @@
       effects.push({ type: 'yanfah-fx', asset: 'yanfah-systemcrash', x: actor.x + actor.facing * 50, y: CONFIG.groundY - 100, facing: actor.facing, life: .8, maxLife: .8, size: 500 });
       spawnParticles(actor.x, CONFIG.groundY - 10, '#00ffff', 30, 400);
     }
-    const centerX = clamp(actor.x, 220, W - 220), baseY = clamp(actor.y, 480, CONFIG.groundY);
+    const centerX = clamp(actor.x, 220, stageW() - 220), baseY = clamp(actor.y, 480, CONFIG.groundY);
     const offsets = [[-150, -240], [-55, -310], [65, -305], [160, -235]];
     const group = {
       t: 0, owner: actor === hero ? 'player' : 'enemy', facing: actor.facing, casterX: actor.x, targeted: (target.x - actor.x) * actor.facing >= 0,
@@ -755,7 +775,7 @@
   }
   function paradeAim(s, r, target) {
     if (s.targeted) return { x: target.x + r.spread, y: target.y - 70 - Math.abs(r.spread) * .6 };
-    return { x: clamp(s.casterX + s.facing * (380 + r.id * 22), 40, W - 40), y: CONFIG.groundY - 14 };
+    return { x: clamp(s.casterX + s.facing * (380 + r.id * 22), 40, stageW() - 40), y: CONFIG.groundY - 14 };
   }
   function updateParade(dt, s) {
     if (!s) return;
@@ -965,7 +985,7 @@
       t: 0, owner: actor === hero ? 'player' : 'enemy', facing: actor.facing, casterX: actor.x, hits: 0, phase: 'cutin',
       strikes: U.strikes.map((at, id) => ({
         id, at, lockAt: at - U.telegraph, appearAt: id ? U.strikes[id - 1] - U.telegraph : U.follow,
-        x: id ? target.x : clamp(actor.x + actor.facing * 90, 60, W - 60), state: 'waiting', lockedAt: 0, hit: false
+        x: id ? target.x : clamp(actor.x + actor.facing * 90, 60, stageW() - 60), state: 'waiting', lockedAt: 0, hit: false
       }))
     };
     if (actor === hero) serpent = group; else enemySerpent = group;
@@ -979,7 +999,7 @@
     for (const k of s.strikes) {
       if (k.state === 'waiting' && s.t >= k.appearAt) { k.state = 'tracking'; if (k.id) k.x = s.strikes[k.id - 1].x; }
       if (k.state === 'tracking') {
-        k.x = clamp(approach(k.x, target.x, U.speed * dt), 60, W - 60);
+        k.x = clamp(approach(k.x, target.x, U.speed * dt), 60, stageW() - 60);
         if (s.t >= k.lockAt) { k.state = 'locked'; k.lockedAt = time; sound('step'); }
       }
       if (k.state === 'locked' && s.t >= k.at) {
@@ -1001,7 +1021,7 @@
   // HALDOR Forge Quake: three hammer slams at the crater in front of him; each sends a molten shockwave along the
   // floor both ways (ground projectiles, 16 each, 48 total). HALDOR is free after the 0.5 s cast; a jump clears a wave.
   function startQuake(actor = hero) {
-    const group = { t: 0, owner: actor === hero ? 'player' : 'enemy', facing: actor.facing, x: clamp(actor.x + actor.facing * 70, 60, W - 60), slams: 0, phase: 'cutin' };
+    const group = { t: 0, owner: actor === hero ? 'player' : 'enemy', facing: actor.facing, x: clamp(actor.x + actor.facing * 70, 60, stageW() - 60), slams: 0, phase: 'cutin' };
     if (actor === hero) quake = group; else enemyQuake = group;
     cinematic = .9; announceTimer = 0;
     startUltimateVoice('haldor', actor);
@@ -1037,7 +1057,7 @@
       const x = a.x + s.facing * (em?.x ?? 90), y = clamp(a.y + (em?.y ?? -95), a.y - 130, a.y - 70);
       projectiles.push({
         x, y, vx: s.facing * U.speed, life: 4, facing: s.facing, owner: s.owner, damage: Z.balance.finaleDamage, knockback: last ? 190 : 50, asset: 'zanni-bigring', size: U.size, color: '#e4f36a',
-        boomerang: true, range: Math.max(120, s.facing > 0 ? W - 60 - x : x - 60), travel: 0, spin: 16, freeze: false
+        boomerang: true, range: Math.max(120, s.facing > 0 ? stageW() - 60 - x : x - 60), travel: 0, spin: 16, freeze: false
       });
       effects.push({ type: 'zanni-fx', asset: 'zanni-confetti', x: x + s.facing * 20, y, facing: s.facing, life: .35, maxLife: .35, size: 170 });
       spawnParticles(x, y, '#e4f36a', 14, 260);
@@ -1061,7 +1081,7 @@
     s.t += dt;
     while (s.calls < U.calls.length && s.t >= U.calls[s.calls]) {
       const last = s.calls === U.calls.length - 1; s.calls++;
-      const tx = clamp(target.x, 40, W - 40), land = CONFIG.groundY - 40, x = tx - s.facing * U.back, y = land - U.height;
+      const tx = clamp(target.x, 40, stageW() - 40), land = CONFIG.groundY - 40, x = tx - s.facing * U.back, y = land - U.height;
       projectiles.push({
         x, y, vx: s.facing * U.back / U.flight, vy: U.height / U.flight, life: U.flight + .3, facing: s.facing, owner: s.owner, damage: IS.balance.lanceDamage, knockback: last ? 190 : 50,
         asset: 'isolde-skyfall', size: U.size, color: '#bfe6ff', landY: land, shatter: U.shatter, freeze: false
@@ -1166,7 +1186,7 @@
   // EDDA Elder Tortoise: a giant jade tortoise spirit rises in front of EDDA, lumbers forward and stomps three times
   // 0.38 s apart (16 each, 48). A stomp only hits a rival on the floor within ED.tortoise.half px of the spirit.
   function startTortoise(actor = hero) {
-    const U = ED.tortoise, group = { t: 0, owner: actor === hero ? 'player' : 'enemy', facing: actor.facing, x: clamp(actor.x + actor.facing * U.ahead, 60, W - 60), stomped: 0, phase: 'cutin', spirit: null };
+    const U = ED.tortoise, group = { t: 0, owner: actor === hero ? 'player' : 'enemy', facing: actor.facing, x: clamp(actor.x + actor.facing * U.ahead, 60, stageW() - 60), stomped: 0, phase: 'cutin', spirit: null };
     if (actor === hero) tortoise = group; else enemyTortoise = group;
     cinematic = .9; announceTimer = 0;
     startUltimateVoice('edda', actor);
@@ -1180,7 +1200,7 @@
 
     }
     if (s.spirit) {
-      s.x = clamp(s.x + s.facing * U.speed * dt, 60, W - 60); s.spirit.x = s.x;
+      s.x = clamp(s.x + s.facing * U.speed * dt, 60, stageW() - 60); s.spirit.x = s.x;
       s.spirit.lift = U.stomps.reduce((m, ts) => Math.max(m, 34 * Math.max(0, 1 - Math.abs(s.t - (ts - .16)) / .16)), 0);
     }
     while (s.stomped < U.stomps.length && s.t >= U.stomps[s.stomped]) {
@@ -1285,9 +1305,9 @@
       if (a.t >= a.duration || (a.type === 'skill1' && a.fired)) { const queued = a.queued && a.index < 3, remaining = Math.max(0, a.queued - 1); const next = (a.index || 0) + 1; hero.action = null; if (queued) { startAttack(next); hero.action.queued = remaining; } else state(hero.grounded ? 'idle' : 'jump'); }
     }
     const oldHeroX = hero.x;
-    hero.x = clamp(hero.x + hero.vx * dt, 70, W - 70);
+    hero.x = clamp(hero.x + hero.vx * dt, 70, stageW() - 70);
     const gap = bodyGap();
-    if (dummy.state !== 'down' && dummy.state !== 'recover' && hero.y > CONFIG.groundY - 130 && dummy.y > CONFIG.groundY - 130 && Math.abs(hero.x - dummy.x) < gap) { hero.x = clamp(dummy.x + (oldHeroX <= dummy.x ? -gap : gap), 70, W - 70); hero.vx = 0; }
+    if (dummy.state !== 'down' && dummy.state !== 'recover' && hero.y > CONFIG.groundY - 130 && dummy.y > CONFIG.groundY - 130 && Math.abs(hero.x - dummy.x) < gap) { hero.x = clamp(dummy.x + (oldHeroX <= dummy.x ? -gap : gap), 70, stageW() - 70); hero.vx = 0; }
     const travelled = Math.abs(hero.x - oldHeroX);
     if (hero.grounded && hero.state === 'run' && travelled > 0) {
       hero.smokeDistance += travelled;
@@ -1309,8 +1329,8 @@
     const heroUlt = hero.action && hero.action.type === 'ultimate';
     if (!((dummy.state === 'hurt' || (dummy.state === 'crouch' && dummy.isBlocking)) && heroUlt)) dummy.stateTime += dt;
     dummy.flash = Math.max(0, dummy.flash - dt); dummy.invuln = Math.max(0, dummy.invuln - dt);
-    dummy.x = clamp(dummy.x + dummy.vx * dt, 110, W - 100); if (!F || !aiEnabled || dummy.action || ['hurt', 'down', 'recover'].includes(dummy.state)) dummy.vx = approach(dummy.vx, 0, dt * (['hurt', 'down', 'recover'].includes(dummy.state) ? 950 : 1900));
-    if (F && !['down', 'recover'].includes(dummy.state) && hero.y > CONFIG.groundY - 130 && dummy.y > CONFIG.groundY - 130 && Math.abs(dummy.x - hero.x) < bodyGap()) dummy.x = clamp(hero.x + (dummy.x >= hero.x ? bodyGap() : -bodyGap()), 110, W - 100);
+    dummy.x = clamp(dummy.x + dummy.vx * dt, 110, stageW() - 100); if (!F || !aiEnabled || dummy.action || ['hurt', 'down', 'recover'].includes(dummy.state)) dummy.vx = approach(dummy.vx, 0, dt * (['hurt', 'down', 'recover'].includes(dummy.state) ? 950 : 1900));
+    if (F && !['down', 'recover'].includes(dummy.state) && hero.y > CONFIG.groundY - 130 && dummy.y > CONFIG.groundY - 130 && Math.abs(dummy.x - hero.x) < bodyGap()) dummy.x = clamp(hero.x + (dummy.x >= hero.x ? bodyGap() : -bodyGap()), 110, stageW() - 100);
     // Versus CPU follows the player's post-hurt immunity rule by difficulty, so a mashed chain cannot loop it forever.
     // Its stun lasts 0.5 s there, which still covers every 3-hit chain gap; the training dummy stays open for practice.
     if ((dummy.state === 'hurt' || (dummy.state === 'crouch' && dummy.isBlocking)) && dummy.stateTime > (F && aiEnabled && match?.mode === 'versus' ? .5 : .4)) { dummy.state = dummy.y < CONFIG.groundY ? 'jump' : 'idle'; dummy.stateTime = 0; dummy.isBlocking = false; }
@@ -1390,7 +1410,7 @@
       }
       if (p.spent) { if (p.life <= 0) projectiles.splice(i, 1); continue; }
       if (p.owner === 'enemy') {
-        if (Math.min(oldX, p.x) <= hero.x + 28 && Math.max(oldX, p.x) >= hero.x - 28 && Math.abs(p.y - (hero.y - 85)) < (p.tall || 75) && window.__game.receiveHit(p.damage, { projectile: true, freeze: p.freeze, knockdown: false, stun: p.yanfahUltTrigger ? 1.0 : 0, hitSound: p.hitSound || null, ultContext: p.ultContext || p.yanfahUltTrigger || p.valkrenEruption, spawnImpact: p.spawnImpact })) {
+        if (Math.min(oldX, p.x) <= hero.x + 28 && Math.max(oldX, p.x) >= hero.x - 28 && Math.abs(p.y - (hero.y - 85)) < (p.tall || 75)) {
           if (p.yanfahUltTrigger) {
             if (hero.isBlocking) {
               if (enemySystemcrash) enemySystemcrash.timeout = 2.0;
@@ -1400,58 +1420,65 @@
               dummy.state = 'ultimate'; dummy.vy = -1350; dummy.vx = dummy.facing * 400; dummy.grounded = false;
             }
             p.life = 0;
-          }
-          else if (p.boomerang) { p.spent = true; p.returning = true; }
-          else if (p.orbit) p.spent = true;
-          else {
-            if (p.asset === 'dhyla-projectile') effects.push({ type: 'dhyla-fx', asset: 'dhyla-explosion', x: hero.x + p.facing * 10, y: p.y + 40, facing: p.facing, life: .4, maxLife: .4, size: 180 });
-            if (p.asset === 'valkren-skill1') effects.push({ type: 'valkren-fx', asset: 'valkren-explosion', x: hero.x, y: p.y, facing: p.facing, life: .4, maxLife: .4, size: 250 });
-            if (p.asset === 'yanfah-datacode') effects.push({ type: 'yanfah-fx', asset: 'yanfah-cyberslam', x: hero.x, y: p.y, facing: p.facing, rotation: -Math.PI / 2, life: .4, maxLife: .4, size: 140 });
-            if (p.valkrenEruption) {
-              effects.push({ type: 'valkren-fx', asset: 'valkren-eruption', x: hero.x, y: CONFIG.groundY - 120, facing: p.facing, life: .6, maxLife: .6, size: 300 });
-              spawnParticles(hero.x, CONFIG.groundY - 10, '#ff5555', 40, 450);
-              sound('heavy');
-              trauma = Math.min(1, trauma + .4);
+          } else if (window.__game.receiveHit(p.damage, { projectile: true, freeze: p.freeze, knockdown: false, stun: 0, hitSound: p.hitSound || null, ultContext: p.ultContext || p.valkrenEruption, spawnImpact: p.spawnImpact })) {
+            if (p.boomerang) { p.spent = true; p.returning = true; }
+            else if (p.orbit) p.spent = true;
+            else {
+              if (p.asset === 'dhyla-projectile') effects.push({ type: 'dhyla-fx', asset: 'dhyla-explosion', x: hero.x + p.facing * 10, y: p.y + 40, facing: p.facing, life: .4, maxLife: .4, size: 180 });
+              if (p.asset === 'valkren-skill1') effects.push({ type: 'valkren-fx', asset: 'valkren-explosion', x: hero.x, y: p.y, facing: p.facing, life: .4, maxLife: .4, size: 250 });
+              if (p.asset === 'yanfah-datacode') effects.push({ type: 'yanfah-fx', asset: 'yanfah-cyberslam', x: hero.x, y: p.y, facing: p.facing, rotation: -Math.PI / 2, life: .4, maxLife: .4, size: 140 });
+              if (p.valkrenEruption) {
+                effects.push({ type: 'valkren-fx', asset: 'valkren-eruption', x: hero.x, y: CONFIG.groundY - 120, facing: p.facing, life: .6, maxLife: .6, size: 300 });
+                spawnParticles(hero.x, CONFIG.groundY - 10, '#ff5555', 40, 450);
+                sound('heavy');
+                trauma = Math.min(1, trauma + .4);
+              }
+              p.life = 0;
             }
-            p.life = 0;
           }
         }
-        if (p.life <= 0 || p.x < -100 || p.x > W + 100) projectiles.splice(i, 1); continue;
+        if (p.life <= 0 || p.x < -100 || p.x > stageW() + 100) projectiles.splice(i, 1); continue;
       }
       // Swept x interval keeps a high-speed bolt from tunneling through a target.
       if (Math.min(oldX, p.x) <= dummy.x + 30 && Math.max(oldX, p.x) >= dummy.x - 30 && Math.abs(p.y - (dummy.y - (F ? 95 : 68))) < (p.tall || (F ? 90 : 66)) && dummy.state !== 'down' && dummy.state !== 'recover') {
-        const dmg = p.yanfahUltTrigger ? 0 : (p.damage ?? BALANCE.skill1.damage);
-        if (hitDummy(dmg, p.knockback ?? BALANCE.skill1.knockback, p.color || '#94ffde', oldX, p.y, false, false, 1, p.yanfahUltTrigger ? 1.0 : 0, p.ultContext || p.yanfahUltTrigger || p.valkrenEruption, p.hitSound || null, p.spawnImpact)) {
-          if (p.yanfahUltTrigger) {
-            if (dummy.isBlocking) {
-              if (systemcrash) systemcrash.timeout = 2.0;
-            } else {
-              if (systemcrash) systemcrash.triggered = true;
-              hero.action = { name: 'ultimate', type: 'ultimate-jump', duration: 1.0, t: 0, fired: true };
-              hero.state = 'ultimate'; hero.vy = -1350; hero.vx = hero.facing * 400; hero.grounded = false;
-            }
-            p.life = 0;
+        if (p.yanfahUltTrigger) {
+          if (dummy.isBlocking) {
+            if (systemcrash) systemcrash.timeout = 2.0;
+          } else {
+            if (systemcrash) systemcrash.triggered = true;
+            hero.action = { name: 'ultimate', type: 'ultimate-jump', duration: 1.0, t: 0, fired: true };
+            hero.state = 'ultimate'; hero.vy = -1350; hero.vx = hero.facing * 400; hero.grounded = false;
           }
-          else if (p.boomerang) { p.spent = true; p.returning = true; }
-          else if (p.orbit) p.spent = true;
-          else {
-            if (p.asset === 'dhyla-projectile') effects.push({ type: 'dhyla-fx', asset: 'dhyla-explosion', x: dummy.x + p.facing * 10, y: p.y + 40, facing: p.facing, life: .4, maxLife: .4, size: 180 });
-            if (p.asset === 'valkren-skill1') effects.push({ type: 'valkren-fx', asset: 'valkren-explosion', x: dummy.x, y: p.y, facing: p.facing, life: .4, maxLife: .4, size: 250 });
-            if (p.asset === 'yanfah-datacode') effects.push({ type: 'yanfah-fx', asset: 'yanfah-cyberslam', x: dummy.x, y: p.y, facing: p.facing, rotation: -Math.PI / 2, life: .4, maxLife: .4, size: 160 });
-            if (p.valkrenEruption) {
-              effects.push({ type: 'valkren-fx', asset: 'valkren-eruption', x: dummy.x, y: CONFIG.groundY - 120, facing: p.facing, life: .6, maxLife: .6, size: 300 });
-              spawnParticles(dummy.x, CONFIG.groundY - 10, '#ff5555', 40, 450);
-              sound('heavy');
-              trauma = Math.min(1, trauma + .4);
+          p.life = 0;
+        } else {
+          const dmg = p.damage ?? BALANCE.skill1.damage;
+          if (hitDummy(dmg, p.knockback ?? BALANCE.skill1.knockback, p.color || '#94ffde', oldX, p.y, false, false, 1, 0, p.ultContext || p.valkrenEruption, p.hitSound || null, p.spawnImpact)) {
+            if (p.boomerang) { p.spent = true; p.returning = true; }
+            else if (p.orbit) p.spent = true;
+            else {
+              if (p.asset === 'dhyla-projectile') effects.push({ type: 'dhyla-fx', asset: 'dhyla-explosion', x: dummy.x + p.facing * 10, y: p.y + 40, facing: p.facing, life: .4, maxLife: .4, size: 180 });
+              if (p.asset === 'valkren-skill1') effects.push({ type: 'valkren-fx', asset: 'valkren-explosion', x: dummy.x, y: p.y, facing: p.facing, life: .4, maxLife: .4, size: 250 });
+              if (p.asset === 'yanfah-datacode') effects.push({ type: 'yanfah-fx', asset: 'yanfah-cyberslam', x: dummy.x, y: p.y, facing: p.facing, rotation: -Math.PI / 2, life: .4, maxLife: .4, size: 160 });
+              if (p.valkrenEruption) {
+                effects.push({ type: 'valkren-fx', asset: 'valkren-eruption', x: dummy.x, y: CONFIG.groundY - 120, facing: p.facing, life: .6, maxLife: .6, size: 300 });
+                spawnParticles(dummy.x, CONFIG.groundY - 10, '#ff5555', 40, 450);
+                sound('heavy');
+                trauma = Math.min(1, trauma + .4);
+              }
+              p.life = 0;
             }
-            p.life = 0;
           }
         }
       }
-      if (p.life <= 0 || p.x < -100 || p.x > W + 100) projectiles.splice(i, 1);
+      if (p.life <= 0 || p.x < -100 || p.x > stageW() + 100) projectiles.splice(i, 1);
     }
   }
   function syncPlayerForm() {
+    if (window.GAME_BALANCE && window.GAME_BALANCE[selectedCharacter] && window.GAME_BALANCE[selectedCharacter].movement) {
+      CONFIG.walkSpeed = window.GAME_BALANCE[selectedCharacter].movement.walkSpeed;
+      CONFIG.runSpeed = window.GAME_BALANCE[selectedCharacter].movement.runSpeed;
+    }
+
     if (selectedCharacter === 'fenr') { const wolf = hero.form === 'wolf'; manifest = wolf ? window.FENR_WOLF_MANIFEST : window.FENR_HUMAN_MANIFEST; metrics = wolf ? window.FENR_WOLF_METRICS : window.FENR_HUMAN_METRICS; images.hero = images[wolf ? 'fenrWolf' : 'fenrHuman']; Object.assign(cooldownMax, F.balance.cooldowns); }
     else if (selectedCharacter === 'mira') { manifest = window.MIRA_MANIFEST; metrics = window.MIRA_METRICS; images.hero = images.mira; Object.assign(cooldownMax, M.balance.cooldowns); }
     else if (selectedCharacter === 'cora') { manifest = window.CORA_MANIFEST; metrics = window.CORA_METRICS; images.hero = images.cora; Object.assign(cooldownMax, C.balance.cooldowns); }
@@ -1467,7 +1494,7 @@
     else if (selectedCharacter === 'yanfah') { manifest = window.YANFAH_MANIFEST; metrics = window.YANFAH_METRICS; images.hero = images.yanfah; Object.assign(cooldownMax, YF.balance.cooldowns); }
     else if (selectedCharacter === 'dhyla') { manifest = window.DHYLA_MANIFEST; metrics = window.DHYLA_METRICS || window.DHYLA_MANIFEST; images.hero = images.dhyla; Object.assign(cooldownMax, DH ? DH.balance.cooldowns : { skill1: 10, skill2: 20, ultimate: 30 }); }
     else if (selectedCharacter === 'valkren') { manifest = window.VALKREN_MANIFEST; metrics = window.VALKREN_METRICS || window.VALKREN_MANIFEST; if (!images.valkren) { const img = new Image(); img.onload = () => { images.valkren = img; images.hero = img; }; img.src = 'assets/valkren/run/sprite-sheet-alpha.webp'; } else { images.hero = images.valkren; } Object.assign(cooldownMax, VK ? VK.balance.cooldowns : { skill1: 12, skill2: 22, ultimate: 40 }); }
-    else { manifest = window.MECHA_MANIFEST || window.SPRITE_MANIFEST; metrics = window.MECHA_METRICS; images.hero = images.arco || images.hero; Object.assign(cooldownMax, { skill1: 10, skill2: 20, ultimate: 30 }); }
+    else { manifest = window.MECHA_MANIFEST || window.SPRITE_MANIFEST; metrics = window.MECHA_METRICS; images.hero = images.arco || images.hero; Object.assign(cooldownMax, { skill1: BALANCE.skill1.cooldown, skill2: BALANCE.skill2.cooldown, ultimate: BALANCE.ultimate.cooldown }); }
     hudIdentity = '';
   }
   function selectCharacter(id) {
@@ -1593,7 +1620,7 @@
     const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, move.type === 'skill2' ? '#f6f3c8' : '#e9f27a', actor.x, hy, false, move.type === 'attack');
     if (connected && move.pull) {
       // Reel the rival in to `pull` px in front of ZANNI (never pushes a closer rival away).
-      if (dx > move.pull) { target.x = clamp(actor.x + actor.facing * move.pull, 70, W - 70); target.vx = 0; }
+      if (dx > move.pull) { target.x = clamp(actor.x + actor.facing * move.pull, 70, stageW() - 70); target.vx = 0; }
       effects.push({ type: 'zanni-fx', asset: 'zanni-snatch', x: target.x, y: target.y - 90, facing: actor.facing, life: .32, maxLife: .32, size: 150 });
     }
     if (connected && move.type === 'attack') {
@@ -1633,7 +1660,7 @@
     }
     if (move.well) {
       // Gravity Well: a vortex opens RH.well.at px ahead and collapses after RH.well.fuse s.
-      const W0 = RH.well, x = clamp(actor.x + actor.facing * W0.at, 40, W - 40);
+      const W0 = RH.well, x = clamp(actor.x + actor.facing * W0.at, 40, stageW() - 40);
       projectiles.push({ x, y: CONFIG.groundY - 80, vx: 0, life: W0.fuse, facing: actor.facing, owner: enemy ? 'enemy' : 'player', damage: move.damage, knockback: move.knockback, asset: 'rhea-well', size: 170, color: '#e8b0c0', inert: true, radius: W0.radius, spin: -6 });
       return;
     }
@@ -1690,7 +1717,7 @@
     if (connected && move.slip) {
       // Rooftop Slip: slip past the rival and turn around to face them (the dash stops there).
       effects.push({ type: 'nib-fx', asset: 'nib-slip', x: target.x, y: target.y - 80, facing: actor.facing, life: .3, maxLife: .3, size: 150 });
-      actor.x = clamp(target.x + actor.facing * NB.slip.behind, 70, W - 70); actor.facing *= -1; actor.vx = 0; if (actor.action) actor.action.dash = 0;
+      actor.x = clamp(target.x + actor.facing * NB.slip.behind, 70, stageW() - 70); actor.facing *= -1; actor.vx = 0; if (actor.action) actor.action.dash = 0;
     }
     if (connected && move.type === 'attack') {
       if (enemy) NB.refund(dummy);
@@ -1901,7 +1928,7 @@
     if (opponentCharacter === 'valkren') return false;
     if (dummy.action || dummy.cooldowns[name] > 0 || ['hurt', 'down', 'recover'].includes(dummy.state)) return false;
     const stateName = name === 'attack' ? `attack${index}` : name, row = window.MECHA_MANIFEST.animation.rows[stateName], duration = name === 'ultimate' ? .5 : row.frames / row.fps;
-    if (name !== 'attack') dummy.cooldowns[name] = (opponentCharacter === 'yanfah' ? YF.balance.cooldowns : { skill1: 10, skill2: 20, ultimate: 30 })[name];
+    if (name !== 'attack') dummy.cooldowns[name] = (KITS[opponentCharacter] ? KITS[opponentCharacter].balance.cooldowns : { skill1: BALANCE.skill1.cooldown, skill2: BALANCE.skill2.cooldown, ultimate: BALANCE.ultimate.cooldown })[name];
     dummy.action = { type: name, name: stateName, index, t: 0, duration, fired: false, hitAt: name === 'skill2' ? .53 : .5 }; dummy.state = stateName; dummy.stateTime = 0;
     if (name === 'ultimate') { startSquadron(dummy); clearScreenForUltimate(dummy); } return true;
   }
@@ -1926,7 +1953,7 @@
     else if (a.type === 'attack') {
       effects.push({ type: 'slash', x: dummy.x + dummy.facing * 48, y: y + 5, life: .22, maxLife: .22, facing: dummy.facing, index: a.index, color: '#cffbf0' });
       const reach = Math.max(...window.MECHA_METRICS.states[a.name].frames.map(f => f.bounds.right));
-      if (dx > (tB(typeof target !== 'undefined' ? target : dummy) - 2) && dx < reach + tW(typeof target !== 'undefined' ? target : dummy) && Math.abs(hero.y - dummy.y) < 113 && window.__game.receiveHit(BALANCE.combo[a.index - 1].damage)) for (const name of ['skill1', 'skill2', 'ultimate']) { const cd = opponentCharacter === 'yanfah' ? YF.balance.cooldowns : { skill1: 10, skill2: 20, ultimate: 30 }; dummy.cooldowns[name] = Math.max(0, dummy.cooldowns[name] - (cd[name] * .05)); }
+      if (dx > (tB(typeof target !== 'undefined' ? target : dummy) - 2) && dx < reach + tW(typeof target !== 'undefined' ? target : dummy) && Math.abs(hero.y - dummy.y) < 113 && window.__game.receiveHit(BALANCE.combo[a.index - 1].damage)) for (const name of ['skill1', 'skill2', 'ultimate']) { const cd = KITS[opponentCharacter] ? KITS[opponentCharacter].balance.cooldowns : { skill1: BALANCE.skill1.cooldown, skill2: BALANCE.skill2.cooldown, ultimate: BALANCE.ultimate.cooldown }; dummy.cooldowns[name] = Math.max(0, dummy.cooldowns[name] - (cd[name] * .05)); }
     }
   }
   // CPU brain. It reads the player after `reaction` seconds (like a person), keeps its own kit spacing, jumps over
@@ -2069,7 +2096,7 @@
         if (!seen(cpu.seen.get(p))) continue;
         cpu.decided.add(p);
         let dir = Math.sign(dummy.x - p.landX) || -dummy.facing;
-        if ((dir < 0 ? dummy.x - 110 : W - 100 - dummy.x) < p.splash + 20) dir = -dir;
+        if ((dir < 0 ? dummy.x - 110 : stageW() - 100 - dummy.x) < p.splash + 20) dir = -dir;
         if (Math.abs(dummy.x - p.landX) < p.splash + 30 && random() < P.evade) cpu.plan = { kind: 'sidestep', dir, until: p.landAt + .05 };
         continue;
       }
@@ -2089,12 +2116,12 @@
       if (k.state !== 'locked' || cpu.decided.has(k) || time - k.lockedAt < P.reaction) continue;
       cpu.decided.add(k);
       let dir = Math.sign(dummy.x - k.x) || -dummy.facing;
-      if ((dir < 0 ? dummy.x - 110 : W - 100 - dummy.x) < N.serpent.radius + 20) dir = -dir;
+      if ((dir < 0 ? dummy.x - 110 : stageW() - 100 - dummy.x) < N.serpent.radius + 20) dir = -dir;
       if (Math.abs(dummy.x - k.x) < N.serpent.radius + 30 && random() < P.evade) cpu.plan = { kind: 'sidestep', dir, until: k.lockedAt + N.serpent.telegraph + .05 };
     }
     // 2. A player move just started: step out of a melee startup, or plan to punish its recovery (once per move).
     if (ha && cpu.read !== ha && seen(cpu.heroActionAt)) {
-      const reach = ha.type === 'attack' ? attackRange(ha.index) + 27 : ha.type === 'skill2' ? 230 : 0, room = dummy.facing > 0 ? dummy.x - 110 : W - 100 - dummy.x;
+      const reach = ha.type === 'attack' ? attackRange(ha.index) + 27 : ha.type === 'skill2' ? 230 : 0, room = dummy.facing > 0 ? dummy.x - 110 : stageW() - 100 - dummy.x;
       cpu.read = ha; cpu.respect = room > 90 && random() < P.evade;
       const toHit = ha.duration * (ha.hitAt || (ha.type === 'skill2' ? .53 : .5)) - ha.t, backOff = (reach + 18 - dist) / (380 * P.speed);
       if (!ha.fired && dist < reach + 15 && random() < P.evade) {
@@ -2182,24 +2209,43 @@
   }
 
   function drawBackground(shakeX, shakeY) {
+    // Always called with only the pixelRatio setTransform active — no camera transforms.
+    // Background scroll is handled manually here based on camX.
     const stage = images.stage;
     if (stage) {
-      // Cover the viewport while aligning the measured stage floor with the combat floor.
-      // Combat remains a uniform 16:9 projection, so fighters never stretch on tall screens.
-      const backdropScale = Math.max(viewW / W, viewH / H);
-      const w = W * backdropScale, h = H * backdropScale;
-      const x = (viewW - w) / 2 + shakeX * scale, y = viewH * .815 - CONFIG.groundY * backdropScale + shakeY * scale;
-      ctx.drawImage(stage, 0, 0, stage.width, stage.height, x, y, w, h);
-      if (x > 0) ctx.drawImage(stage, 0, 0, 1, stage.height, 0, y, x + 1, h);
-      if (x + w < viewW) ctx.drawImage(stage, stage.width - 1, 0, 1, stage.height, x + w - 1, y, viewW - x - w + 1, h);
+      // User requested exactly 7% zoom.
+      // This might leave a tiny gap at the bottom which will be edge-stretched.
+      const fitH = viewH / stage.height;
+      const backdropScale = stageW() > W
+        ? fitH * 1.07
+        : Math.max(viewW / W, viewH / H);
+      const drawnW = stage.width * backdropScale;
+      const drawnH = stage.height * backdropScale;   // equals viewH for wide stages
+      const y = viewH * .815 - CONFIG.groundY * backdropScale + shakeY * scale;
+      let x;
+      if (stageW() > W) {
+        // Scroll background proportionally: progress 0 = left edge, 1 = right edge.
+        const progress = (camX - W / 2) / (stageW() - W);
+        x = progress * (viewW - drawnW) + shakeX * scale;
+      } else {
+        x = (viewW - drawnW) / 2 + shakeX * scale;
+      }
+      ctx.drawImage(stage, 0, 0, stage.width, stage.height, x, y, drawnW, drawnH);
+      if (x > 0) ctx.drawImage(stage, 0, 0, 1, stage.height, 0, y, x + 1, drawnH);
+      if (x + drawnW < viewW) ctx.drawImage(stage, stage.width - 1, 0, 1, stage.height, x + drawnW - 1, y, viewW - x - drawnW + 1, drawnH);
       if (y > 0) ctx.drawImage(stage, 0, 0, stage.width, 1, 0, 0, viewW, y + 1);
-      if (y + h < viewH) ctx.drawImage(stage, 0, stage.height - 1, stage.width, 1, 0, y + h - 1, viewW, viewH - y - h + 1);
-      // Overscan edge strips hide the shake without zooming or cropping the artwork.
-      ctx.drawImage(stage, 0, 0, 1, stage.height, x - viewW * 2, y, viewW * 2 + 1, h);
-      ctx.drawImage(stage, stage.width - 1, 0, 1, stage.height, x + w - 1, y, viewW * 2 + 1, h);
+      if (y + drawnH < viewH) ctx.drawImage(stage, 0, stage.height - 1, stage.width, 1, 0, y + drawnH - 1, viewW, viewH - y - drawnH + 1);
+      ctx.drawImage(stage, 0, 0, 1, stage.height, x - viewW * 2, y, viewW * 2 + 1, drawnH);
+      ctx.drawImage(stage, stage.width - 1, 0, 1, stage.height, x + drawnW - 1, y, viewW * 2 + 1, drawnH);
     } else { ctx.save(); ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0); ctx.fillStyle = '#9fd3df'; ctx.fillRect(0, 0, viewW, viewH); ctx.restore(); }
+    // Subtle background dimming to help characters stand out from busy stages
+    ctx.save(); ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.20)';
+    ctx.fillRect(0, 0, viewW, viewH);
+    ctx.restore();
     if (cinematic > 0) { ctx.save(); ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0); ctx.fillStyle = `rgba(9,26,39,${Math.min(.65, cinematic * 1.5)})`; ctx.fillRect(0, 0, viewW, viewH); ctx.restore(); }
   }
+
   function shadow(x, y, width, opacity = .22) { ctx.fillStyle = `rgba(29,46,45,${opacity})`; ctx.beginPath(); ctx.ellipse(Math.round(x), Math.round(y + 2), width, 10, 0, 0, Math.PI * 2); ctx.fill(); }
   function heroPose() {
     const list = frames(hero.state).length ? frames(hero.state) : frames('idle');
@@ -2241,8 +2287,12 @@
       spriteScale += 0.10;
     }
     ctx.save(); ctx.translate(Math.round(hero.x), Math.round(hero.y)); ctx.scale(hero.facing * spriteScale, spriteScale); ctx.imageSmoothingEnabled = false;
+    // Subtle glow to separate hero from background
+    ctx.shadowColor = 'rgba(180,220,255,0.55)'; ctx.shadowBlur = 14;
     if (pose.pivot) { ctx.translate(pose.worldPivot.x, pose.worldPivot.y); ctx.rotate(pose.rotation); ctx.translate(-pose.pivot.x, -pose.pivot.y); }
-    ctx.drawImage(images.hero, r.x, r.y, r.w, r.h, -anchorX, -anchorY, r.w, r.h); ctx.restore();
+    ctx.drawImage(images.hero, r.x, r.y, r.w, r.h, -anchorX, -anchorY, r.w, r.h);
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+    ctx.restore();
 
     if (hero.state === 'crouch') {
       if (selectedCharacter === 'valkren' && images['fx-valkren-guard']) {
@@ -2290,7 +2340,11 @@
       spriteScale += 0.10;
     }
     ctx.save(); ctx.translate(Math.round(dummy.x), Math.round(dummy.y)); ctx.scale((dummy.facing || -1) * spriteScale, spriteScale); ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(img, r.x, r.y, r.w, r.h, -anchorX, -anchorY, r.w, r.h); ctx.restore();
+    // Subtle warm glow to separate enemy from background
+    ctx.shadowColor = 'rgba(255,200,140,0.55)'; ctx.shadowBlur = 14;
+    ctx.drawImage(img, r.x, r.y, r.w, r.h, -anchorX, -anchorY, r.w, r.h);
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+    ctx.restore();
 
     if (dummy.state === 'crouch') {
       const facing = dummy.facing || -1;
@@ -2500,31 +2554,44 @@
   function draw() {
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0); ctx.imageSmoothingEnabled = false; ctx.fillStyle = '#091a27'; ctx.fillRect(0, 0, viewW, viewH);
 
+    // Camera targeting: for wide stages, pan between [W/2, stageW()-W/2].
     let targetZoom = 1, targetX = W / 2, targetY = H / 2;
     if (typeof voiceActive !== 'undefined' && voiceActive && typeof voiceActor !== 'undefined' && voiceActor) {
       targetZoom = 1.35;
-      targetX = clamp(voiceActor.x, 300, W - 300);
+      targetX = clamp(voiceActor.x, W / 2, stageW() - W / 2);
       targetY = clamp(voiceActor.y - 120, 200, H - 200);
+    } else if (stageW() > W) {
+      targetX = clamp((hero.x + dummy.x) / 2, W / 2, stageW() - W / 2);
     }
     camZoom += (targetZoom - camZoom) * 0.09;
     camX += (targetX - camX) * 0.09;
     camY += (targetY - camY) * 0.09;
 
-    if (camZoom > 1.001) {
-      const focusScreenX = camX * scale + offsetX;
-      const focusScreenY = camY * scale + offsetY;
-      ctx.translate(viewW / 2, viewH / 2);
-      ctx.scale(camZoom, camZoom);
-      ctx.translate(-focusScreenX, -focusScreenY);
-    }
-
     const shakeX = Math.sin(realTime * 93) * trauma * trauma * 13, shakeY = Math.cos(realTime * 111) * trauma * trauma * 9;
-    drawBackground(shakeX, shakeY); ctx.save(); ctx.translate(offsetX + shakeX * scale, offsetY + shakeY * scale); ctx.scale(scale, scale);
-    // Light motes provide life without moving the fixed stage or camera.
-    for (let i = 0; i < 14; i++) { const x = (i * 117 + realTime * (6 + i % 3)) % W, y = 210 + (i * 47) % 330 + Math.sin(realTime + i) * 9; ctx.fillStyle = i % 2 ? '#fff8cb88' : '#f0ffe94d'; ctx.fillRect(Math.round(x), Math.round(y), 2, 2); }
+
+    ctx.save();
+    // Global camera zoom (Ultimate cut-in)
+    // pannedX, pannedY represent the screen coordinates of the camera focal point BEFORE zooming.
+    // Because we continuously pan world objects to keep camX at center screen, X is always viewW/2.
+    const pannedX = viewW / 2;
+    const pannedY = offsetY + camY * scale;
+
+    ctx.translate(viewW / 2, viewH / 2);
+    ctx.scale(camZoom, camZoom);
+    ctx.translate(-pannedX, -pannedY);
+
+    // Background renders here (affected by global zoom, handles its own horizontal pan)
+    drawBackground(shakeX, shakeY);
+
+    ctx.save();
+    // Pan world objects to follow camX
+    const worldPanX = (W / 2 - camX) * scale;
+    ctx.translate(offsetX + worldPanX + shakeX * scale, offsetY + shakeY * scale); ctx.scale(scale, scale);
+    // Light motes span the full stage width.
+    for (let i = 0; i < 14; i++) { const x = (i * 117 + realTime * (6 + i % 3)) % stageW(), y = 210 + (i * 47) % 330 + Math.sin(realTime + i) * 9; ctx.fillStyle = i % 2 ? '#fff8cb88' : '#f0ffe94d'; ctx.fillRect(Math.round(x), Math.round(y), 2, 2); }
     drawEffects('behind');
     if (hero.x < dummy.x) { drawHero(); drawDummy(); } else { drawDummy(); drawHero(); }
-    drawSquadron(); drawSquadron(enemySquad); drawParade(parade); drawParade(enemyParade); drawMurmuration(flock); drawMurmuration(enemyFlock); drawSerpent(serpent); drawSerpent(enemySerpent); drawEffects('front'); drawHitboxes(); ctx.restore(); updateHud();
+    drawSquadron(); drawSquadron(enemySquad); drawParade(parade); drawParade(enemyParade); drawMurmuration(flock); drawMurmuration(enemyFlock); drawSerpent(serpent); drawSerpent(enemySerpent); drawEffects('front'); drawHitboxes(); ctx.restore(); ctx.restore(); updateHud();
   }
   function fighterInfo(id, form) {
     if (id === 'fenr') { const wolf = form === 'wolf'; return { name: 'FENR', cls: wolf ? 'WEREWOLF' : 'DEMI-HUMAN', deck: wolf ? 'FENR  -  FERAL' : 'FENR', title: 'WOLF RANGER', portrait: 'assets/fenr/ui/portrait-' + (wolf ? 'wolf' : 'human') + '.webp', names: F.kits[wolf ? 'wolf' : 'human'].names, icons: ['basic', 'skill1', 'skill2', 'ultimate'].map((s, i) => 'assets/fenr/ui/icon-' + (i === 3 ? 'ultimate' : (wolf ? 'wolf' : 'human') + '-' + s) + '.webp') }; }
@@ -2783,15 +2850,27 @@
       if (time - (hero.lastHitTime || 0) > 2.5) hero.stunHits = 1; else hero.stunHits = (hero.stunHits || 0) + 1;
       hero.lastHitTime = time;
 
-      if (knockdown || hero.stunHits >= 5 || isJuggle || hero.hp <= 0) {
+      if (knockdown || hero.stunHits >= 6 || isJuggle || hero.hp <= 0) {
         hero.hurtTime = 0; hero.state = 'down'; hero.stateTime = 0; hero.downTimer = 0;
         if (options.ultContext) {
           hero.vy = 0; hero.grounded = true; hero.y = Math.min(hero.y, CONFIG.groundY);
+          hero.vx = hero.facing * -1100; // Pentalan saat terkena Ultimate
         } else {
-          hero.vy = isJuggle ? -300 : -420; hero.vx = hero.facing * -600; hero.grounded = false; hero.stunHits = 0;
+          // hero.vx mengatur jarak pentalan player. Aslinya -600, kita perbesar jadi -900
+          hero.vy = isJuggle ? -300 : -420; hero.vx = hero.facing * -900; hero.grounded = false; hero.stunHits = 0;
         }
       } else {
-        hero.hurtTime = (options.stun || 0) + .42; hero.vx = hero.facing * -170; state('hurt');
+        hero.hurtTime = (options.stun || 0) + .42; state('hurt');
+        // Efek pentalan/mundur (knockback hurt):
+        // Gunakan damage untuk menentukan jarak terpental (knockback), abaikan parameter lama
+        let pushback = 170;
+        if (!options.ultContext) {
+          if (damage >= 30) pushback = 900;
+          else if (damage >= 20) pushback = 600;
+          else if (damage >= 15) pushback = 300;
+          else pushback = 170; // hurt biasa
+        }
+        hero.vx = hero.facing * -pushback;
       }
 
       if (options.spawnImpact !== false) spawnParticles(hero.x, hero.y - 75, '#ffc694', 14, 200);
@@ -2846,12 +2925,12 @@
   // Load only the essential shared assets on startup. Character-specific assets are lazy-loaded when each character is first selected or used as an opponent.
   Promise.resolve(window.AETHER_PRELOAD).then(() => Promise.all([
     loadImage('hero', 'assets/mecha/run/sprite-sheet-alpha.webp', true),
-    loadImage('stage', 'assets/stages/stage.webp', true),
+    loadImage('stage', 'assets/stages/amikom-arena-wide.webp', true),
     loadImage('drone', 'assets/ui/drone.png', true),
     loadImage('cutin', 'assets/ui/ultimate-cutin.webp', true),
-    ...(Rules ? Object.entries(Rules.stages).filter(([id]) => id !== 'bellora').map(([id, s]) => loadImage('stage-' + id, s.image, true)) : []),
+    ...(Rules ? Object.entries(Rules.stages).filter(([id]) => id !== 'amikom').map(([id, s]) => loadImage('stage-' + id, s.image, true)) : []),
   ])).then(results => {
-    images['stage-bellora'] = images.stage; images.arco = images.hero;
+    images['stage-amikom'] = images.stage; images.arco = images.hero;
     // Lazy-load only the two characters that are actually selected at startup
     const startTasks = [];
     if (F) startTasks.push(new Promise(r => loadCharacterAssets('fenr', r)));

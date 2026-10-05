@@ -3,7 +3,7 @@
   'use strict';
   const root = document.querySelector('#front-menu'), game = window.__game;
   const fighters = {
-    arco: { name: 'ARCO', tag: 'THE AETHER ARM', race: 'MECHA', portrait: 'assets/ui/arco-avatar.webp', art: 'assets/menu/arco-select.webp', detail: 'Steel resolve. Unbreakable spirit.', basic: 'IRON CHAIN', ultimate: 'HELIOS SQUADRON', style: 'Brawler / drone summon', color: '#8ae3d3' },
+    arco: { name: 'ARCO', tag: 'THE AETHER ARM', race: 'MECHA', portrait: 'assets/ui/arco-avatar.webp', art: 'assets/menu/arco-select.webp', detail: 'Steel resolve. Unbreakable spirit.', basic: 'IRON CHAIN', ultimate: 'HELIOS SQUADRON', style: 'Brawler / drone summon', color: '#8ae3d3', cutin: 'assets/ui/ultimate-cutin.webp' },
     fenr: { name: 'FENR', tag: 'THE WOLF RANGER', race: 'DEMI-HUMAN', portrait: 'assets/fenr/ui/portrait-human.webp', art: 'assets/menu/fenr-select.webp', detail: 'The wild never bows.', basic: 'RANGER CHAIN', ultimate: 'FERAL AWAKENING', style: 'Agile / werewolf transformation', color: '#eab27a' },
     ...(window.Mira && window.MIRA_MANIFEST ? { mira: { name: 'MIRA', tag: 'THE CANDY PILOT', race: 'MECHA', portrait: 'assets/mira/ui/portrait.webp', art: 'assets/menu/mira-select.webp', detail: 'Small pilot. Big robot. Bigger fireworks.', basic: 'MITTEN CHAIN', ultimate: 'ROCKET PARADE', style: 'Heavy mech / rocket barrage', color: '#d9b4ff' } } : {}),
     ...(window.Cora && window.CORA_MANIFEST ? { cora: { name: 'CORA', tag: 'THE RAVEN DANCER', race: 'DEMI-HUMAN', portrait: 'assets/cora/ui/portrait.webp', art: 'assets/menu/cora-select.webp', detail: 'Every feather is a blade.', basic: 'FEATHER WALTZ', ultimate: 'NIGHT MURMURATION', style: 'Agile / raven swarm', color: '#c4a6ff' } } : {}),
@@ -40,7 +40,7 @@
   const roster = [...opened, ...Array.from({ length: totalSlots - opened.length }, (_, i) => 'locked-' + i)];
   // lockIn: the pending step change while a confirmed fighter flashes 3 times (PICK_FLASH s each); input waits for it.
   const PICK_FLASH = .3; let lockIn = null, lockTicks = [];
-  let screen = 'home', step = 0, mode = 'versus', player = 'arco', enemy = 'fenr', hover = 'arco', stage = 'bellora', level = 'medium', result = null, interacted = false, lastSound = 0;
+  let screen = 'home', step = 0, mode = 'versus', player = 'arco', enemy = 'fenr', hover = 'arco', stage = 'amikom', level = 'medium', result = null, interacted = false, lastSound = 0;
   let rosterPage = 0;
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
   let backgroundEnabled = false, backgroundVideo = null, videoPlayToken = 0;
@@ -75,25 +75,247 @@
   const brand = '<span class="wordmark">RAGNAROK<span>TRINITY</span><i>✦</i></span>';
   const footer = () => '<footer class="menu-footer"><span><kbd>W A S D</kbd> / <kbd>↑ ↓ ← →</kbd> SELECT &nbsp; <kbd>ENTER</kbd> CONFIRM &nbsp; <kbd>ESC</kbd> BACK</span><span>LOCAL PLAY <i></i> BUILD 02</span></footer>';
   function navHeader(title, subtitle) { return `<header class="select-header"><button class="menu-back" data-cmd="back" aria-label="Kembali">← <span>BACK</span></button><div><span class="eyebrow">${subtitle}</span><h1>${title}</h1></div>${brand}</header>`; }
-  function fighterPanel(id, side) { const f = info(id); let yStyle = ''; if (id === 'yanfah') { yStyle = side === 'enemy' ? 'transform: scale(-1, 1) translate(50%, -3%); transform-origin: bottom center;' : 'transform: scale(1) translate(-50%, -3%); transform-origin: bottom center;'; } return `<div class="fighter-plinth ${side} ${f ? '' : 'unknown'} ${soon(id) ? 'soon' : ''}"><div class="plinth-light"></div><span class="side-tag">${side === 'player' ? 'P1 / YOUR FIGHTER' : 'CPU / YOUR RIVAL'}</span><img class="selection-art" src="${f?.art || 'assets/menu/locked.svg'}" alt="${f?.name || 'Karakter belum dipilih'}" style="${yStyle}"> <div class="fighter-copy"><span>${f?.tag || 'AWAITING CHALLENGER'}</span><h2>${f?.name || '???'}</h2><p>${f?.race || 'ROSTER EXPANDING'}</p><small>${f?.detail || 'A new challenger is on the way.'}</small></div></div>`; }
+  function fighterPanel(id, side) {
+    const f = info(id);
+    let yStyle = '';
+    if (id === 'yanfah') {
+      yStyle = side === 'enemy' ? 'transform: scale(-1, 1) translate(50%, -3%); transform-origin: bottom center;' : 'transform: scale(1) translate(-50%, -3%); transform-origin: bottom center;';
+    }
+    let statsHtml = '';
+    if (f && window.GAME_BALANCE && window.GAME_BALANCE[id]) {
+      const bal = window.GAME_BALANCE[id];
+      const comboDmg = bal.combo.reduce((a, b) => a + b, 0);
+      const pwrPct = Math.min(100, Math.max(10, (comboDmg / 45) * 100));
+      const spdPct = Math.min(100, Math.max(10, (bal.movement.runSpeed / 650) * 100));
+      const atkSpdPct = Math.min(100, Math.max(10, ((1.4 - bal.movement.attackSpeed) / 0.7) * 100));
+      statsHtml = `<div class="fighter-stats">
+        <div class="stat-row"><span>POWER</span><div class="stat-bar"><div class="stat-fill" style="width:${pwrPct}%; background: var(--accent);"></div></div></div>
+        <div class="stat-row"><span>SPEED</span><div class="stat-bar"><div class="stat-fill" style="width:${spdPct}%; background: var(--accent);"></div></div></div>
+        <div class="stat-row"><span>AGILITY</span><div class="stat-bar"><div class="stat-fill" style="width:${atkSpdPct}%; background: var(--accent);"></div></div></div>
+      </div>`;
+    }
+    return `<div class="fighter-plinth ${side} ${f ? '' : 'unknown'} ${soon(id) ? 'soon' : ''}">${f ? `<img class="selection-cutin" src="${f.cutin || `assets/${id}/ui/cutin.webp`}" alt="" onerror="this.style.display='none'" onload="this.style.display='block'">` : ''}<div class="plinth-light"></div>${f ? `<img class="selection-art" src="${f.art || f.portrait}" alt="${f.name}" style="${yStyle}" onload="this.style.opacity=1">` : ''}  <div class="fighter-copy"><span>${f?.tag || ''}</span><h2>${f?.name || '???'}</h2><p>${f?.race || ''}</p>${statsHtml}</div></div>`;
+  }
   function render() {
+    if (window._homeCycle) { clearInterval(window._homeCycle); window._homeCycle = null; }
     if (lockIn) { clearTimeout(lockIn); lockIn = null; } for (const t of lockTicks) clearTimeout(t); lockTicks = [];
     if (backgroundVideo) { videoPlayToken++; backgroundVideo.pause(); backgroundVideo.remove(); }
-    root.dataset.screen = screen; root.dataset.step = String(step); root.dataset.mode = mode;
+    const accentFighter = screen === 'select' ? info(hover) : (screen === 'arena' ? fighters[enemy] : fighters[player]);
+    root.style.setProperty('--accent', (accentFighter || {}).color || '#e8b94a'); root.dataset.screen = screen; root.dataset.step = String(step); root.dataset.mode = mode;
     if (screen === 'home') {
-      root.innerHTML = `<div class="home-layout"><header class="home-header"><div class="home-logo"><span class="logo-top">RAGNAROK</span><span class="logo-bot">TRINITY</span></div><nav class="home-tabs"><span class="tab-active">MAIN</span></nav><div class="header-right"><span class="home-status" id="menu-ready">${game.snapshot().ready ? 'READY TO FIGHT' : 'PREPARING\u2026'}</span>${canFullscreen ? `<button class="menu-fullscreen${fullscreenHint ? ' hinted' : ''}" data-cmd="fullscreen" aria-label="Layar penuh" title="Layar penuh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>` : ''}</div></header><div class="home-grid"><button class="tile tile-vs" data-cmd="versus"><div class="tile-bg" style="background-image:url(assets/menu/ragnarok-bg.jpg);background-position:12% center"></div><div class="tile-overlay"></div><div class="tile-body"><span class="tile-eyebrow">▶ MAIN MODE</span><span class="tile-title">VS COMPUTER</span><span class="tile-desc">Choose your champion. Claim glory.</span></div></button><button class="tile tile-quick" data-cmd="quicktraining"><div class="tile-bg" style="background-image:url(assets/menu/ragnarok-bg.jpg);background-position:45% 80%"></div><div class="tile-overlay"></div><div class="tile-body"><span class="tile-eyebrow">⊕ INSTANT</span><span class="tile-title">QUICK BATTLE</span></div></button><button class="tile tile-training" data-cmd="training"><div class="tile-bg" style="background-image:url(assets/menu/ragnarok-bg.jpg);background-position:70% center"></div><div class="tile-overlay"></div><div class="tile-body"><span class="tile-eyebrow">⊕ PRACTICE</span><span class="tile-title">TRAINING</span><span class="tile-desc">Master your fighter. Forge your legend.</span></div></button><button class="tile tile-settings" data-cmd="settings"><div class="tile-bg"></div><div class="tile-overlay"></div><div class="tile-body tile-body-dark"><span class="tile-eyebrow">⚙ CONFIGURE</span><span class="tile-title">SETTINGS</span></div></button><button class="tile tile-chronicles" data-cmd="about"><div class="tile-bg"></div><div class="tile-overlay"></div><div class="tile-body tile-body-dark"><span class="tile-eyebrow">✦ LORE</span><span class="tile-title">CHRONICLES</span><div class="tile-factions"><span class="tf divine">DIVINE</span><span class="tf fantasy">FANTASY</span><span class="tf mortal">MORTAL</span></div></div></button></div></div>`;
+      window._homeCycle = setInterval(() => {
+        if (screen !== 'home') return;
+        const keys = Object.keys(fighters);
+        player = keys[(keys.indexOf(player) + 1) % keys.length];
+        const active = fighters[player];
+        const img = root.querySelector('.home-char-art');
+        const cutinImg = root.querySelector('.home-char-cutin');
+        const infoBox = root.querySelector('.home-char-info');
+
+        let loaded = 0;
+        const onReady = () => {
+          if (++loaded < 2 || screen !== 'home') return;
+          if (img) {
+            img.style.animation = 'm-float 7s ease-in-out infinite';
+            img.style.opacity = '0';
+          }
+          if (cutinImg) cutinImg.style.opacity = '0';
+          if (infoBox) infoBox.style.opacity = '0';
+
+          setTimeout(() => {
+            root.style.setProperty('--accent', active.color || '#e8b94a');
+            if (img) { img.src = active.art; img.style.opacity = '1'; }
+            if (cutinImg) { cutinImg.src = active.cutin || `assets/${player}/ui/cutin.webp`; cutinImg.style.opacity = ''; }
+            if (infoBox) {
+              const infoStr = infoBox.querySelector('strong');
+              if (infoStr) infoStr.textContent = active.name;
+              const infoSpan = infoBox.querySelector('span');
+              if (infoSpan) infoSpan.textContent = active.tag;
+              infoBox.style.opacity = '1';
+            }
+          }, 400);
+        };
+        const preloader = new Image();
+        preloader.onload = preloader.onerror = onReady;
+        preloader.src = active.art;
+        const cutinPreloader = new Image();
+        cutinPreloader.onload = cutinPreloader.onerror = onReady;
+        cutinPreloader.src = active.cutin || `assets/${player}/ui/cutin.webp`;
+      }, 5000);
+      const activeChar = fighters[player] || fighters['arco'];
+      const charArt = activeChar?.art || 'assets/menu/arco-select.webp';
+      const charName = activeChar?.name || 'ARCO';
+      root.innerHTML = `<div class="home-layout">
+        <img class="home-char-cutin" src="${activeChar.cutin || `assets/${player}/ui/cutin.webp`}" alt="" onerror="this.style.display='none'" onload="this.style.display='block'">
+        <header class="home-header">
+          <div class="home-logo"><span class="logo-top">AETHER</span><span class="logo-bot">CLASH</span></div>
+          <nav class="home-tabs">
+            <span class="tab-active">MAIN</span>
+            <span>ROSTER</span>
+            <span>ARENA</span>
+            <span>SETTINGS</span>
+          </nav>
+          <div class="header-right">
+            <span class="home-status" id="menu-ready">${game.snapshot().ready ? 'READY' : 'LOADING…'}</span>
+            <div class="home-user-profile">
+              <div class="home-user-details">
+                <span class="home-user-name">GuestPlayer</span>
+                <span class="home-user-rank">RANK 14</span>
+              </div>
+              <img src="assets/menu/arco-select.webp" alt="Avatar" class="home-user-avatar">
+            </div>
+            ${canFullscreen ? `<button class="menu-fullscreen${fullscreenHint ? ' hinted' : ''}" data-cmd="fullscreen" aria-label="Fullscreen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>` : ''}
+          </div>
+        </header>
+
+        <aside class="home-left">
+          <span class="home-game-logo-text">RAGNAROK<span>TRINITY</span></span>
+          <button class="home-nav-item active" data-cmd="versus">Vs Computer</button>
+          <button class="home-nav-item" data-cmd="quicktraining">Tanding Cepat</button>
+          <button class="home-nav-item" data-cmd="training">Latihan</button>
+          <button class="home-nav-item" data-cmd="settings">Pengaturan</button>
+          <button class="home-nav-item" data-cmd="about">Tentang</button>
+          <button class="home-play" data-cmd="versus">START FIGHT <b>→</b></button>
+        </aside>
+
+        <main class="home-center">
+          <img class="home-char-art" src="${charArt}" alt="${charName}" draggable="false">
+          <div class="home-char-info"><strong>${charName}</strong><span>${activeChar.tag}</span></div>
+          <div class="home-ground"></div>
+        </main>
+
+        <aside class="home-right">
+          <div class="home-challenges-title">DAILY CHALLENGES</div>
+          <div class="home-challenge-list">
+            <div class="home-challenge-item">
+              <div class="home-challenge-header">
+                <span class="home-challenge-label">Win 3 Versus Matches</span>
+                <span class="home-challenge-xp">250 XP</span>
+              </div>
+              <div class="home-challenge-prog-wrap">
+                <div class="home-challenge-bar-wrap"><div class="home-challenge-bar" style="width:33%"></div></div>
+                <span class="home-challenge-prog-text">1 / 3</span>
+              </div>
+            </div>
+            <div class="home-challenge-item">
+              <div class="home-challenge-header">
+                <span class="home-challenge-label">Land 20 Skill Hits</span>
+                <span class="home-challenge-xp">250 XP</span>
+              </div>
+              <div class="home-challenge-prog-wrap">
+                <div class="home-challenge-bar-wrap"><div class="home-challenge-bar" style="width:60%"></div></div>
+                <span class="home-challenge-prog-text">12 / 20</span>
+              </div>
+            </div>
+            <div class="home-challenge-item">
+              <div class="home-challenge-header">
+                <span class="home-challenge-label">Use Ultimate 5 Times</span>
+                <span class="home-challenge-xp">250 XP</span>
+              </div>
+              <div class="home-challenge-prog-wrap">
+                <div class="home-challenge-bar-wrap"><div class="home-challenge-bar" style="width:40%"></div></div>
+                <span class="home-challenge-prog-text">2 / 5</span>
+              </div>
+            </div>
+            <div class="home-challenge-item">
+              <div class="home-challenge-header">
+                <span class="home-challenge-label">Perform a 10-Hit Combo</span>
+                <span class="home-challenge-xp">500 XP</span>
+              </div>
+              <div class="home-challenge-prog-wrap">
+                <div class="home-challenge-bar-wrap"><div class="home-challenge-bar" style="width:0%"></div></div>
+                <span class="home-challenge-prog-text">0 / 1</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <footer class="home-footer-bar">
+          <div class="hfb-left">
+            <button class="hfb-btn" data-cmd="versus"><kbd>ENTER</kbd> PLAY</button>
+            <button class="hfb-btn" data-cmd="versus"><kbd>V</kbd> VERSUS</button>
+            <button class="hfb-btn" data-cmd="training"><kbd>T</kbd> TRAINING</button>
+          </div>
+          <div class="hfb-right">
+            <button data-cmd="settings">OPTIONS</button>
+            <button data-cmd="about">CHRONICLES</button>
+          </div>
+        </footer>
+      </div>`;
     } else if (screen === 'select') {
-      root.innerHTML = `<div class="selection-backdrop"></div>${navHeader(step === 0 ? 'SELECT YOUR FIGHTER' : 'SELECT YOUR RIVAL', mode === 'versus' ? 'VERSUS COMPUTER' : 'TRAINING ROOM')}<div class="selection-steps"><span class="${step === 0 ? 'current' : 'done'}">01 <b>PLAYER</b></span><i></i><span class="${step === 1 ? 'current' : ''}">02 <b>RIVAL</b></span><i></i><span>03 <b>ARENA</b></span></div><div class="select-stage"><div id="player-preview">${fighterPanel(step === 0 ? hover : player, 'player')}</div><div class="roster-center"><div class="roster-caption"><strong>${step === 0 ? 'PLAYER 1' : 'COMPUTER'}</strong><span>CHOOSE A FIGHTER</span></div><div class="roster-grid" role="group" aria-label="Roster karakter">${roster.slice(rosterPage * 12, rosterPage * 12 + 12).map((id, i) => { const f = info(id); return `<button class="roster-tile ${id === hover ? 'highlight' : ''} ${!f ? 'locked' : ''} ${soon(id) ? 'soon' : ''}" data-fighter="${id}" aria-label="${f ? f.name + ' — ' + f.race + (soon(id) ? ', belum bisa dimainkan' : '') : 'Slot ' + (i + 1) + ' terkunci'}" aria-disabled="${!fighters[id]}"><img class="${f ? 'portrait-image' : ''}" data-portrait-side="${step === 1 ? 'enemy' : 'player'}" src="${f?.portrait || 'assets/menu/locked.svg'}" alt=""><span class="roster-name-tag">${f?.name || 'LOCKED'}</span><b>${step === 1 && id === player ? 'P1' : ''}</b></button>`; }).join('')}</div><div class="roster-pagination" style="display:flex;justify-content:center;gap:10px;margin-top:10px;"><button class="page-btn" data-cmd="prev-page" style="background:transparent;color:#c9a84c;border:1px solid rgba(201,168,76,.4);padding:2px 10px;cursor:pointer;">&lt;&lt;</button><span style="color:#c9a84c;font-size:12px;margin-top:3px;">PAGE ${rosterPage + 1}</span><button class="page-btn" data-cmd="next-page" style="background:transparent;color:#c9a84c;border:1px solid rgba(201,168,76,.4);padding:2px 10px;cursor:pointer;">&gt;&gt;</button></div><div id="fighter-moves" class="fighter-moves"></div><button class="menu-primary confirm-fighter" data-cmd="confirm">${step === 0 ? 'CONFIRM FIGHTER' : 'CONFIRM RIVAL'} <b>→</b></button><p id="roster-notice" class="roster-notice" aria-live="polite">${roster.length > opened.length ? (roster.length - opened.length) + ' challenger slots reserved.' : ''}</p></div><div id="enemy-preview">${fighterPanel(step === 1 ? hover : null, 'enemy')}</div></div>${footer()}`;
+      root.innerHTML = `<div class="selection-backdrop"></div>${navHeader(step === 0 ? 'SELECT YOUR FIGHTER' : 'SELECT YOUR RIVAL', mode === 'versus' ? 'VERSUS COMPUTER' : 'TRAINING ROOM')}<div class="select-stage"><div id="player-preview">${fighterPanel(step === 0 ? hover : player, 'player')}</div><div class="roster-center"><div class="selection-steps"><span class="${step === 0 ? 'current' : 'done'}">01 <b>PLAYER</b></span><i></i><span class="${step === 1 ? 'current' : ''}">02 <b>RIVAL</b></span><i></i><span>03 <b>ARENA</b></span></div><div class="roster-caption"><strong>${step === 0 ? 'PLAYER 1' : 'CPU'}</strong></div><div class="roster-grid" role="group" aria-label="Roster karakter">${roster.slice(rosterPage * 12, rosterPage * 12 + 12).map((id, i) => { const f = info(id); return `<button class="roster-tile ${id === hover ? 'highlight' : ''} ${!f ? 'locked' : ''} ${soon(id) ? 'soon' : ''}" data-fighter="${id}" aria-label="${f ? f.name + ' — ' + f.race + (soon(id) ? ', belum bisa dimainkan' : '') : 'Slot ' + (i + 1) + ' terkunci'}" aria-disabled="${!fighters[id]}"><img class="${f ? 'portrait-image' : ''}" data-portrait-side="${step === 1 ? 'enemy' : 'player'}" src="${f?.portrait || 'assets/menu/locked.svg'}" alt=""><span class="roster-name-tag">${f?.name || 'LOCKED'}</span><b>${step === 1 && id === player ? 'P1' : ''}</b></button>`; }).join('')}</div><div class="roster-controls-wrapper"><div class="roster-pagination"><button class="page-btn" data-cmd="prev-page">&lt;&lt;</button><span class="page-label">PAGE ${rosterPage + 1}</span><button class="page-btn" data-cmd="next-page">&gt;&gt;</button></div><div id="fighter-moves" class="fighter-moves"></div><button class="menu-primary confirm-fighter" data-cmd="confirm">${step === 0 ? 'CONFIRM FIGHTER' : 'CONFIRM RIVAL'} <b>&rarr;</b></button><p id="roster-notice" class="roster-notice" role="status"></p></div></div><div id="enemy-preview">${fighterPanel(step === 1 ? hover : null, 'enemy')}</div></div>${footer()}`;
       updatePreview(false);
     } else if (screen === 'arena') {
-      const st = MatchRules.stages[stage]; root.innerHTML = `<div class="arena-screen-bg" style="background-image:url('${st.image}')"></div>${navHeader('SET THE STAGE', mode === 'versus' ? 'VERSUS COMPUTER / MATCH SETUP' : 'TRAINING / ARENA SETUP')}<div class="arena-content"><div class="versus-strip"><div><img class="portrait-image" data-portrait-side="player" src="${fighters[player].portrait}" alt=""><span>P1<strong>${fighters[player].name}</strong></span></div><b>VS</b><div><span>CPU<strong>${fighters[enemy].name}</strong></span><img class="portrait-image" data-portrait-side="enemy" src="${fighters[enemy].portrait}" alt=""></div></div><div class="arena-window"><span class="arena-number">${String(Object.keys(MatchRules.stages).indexOf(stage) + 1).padStart(2, '0')} / ${String(Object.keys(MatchRules.stages).length).padStart(2, '0')}</span><div><small>${st.tag}</small><h2>${st.name}</h2></div><span class="arena-day">✦ ${st.time || 'SUNNY DAYLIGHT'}</span></div><div class="arena-tiles" role="group" aria-label="Pilih arena">${Object.entries(MatchRules.stages).map(([id, a]) => `<button class="arena-tile ${id === stage ? 'selected' : ''}" data-stage="${id}" aria-pressed="${id === stage}"><img src="${a.image}" alt=""><span>${a.name}</span></button>`).join('')}</div><div class="match-options"><div class="difficulty-area"><span class="eyebrow">${mode === 'versus' ? 'CPU DIFFICULTY' : 'PRACTICE MODE'}</span>${mode === 'versus' ? `<div class="difficulty-buttons" role="group" aria-label="Tingkat kesulitan">${Object.entries(MatchRules.difficulties).map(([id, d], i) => `<button data-level="${id}" class="${id === level ? 'selected' : ''}" aria-pressed="${id === level}"><i>${'▰'.repeat(i + 1)}</i>${d.label}</button>`).join('')}</div>` : '<p class="training-note">Unlimited time · Passive rival · Reset anytime</p>'}</div><div class="match-rules">${mode === 'versus' ? '<b>FIRST TO 2 WINS</b><span>BEST OF 3 ROUNDS · 90 SECONDS</span>' : '<b>MAKE EVERY HIT COUNT</b><span>COMBO TRACKER · FULL MOVE SET</span>'}</div></div><button class="menu-primary start-battle" data-cmd="start" ${game.snapshot().ready ? '' : 'disabled'}>${game.snapshot().ready ? (mode === 'versus' ? 'LET’S FIGHT' : 'ENTER TRAINING') : 'PREPARING ARENA…'} <b>→</b></button><p id="setup-error" role="status"></p></div>${footer()}`;
+      const stages = Object.entries(MatchRules.stages);
+      const stageIndex = Math.max(0, stages.findIndex(([id]) => id === stage));
+      const st = MatchRules.stages[stage];
+      const stageCount = String(stages.length).padStart(2, '0');
+      const currentNumber = String(stageIndex + 1).padStart(2, '0');
+      const ready = game.snapshot().ready;
+      root.innerHTML = `<div class="arena-screen-bg" style="background-image:url('${st.image}')"></div>${navHeader('SELECT ARENA', mode === 'versus' ? 'VERSUS COMPUTER / MATCH SETUP' : 'TRAINING / ARENA SETUP')}
+        <div class="arena-content">
+          <div class="arena-matchbar">
+            <div class="arena-matchbar-step"><span>03</span><i></i><b>ARENA</b><small>FINAL SETUP</small></div>
+            <div class="versus-strip">
+              <div><img class="portrait-image" data-portrait-side="player" src="${fighters[player].portrait}" alt=""><span>P1<strong>${fighters[player].name}</strong></span></div>
+              <b>VS</b>
+              <div><span>CPU<strong>${fighters[enemy].name}</strong></span><img class="portrait-image" data-portrait-side="enemy" src="${fighters[enemy].portrait}" alt=""></div>
+            </div>
+            <div class="arena-matchbar-mode"><span>${mode === 'versus' ? 'VERSUS' : 'TRAINING'}</span><small>LOCAL MATCH</small></div>
+          </div>
+
+          <section class="arena-picker" aria-label="Arena selection">
+            <div class="arena-preview">
+              <img src="${st.image}" alt="${st.name}" class="arena-preview-image">
+              <div class="arena-preview-vignette"></div>
+              <div class="arena-preview-grid"></div>
+              <div class="arena-preview-top">
+                <span class="arena-index">${currentNumber} <i>/</i> ${stageCount}</span>
+                <span class="arena-live"><i></i> STAGE PREVIEW</span>
+              </div>
+              <div class="arena-preview-copy">
+                <small>${st.tag || 'BATTLE ARENA'}</small>
+                <h2>${st.name}</h2>
+                <div class="arena-preview-meta"><span>✦ ${st.time || 'SUNNY DAYLIGHT'}</span><i></i><span>FINAL SHOWDOWN</span></div>
+              </div>
+              <div class="arena-preview-corner tl"></div><div class="arena-preview-corner tr"></div><div class="arena-preview-corner bl"></div><div class="arena-preview-corner br"></div>
+            </div>
+
+            <aside class="arena-map-panel">
+              <div class="arena-map-heading">
+                <div><span class="eyebrow">BATTLEFIELD</span><strong>CHOOSE YOUR STAGE</strong></div>
+                <span>${stageCount} MAPS</span>
+              </div>
+              <div class="arena-map-rail" role="group" aria-label="Pilih arena">
+                ${stages.map(([id, a], i) => `<button class="arena-tile ${id === stage ? 'selected' : ''}" data-stage="${id}" aria-pressed="${id === stage}">
+                  <span class="arena-tile-number">${String(i + 1).padStart(2, '0')}</span>
+                  <img src="${a.image}" alt="${a.name}">
+                  <span class="arena-tile-info"><b>${a.name}</b><small>${a.tag || 'BATTLEFIELD'}</small></span>
+                  <span class="arena-tile-check">✓</span>
+                </button>`).join('')}
+              </div>
+            </aside>
+          </section>
+
+          <section class="arena-controls">
+            <div class="arena-difficulty">
+              <div class="arena-control-heading"><span class="eyebrow">${mode === 'versus' ? 'CPU DIFFICULTY' : 'PRACTICE MODE'}</span><small>${mode === 'versus' ? '← → TO ADJUST' : 'TRAINING CONFIGURATION'}</small></div>
+              ${mode === 'versus' ? `<div class="difficulty-buttons" role="group" aria-label="Tingkat kesulitan">${Object.entries(MatchRules.difficulties).map(([id, d], i) => `<button data-level="${id}" class="${id === level ? 'selected' : ''}" aria-pressed="${id === level}"><i>${'▰'.repeat(i + 1)}</i><b>${d.label}</b></button>`).join('')}</div>` : '<p class="training-note">Unlimited time · Passive rival · Reset anytime</p>'}
+            </div>
+            <div class="match-rules"><b>${mode === 'versus' ? 'FIRST TO 2 WINS' : 'MAKE EVERY HIT COUNT'}</b><span>${mode === 'versus' ? 'BEST OF 3 ROUNDS · 90 SECONDS' : 'COMBO TRACKER · FULL MOVE SET'}</span></div>
+            <button class="menu-primary start-battle" data-cmd="start" ${ready ? '' : 'disabled'}><span>${ready ? (mode === 'versus' ? 'LET’S FIGHT' : 'ENTER TRAINING') : 'PREPARING ARENA…'}</span><b>→</b></button>
+          </section>
+          <p id="setup-error" role="status"></p>
+        </div>${footer()}`;
     } else if (screen === 'about') {
-      root.innerHTML = `<div class="home-art dim"></div>${navHeader('CHRONICLES', 'RAGNAROK: TRINITY')}<article class="about-panel"><span class="eyebrow">CHRONICLES OF THE THREE REALMS</span><h2>Three factions.<br><em>One destiny.</em></h2><p>In a world where realms collide, three great factions are summoned to the sacred arena: the Divine Gods from the heavens above, the mystical Fantasy beings born of ancient magic, and the Mortal warriors forged in the fires of humanity. Each carries their own story, their own power, and their own reason to fight.</p><div class="about-fighters"><p><b>⚡ DIVINE</b><span>Celestial gods and heavenly beings. Wielders of sacred power, lightning, and divine judgment.</span></p><p><b>✦ FANTASY</b><span>Mystic creatures of ancient legend. Masters of elemental magic, shapeshifting, and arcane arts.</span></p><p><b>⚔ MORTAL</b><span>Human warriors tempered by battle. Unyielding spirit, martial mastery, and unbreakable will.</span></p></div><div class="about-stats"><span><b>03</b>FACTIONS</span><span><b>13</b>FIGHTERS</span><span><b>∞</b>RIVALRIES</span></div><small>Visuals · Higgsfield &nbsp; Voices · ElevenLabs &nbsp; Typography · Cinzel / Rajdhani<br>Local fighting demo · Single player</small><button class="menu-primary" data-cmd="home">BACK TO MAIN MENU <b>→</b></button></article>`;    } else if (screen === 'result') {
+      root.innerHTML = `<div class="home-art dim"></div>${navHeader('CHRONICLES', 'RAGNAROK: TRINITY')}<article class="about-panel"><span class="eyebrow">CHRONICLES OF THE THREE REALMS</span><h2>Three factions.<br><em>One destiny.</em></h2><p>In a world where realms collide, three great factions are summoned to the sacred arena: the Divine Gods from the heavens above, the mystical Fantasy beings born of ancient magic, and the Mortal warriors forged in the fires of humanity. Each carries their own story, their own power, and their own reason to fight.</p><div class="about-fighters"><p><b>⚡ DIVINE</b><span>Celestial gods and heavenly beings. Wielders of sacred power, lightning, and divine judgment.</span></p><p><b>✦ FANTASY</b><span>Mystic creatures of ancient legend. Masters of elemental magic, shapeshifting, and arcane arts.</span></p><p><b>⚔ MORTAL</b><span>Human warriors tempered by battle. Unyielding spirit, martial mastery, and unbreakable will.</span></p></div><div class="about-stats"><span><b>03</b>FACTIONS</span><span><b>13</b>FIGHTERS</span><span><b>∞</b>RIVALRIES</span></div><small>Visuals · Higgsfield &nbsp; Voices · ElevenLabs &nbsp; Typography · Cinzel / Rajdhani<br>Local fighting demo · Single player</small><button class="menu-primary" data-cmd="home">BACK TO MAIN MENU <b>→</b></button></article>`;
+    } else if (screen === 'result') {
       const won = result.winner === 'player', winner = won ? result.player : result.enemy; root.innerHTML = `<div class="result-bg"></div>${navHeader('MATCH COMPLETE', MatchRules.stages[result.stage].name.toUpperCase())}<div class="result-layout"><img class="result-fighter" src="${fighters[winner].art}" alt="${fighters[winner].name}"><div class="result-copy"><span class="eyebrow">${won ? 'PLAYER 1' : 'COMPUTER'} TAKES THE MATCH</span><h1>${won ? 'VICTORY' : 'DEFEAT'}</h1><p>${fighters[winner].name} WINS</p><div class="final-score"><span>${result.playerWins}</span><i>—</i><span>${result.enemyWins}</span></div><small>${fighters[result.player].name} vs ${fighters[result.enemy].name} · ${MatchRules.difficulties[result.level].label}</small><button class="menu-primary" data-cmd="rematch">REMATCH <b>→</b></button><button class="result-secondary" data-cmd="reselect">CHARACTER SELECT</button><button class="result-secondary" data-cmd="home">MAIN MENU</button></div></div>`;
     }
     bind(); attachBackground();
   }
   function updatePreview(play = true) {
+    root.style.setProperty('--accent', (info(hover) || {}).color || '#e8b94a');
     root.querySelectorAll('[data-fighter]').forEach(b => b.classList.toggle('highlight', b.dataset.fighter === hover));
     const panel = root.querySelector(step === 0 ? '#player-preview' : '#enemy-preview'); if (panel) panel.innerHTML = fighterPanel(hover, step === 0 ? 'player' : 'enemy');
     const f = info(hover), moves = root.querySelector('#fighter-moves'); if (moves) moves.innerHTML = f ? `<span>${f.style}</span>${soon(hover) ? '' : `<b>${f.ultimate}</b>`}` : '<span>NEW CHALLENGER</span><b>COMING LATER</b>';
@@ -106,16 +328,16 @@
     sfx('pick', true); game.announceSelection(hover); root.dataset.picking = 'true';
     root.querySelector(`[data-fighter="${hover}"]`)?.classList.add('picked'); root.querySelector(step === 0 ? '#player-preview' : '#enemy-preview')?.classList.add('picked');
     lockTicks = [1, 2].map(i => setTimeout(() => sfx('blink', true), i * PICK_FLASH * 1000));
-    
+
     // Check duration of the voice line so we don't cut it off prematurely when moving to arena
     const voiceDuration = (window.ANNOUNCER_MANIFEST?.clips?.['select_' + hover]?.duration || 0) * 1000;
     let transitionDelay = step === 1 ? Math.max(3 * PICK_FLASH * 1000, voiceDuration + 200) : (3 * PICK_FLASH * 1000);
     if (hover === 'yanfah' || hover === 'dhyla') transitionDelay = 2000;
     if (hover === 'valkren') transitionDelay = 3000;
 
-    lockIn = setTimeout(() => { lockIn = null; delete root.dataset.picking; if (step === 0) { player = hover; step = 1; hover = player === 'arco' ? 'fenr' : 'arco'; } else { enemy = hover; screen = 'arena'; step = 2; } render(); }, transitionDelay);
+    lockIn = setTimeout(() => { lockIn = null; delete root.dataset.picking; if (step === 0) { player = hover; step = 1; hover = 'arco'; } else { enemy = hover; screen = 'arena'; step = 2; } rosterPage = Math.floor(roster.indexOf(hover) / 12); render(); }, transitionDelay);
   }
-  function back() { if (lockIn) return; game.stopAnnouncer(); sfx('back', true); if (screen === 'arena') { screen = 'select'; step = 1; hover = enemy; } else if (screen === 'select' && step === 1) { step = 0; hover = player; } else screen = 'home'; render(); }
+  function back() { if (lockIn) return; game.stopAnnouncer(); sfx('back', true); if (screen === 'arena') { screen = 'select'; step = 1; hover = enemy; } else if (screen === 'select' && step === 1) { step = 0; hover = player; } else screen = 'home'; if (screen === 'select') rosterPage = Math.floor(roster.indexOf(hover) / 12); render(); }
   function start() { if (game.startMatch({ player, enemy, stage, level, mode })) { document.querySelector('#arena').focus(); } else { const error = root.querySelector('#setup-error'); if (error) error.textContent = 'Aset belum siap. Tunggu sebentar lalu coba lagi.'; sfx('locked', true); } }
   function command(cmd) {
     if (lockIn) return;
@@ -124,11 +346,11 @@
     if (cmd === 'prev-page') { rosterPage = (rosterPage > 0) ? rosterPage - 1 : Math.ceil(roster.length / 12) - 1; hover = roster[rosterPage * 12]; focusFighter(hover); sfx('move'); render(); return; }
     if (cmd === 'next-page') { rosterPage = (rosterPage < Math.ceil(roster.length / 12) - 1) ? rosterPage + 1 : 0; hover = roster[rosterPage * 12]; focusFighter(hover); sfx('move'); render(); return; }
     sfx('confirm', true);
-    if (cmd === 'versus' || cmd === 'training') { mode = cmd; screen = 'select'; step = 0; hover = player; rosterPage = 0; render(); }
+    if (cmd === 'versus' || cmd === 'training') { mode = cmd; screen = 'select'; step = 0; player = 'arco'; hover = 'arco'; rosterPage = 0; render(); }
     if (cmd === 'quicktraining') {
       const chars = Object.keys(fighters);
       const stages = Object.keys(MatchRules?.stages || {});
-      const rStage = stages[Math.floor(Math.random() * stages.length)] || 'bellora';
+      const rStage = stages[Math.floor(Math.random() * stages.length)] || 'amikom';
       const rPlayer = chars[Math.floor(Math.random() * chars.length)];
       let rEnemy;
       do { rEnemy = chars[Math.floor(Math.random() * chars.length)]; } while (rEnemy === rPlayer && chars.length > 1);
@@ -142,6 +364,25 @@
   }
   function bind() {
     root.querySelectorAll('[data-cmd]').forEach(b => { b.onclick = () => command(b.dataset.cmd); b.onpointerenter = () => sfx('move'); b.onfocus = () => sfx('move'); });
+    root.querySelectorAll('.home-nav-item').forEach(b => {
+      const updateNav = () => {
+        root.querySelectorAll('.home-nav-item').forEach(n => n.classList.remove('active'));
+        b.classList.add('active');
+        const playBtn = root.querySelector('.home-play');
+        if (playBtn) {
+          playBtn.dataset.cmd = b.dataset.cmd;
+          let label = b.textContent.trim();
+          if (label === 'Vs Computer') label = 'START FIGHT';
+          else if (label === 'Tanding Cepat') label = 'QUICK START';
+          else if (label === 'Latihan') label = 'ENTER TRAINING';
+          else if (label === 'Pengaturan') label = 'OPEN SETTINGS';
+          else if (label === 'Tentang') label = 'READ CHRONICLES';
+          playBtn.innerHTML = `${label} <b>&rarr;</b>`;
+        }
+      };
+      b.addEventListener('pointerenter', updateNav);
+      b.addEventListener('focus', updateNav);
+    });
     root.querySelectorAll('[data-fighter]').forEach(b => { b.onpointerenter = () => focusFighter(b.dataset.fighter); b.onfocus = () => focusFighter(b.dataset.fighter); b.onclick = () => { focusFighter(b.dataset.fighter); if (!touch) confirm(); }; });
     root.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { stage = b.dataset.stage; sfx('move', true); render(); root.querySelector(`[data-stage="${stage}"]`).focus(); });
     root.querySelectorAll('[data-level]').forEach(b => b.onclick = () => { level = b.dataset.level; sfx('move', true); render(); root.querySelector(`[data-level="${level}"]`).focus(); });
@@ -150,14 +391,14 @@
     if (root.hidden || document.querySelector('dialog[open]') || e.repeat) return; interacted = true;
     if (lockIn) { e.preventDefault(); return; }
     if (e.key === 'Escape') { e.preventDefault(); back(); return; }
-    if (screen === 'select' && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'a', 'd', 'w', 's'].includes(e.key)) {
+    if (screen === 'select' && ['arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'a', 'd', 'w', 's'].includes(e.key.toLowerCase())) {
       e.preventDefault();
-      const offset = { ArrowLeft: -1, a: -1, ArrowRight: 1, d: 1, ArrowUp: -4, w: -4, ArrowDown: 4, s: 4 }[e.key];
+      const key = e.key.toLowerCase();
+      const offset = { arrowleft: -1, a: -1, arrowright: 1, d: 1, arrowup: -4, w: -4, arrowdown: 4, s: 4 }[key];
       const pageStart = rosterPage * 12;
-      let localIndex = (roster.indexOf(hover) - pageStart + offset);
+      let localIndex = (roster.indexOf(hover) - pageStart);
       const oldPage = rosterPage;
-      if (localIndex < 0) { rosterPage = (rosterPage > 0) ? rosterPage - 1 : Math.ceil(roster.length / 12) - 1; localIndex = 11; }
-      if (localIndex >= 12) { rosterPage = (rosterPage < Math.ceil(roster.length / 12) - 1) ? rosterPage + 1 : 0; localIndex = 0; }
+      if (Math.abs(offset) === 4) { localIndex = (localIndex + offset + 12) % 12; } else { localIndex += offset; if (localIndex < 0) { rosterPage = (rosterPage > 0) ? rosterPage - 1 : Math.ceil(roster.length / 12) - 1; localIndex = 11; } else if (localIndex >= 12) { rosterPage = (rosterPage < Math.ceil(roster.length / 12) - 1) ? rosterPage + 1 : 0; localIndex = 0; } }
       const nextHover = roster[rosterPage * 12 + localIndex];
 
       if (rosterPage !== oldPage) {
@@ -176,13 +417,17 @@
     if (screen === 'select' && (e.key === 'Enter' || e.key === ' ')) { const cmd = e.target.closest?.('[data-cmd]')?.dataset.cmd; if (cmd && cmd !== 'confirm') return; e.preventDefault(); confirm(); return; }
     if (screen === 'arena' && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'a', 'd', 'w', 's'].includes(e.key)) {
       e.preventDefault(); const levels = Object.keys(MatchRules.difficulties), stages = Object.keys(MatchRules.stages), vertical = ['ArrowUp', 'ArrowDown', 'w', 's'].includes(e.key), backward = ['ArrowLeft', 'ArrowUp', 'a', 'w'].includes(e.key);
-      if (vertical && mode === 'versus') { level = levels[(levels.indexOf(level) + (backward ? -1 : 1) + levels.length) % levels.length]; } else { stage = stages[(stages.indexOf(stage) + (backward ? -1 : 1) + stages.length) % stages.length]; } sfx('move'); render(); return;
+      if (!vertical && mode === 'versus') { level = levels[(levels.indexOf(level) + (backward ? -1 : 1) + levels.length) % levels.length]; } else { stage = stages[(stages.indexOf(stage) + (backward ? -1 : 1) + stages.length) % stages.length]; } sfx('move'); render(); return;
     }
     if (screen === 'arena' && e.key === 'Enter' && !e.target.closest?.('button')) { e.preventDefault(); command('start'); return; }
     if (screen === 'home' && e.key === 'Enter' && !e.target.closest?.('button')) { e.preventDefault(); command('versus'); return; }
-    if (screen === 'home' && ['ArrowUp', 'ArrowDown', 'w', 's'].includes(e.key)) { e.preventDefault(); const list = [...root.querySelectorAll('.home-nav button')], current = list.indexOf(document.activeElement), next = (current + (['ArrowUp', 'w'].includes(e.key) ? -1 : 1) + list.length) % list.length; list[next].focus(); }
+    if (screen === 'home' && ['ArrowUp', 'ArrowDown', 'w', 's'].includes(e.key)) { e.preventDefault(); const list = [...root.querySelectorAll('.home-nav-item')], current = list.indexOf(document.activeElement), next = (current + (['ArrowUp', 'w'].includes(e.key) ? -1 : 1) + list.length) % list.length; list[next].focus(); }
   });
   window.FrontEnd = { syncBackground, home() { screen = 'home'; game.setMenuOpen(true); render(); }, showResult(data) { result = data; ({ player, enemy, stage, level, mode } = data); screen = 'result'; game.setMenuOpen(true); render(); }, assetsReady(ok = true) { if (game.snapshot().menuOpen) { render(); if (!ok) { const status = root.querySelector('#menu-ready'); if (status) status.textContent = 'ASSET ERROR · RELOAD REQUIRED'; } } } };
   // First paint after the loading screen's download, so menu pictures come straight from the cache.
   Promise.resolve(window.AETHER_PRELOAD).then(render);
 })();
+
+
+
+
