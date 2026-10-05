@@ -117,7 +117,7 @@
         if (!isMap) {
           const f = info(id);
           const im = new Image(); im.src = f.art; im.decode().catch(()=>{});
-          const cutin = new Image(); cutin.src = f.cutin || \`assets/\${id}/ui/cutin.webp\`; cutin.decode().catch(()=>{});
+          const cutin = new Image(); cutin.src = f.cutin || `assets/${id}/ui/cutin.webp`; cutin.decode().catch(()=>{});
         }
       } else {
         alert('Gagal mengunduh aset. Periksa memori dan koneksi Anda.');
@@ -181,7 +181,7 @@
       for (let i = 0; i < charList.length; i++) {
         const c = charList[i];
         if (dlcStatus[c]) continue;
-        modal.querySelector('.dlc-status-text').textContent = \`Mengunduh Karakter: \${info(c).name}...\`;
+        modal.querySelector('.dlc-status-text').textContent = `Mengunduh Karakter: ${info(c).name}...`;
         const res = await window.downloadDLC(c, (p) => {
           const overallPct = (charsDownloaded + p) / charsTotal;
           updateUI('dl-prog-chars', overallPct);
@@ -200,7 +200,7 @@
         for (let i = 0; i < mapList.length; i++) {
           const m = mapList[i];
           if (dlcStatus['map_' + m]) continue;
-          modal.querySelector('.dlc-status-text').textContent = \`Mengunduh Map: \${MatchRules.stages[m].name}...\`;
+          modal.querySelector('.dlc-status-text').textContent = `Mengunduh Map: ${MatchRules.stages[m].name}...`;
           const res = await window.downloadDLC('map_' + m, (p) => {
             const overallPct = (mapsDownloaded + p) / mapsTotal;
             updateUI('dl-prog-maps', overallPct);
