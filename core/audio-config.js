@@ -59,9 +59,9 @@ window.AUDIO_CONFIG = {
   // 🔥 [AMPLIFIER AKTIF] - Sistem ini sudah di-upgrade menggunakan Web Audio GainNode!
   // Kamu BEBAS mengisi angka lebih dari 1.0 di bawah ini untuk memperkeras suara (contoh: 4.0 = 4x lebih keras).
   announcer: {
-    ronde_1: 4.0,       // Suara pembuka saat layar masuk ke Ronde 1 ("Round 1")
-    ronde_2: 4.0,       // Suara pembuka saat layar masuk ke Ronde 2 ("Round 2")
-    ronde_3: 4.0,       // Suara pembuka saat layar masuk ke Ronde 3 / Final Round
+    ronde_1: 3.0,       // Suara pembuka saat layar masuk ke Ronde 1 ("Round 1")
+    ronde_2: 3.0,       // Suara pembuka saat layar masuk ke Ronde 2 ("Round 2")
+    ronde_3: 3.0,       // Suara pembuka saat layar masuk ke Ronde 3 / Final Round
     mulai: 4.5,         // Suara teriakan memulai pertarungan ("Fight!" / "Mulai!")
     ko: 4.5,            // Suara pengumuman saat ada yang mati ("K.O.")
     ko_ganda: 4.5,      // Suara pengumuman saat keduanya mati ("Double K.O.")

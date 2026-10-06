@@ -40,8 +40,8 @@
     const f = info(id);
     if (!f) return;
     [f.portrait, f.art, f.cutin || `assets/${id}/ui/cutin.webp`].filter(Boolean).forEach(src => {
-      const im = new Image(); im.src = src; 
-      im.decode().catch(()=>{}); // force background decoding
+      const im = new Image(); im.src = src;
+      im.decode().catch(() => { }); // force background decoding
       warm.push(im);
     });
   });
@@ -80,7 +80,7 @@
     const name = isMap ? MatchRules.stages[id]?.name : info(id)?.name;
     const dlcId = isMap ? 'map_' + id : id;
     if (!name || !window.downloadDLC) return;
-    
+
     const modal = document.createElement('div');
     modal.className = 'dlc-modal';
     modal.innerHTML = `
@@ -96,29 +96,29 @@
       </div>
     `;
     document.body.appendChild(modal);
-    
+
     modal.querySelector('.dlc-btn-cancel').onclick = () => { if (!isDownloading) modal.remove(); };
     modal.querySelector('.dlc-btn-download').onclick = async () => {
       isDownloading = true;
       modal.querySelector('.dlc-actions').style.display = 'none';
       modal.querySelector('.dlc-status-text').textContent = 'Mengunduh aset... 0%';
       const fill = modal.querySelector('.dlc-progress-fill');
-      
+
       const success = await window.downloadDLC(dlcId, (p) => {
         fill.style.width = (p * 100) + '%';
         modal.querySelector('.dlc-status-text').textContent = 'Mengunduh aset... ' + Math.floor(p * 100) + '%';
       });
-      
+
       isDownloading = false;
       if (success) {
         dlcStatus[dlcId] = true;
         render();
         if (!isMap) {
           const f = info(id);
-          const im = new Image(); im.src = f.art; im.decode().catch(()=>{});
-          const cutin = new Image(); cutin.src = f.cutin || `assets/${id}/ui/cutin.webp`; cutin.decode().catch(()=>{});
+          const im = new Image(); im.src = f.art; im.decode().catch(() => { });
+          const cutin = new Image(); cutin.src = f.cutin || `assets/${id}/ui/cutin.webp`; cutin.decode().catch(() => { });
         }
-        
+
         modal.innerHTML = `
           <div class="dlc-modal-content">
             <h2 style="color: var(--accent, #3dd2a6);">BERHASIL</h2>
@@ -136,7 +136,7 @@
     };
   }
 
-  window.showGlobalDownloadManager = async function() {
+  window.showGlobalDownloadManager = async function () {
     if (isDownloading || !window.downloadDLC) return;
     const modal = document.createElement('div');
     modal.className = 'dlc-modal';
@@ -175,15 +175,15 @@
     charList.forEach(c => { if (dlcStatus[c]) charsDownloaded++; });
     let mapsTotal = mapList.length, mapsDownloaded = 0;
     mapList.forEach(m => { if (dlcStatus['map_' + m]) mapsDownloaded++; });
-    
+
     updateUI('dl-prog-chars', charsTotal ? charsDownloaded / charsTotal : 1);
     updateUI('dl-prog-maps', mapsTotal ? mapsDownloaded / mapsTotal : 1);
 
     modal.querySelector('.dlc-btn-cancel').onclick = () => { if (!isDownloading) modal.remove(); };
-    
+
     modal.querySelector('.dlc-btn-clear').onclick = async () => {
       if (isDownloading) return;
-      
+
       const confirmModal = document.createElement('div');
       confirmModal.className = 'dlc-modal';
       confirmModal.innerHTML = `
@@ -197,14 +197,14 @@
         </div>
       `;
       root.appendChild(confirmModal);
-      
+
       confirmModal.querySelector('#btn-no').onclick = () => confirmModal.remove();
       confirmModal.querySelector('#btn-yes').onclick = async () => {
         confirmModal.querySelector('#btn-yes').textContent = 'MENGHAPUS...';
         confirmModal.querySelector('#btn-yes').style.pointerEvents = 'none';
-        
+
         if (window.clearDLCCache) await window.clearDLCCache();
-        
+
         confirmModal.innerHTML = `
           <div class="dlc-modal-content">
             <h2 style="color: #3dd2a6;">BERHASIL</h2>
@@ -340,7 +340,7 @@
     if (lockIn) { clearTimeout(lockIn); lockIn = null; } for (const t of lockTicks) clearTimeout(t); lockTicks = [];
     if (backgroundVideo) { videoPlayToken++; backgroundVideo.pause(); backgroundVideo.remove(); }
     const accentFighter = screen === 'select' ? info(hover) : (screen === 'arena' ? fighters[enemy] : fighters[player]);
-    root.style.setProperty('--accent', (accentFighter || {}).color || '#e8b94a'); root.dataset.screen = screen; root.dataset.step = String(step); root.dataset.mode = mode;
+    document.documentElement.style.setProperty('--accent', (accentFighter || {}).color || '#e8b94a'); root.dataset.screen = screen; root.dataset.step = String(step); root.dataset.mode = mode;
     if (screen === 'home') {
       window._homeCycle = setInterval(() => {
         if (screen !== 'home') return;
@@ -362,7 +362,7 @@
           if (infoBox) infoBox.style.opacity = '0';
 
           setTimeout(() => {
-            root.style.setProperty('--accent', active.color || '#e8b94a');
+            document.documentElement.style.setProperty('--accent', active.color || '#e8b94a');
             if (img) { img.src = active.art; img.style.opacity = '1'; }
             if (cutinImg) { cutinImg.src = active.cutin || `assets/${player}/ui/cutin.webp`; cutinImg.style.opacity = ''; }
             if (infoBox) {
@@ -474,13 +474,13 @@
               </div>
               <div class="home-dl-progress">
                 <div class="home-dl-fill" style="width: ${(() => {
-                  if (!window.isDLCDownloaded) return 100;
-                  let total = charList.length + mapList.length;
-                  let done = 0;
-                  charList.forEach(c => { if (dlcStatus[c]) done++; });
-                  mapList.forEach(m => { if (dlcStatus['map_' + m]) done++; });
-                  return Math.floor((done / total) * 100);
-                })()}%"></div>
+          if (!window.isDLCDownloaded) return 100;
+          let total = charList.length + mapList.length;
+          let done = 0;
+          charList.forEach(c => { if (dlcStatus[c]) done++; });
+          mapList.forEach(m => { if (dlcStatus['map_' + m]) done++; });
+          return Math.floor((done / total) * 100);
+        })()}%"></div>
               </div>
             </div>
 
@@ -500,10 +500,10 @@
         </footer>
       </div>`;
     } else if (screen === 'select') {
-      root.innerHTML = `<div class="selection-backdrop"></div>${navHeader(step === 0 ? 'SELECT YOUR FIGHTER' : 'SELECT YOUR RIVAL', mode === 'versus' ? 'VERSUS COMPUTER' : 'TRAINING ROOM')}<div class="select-stage"><div id="player-preview">${fighterPanel(step === 0 ? hover : player, 'player')}</div><div class="roster-center"><div class="selection-steps"><span class="${step === 0 ? 'current' : 'done'}">01 <b>PLAYER</b></span><i></i><span class="${step === 1 ? 'current' : ''}">02 <b>RIVAL</b></span><i></i><span>03 <b>ARENA</b></span></div><div class="roster-caption"><strong>${step === 0 ? 'PLAYER 1' : 'CPU'}</strong></div><div class="roster-grid" role="group" aria-label="Roster karakter">${roster.slice(rosterPage * 12, rosterPage * 12 + 12).map((id, i) => { 
-        const f = info(id); 
+      root.innerHTML = `<div class="selection-backdrop"></div>${navHeader(step === 0 ? 'SELECT YOUR FIGHTER' : 'SELECT YOUR RIVAL', mode === 'versus' ? 'VERSUS COMPUTER' : 'TRAINING ROOM')}<div class="select-stage"><div id="player-preview">${fighterPanel(step === 0 ? hover : player, 'player')}</div><div class="roster-center"><div class="selection-steps"><span class="${step === 0 ? 'current' : 'done'}">01 <b>PLAYER</b></span><i></i><span class="${step === 1 ? 'current' : ''}">02 <b>RIVAL</b></span><i></i><span>03 <b>ARENA</b></span></div><div class="roster-caption"><strong>${step === 0 ? 'PLAYER 1' : 'CPU'}</strong></div><div class="roster-grid" role="group" aria-label="Roster karakter">${roster.slice(rosterPage * 12, rosterPage * 12 + 12).map((id, i) => {
+        const f = info(id);
         const needsDL = f && dlcStatus[id] === false && fighters[id];
-        return `<button class="roster-tile ${id === hover ? 'highlight' : ''} ${!f ? 'locked' : ''} ${soon(id) ? 'soon' : ''} ${needsDL ? 'needs-dl' : ''}" data-fighter="${id}" aria-label="${f ? f.name + ' — ' + f.race + (soon(id) ? ', belum bisa dimainkan' : '') : 'Slot ' + (i + 1) + ' terkunci'}" aria-disabled="${!fighters[id]}"><img class="${f ? 'portrait-image' : ''}" data-portrait-side="${step === 1 ? 'enemy' : 'player'}" src="${f?.portrait || 'assets/menu/locked.svg'}" alt="">${needsDL ? '<div class="dlc-icon-badge"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg></div>' : ''}<span class="roster-name-tag">${f?.name || 'LOCKED'}</span><b>${step === 1 && id === player ? 'P1' : ''}</b></button>`; 
+        return `<button class="roster-tile ${id === hover ? 'highlight' : ''} ${!f ? 'locked' : ''} ${soon(id) ? 'soon' : ''} ${needsDL ? 'needs-dl' : ''}" data-fighter="${id}" aria-label="${f ? f.name + ' — ' + f.race + (soon(id) ? ', belum bisa dimainkan' : '') : 'Slot ' + (i + 1) + ' terkunci'}" aria-disabled="${!fighters[id]}"><img class="${f ? 'portrait-image' : ''}" data-portrait-side="${step === 1 ? 'enemy' : 'player'}" src="${f?.portrait || 'assets/menu/locked.svg'}" alt="">${needsDL ? '<div class="dlc-icon-badge"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg></div>' : ''}<span class="roster-name-tag">${f?.name || 'LOCKED'}</span><b>${step === 1 && id === player ? 'P1' : ''}</b></button>`;
       }).join('')}</div><div class="roster-controls-wrapper"><div class="roster-pagination"><button class="page-btn" data-cmd="prev-page">&lt;&lt;</button><span class="page-label">PAGE ${rosterPage + 1}</span><button class="page-btn" data-cmd="next-page">&gt;&gt;</button></div><div id="fighter-moves" class="fighter-moves"></div><button class="menu-primary confirm-fighter" data-cmd="confirm">${step === 0 ? 'CONFIRM FIGHTER' : 'CONFIRM RIVAL'} <b>&rarr;</b></button><p id="roster-notice" class="roster-notice" role="status"></p></div></div><div id="enemy-preview">${fighterPanel(step === 1 ? hover : null, 'enemy')}</div></div>${footer()}`;
       updatePreview(false);
     } else if (screen === 'arena') {
@@ -550,15 +550,15 @@
               </div>
               <div class="arena-map-rail" role="group" aria-label="Pilih arena">
                 ${stages.map(([id, a], i) => {
-                  const mapDL = id === 'amikom' || dlcStatus['map_' + id] !== false;
-                  return `<button class="arena-tile ${id === stage ? 'selected' : ''} ${!mapDL ? 'needs-dl' : ''}" data-stage="${id}" aria-pressed="${id === stage}">
+        const mapDL = id === 'amikom' || dlcStatus['map_' + id] !== false;
+        return `<button class="arena-tile ${id === stage ? 'selected' : ''} ${!mapDL ? 'needs-dl' : ''}" data-stage="${id}" aria-pressed="${id === stage}">
                   <span class="arena-tile-number">${String(i + 1).padStart(2, '0')}</span>
                   <img src="${a.image}" alt="${a.name}">
                   ${!mapDL ? '<div class="dlc-icon-badge"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg></div>' : ''}
                   <span class="arena-tile-info"><b>${a.name}</b><small>${a.tag || 'BATTLEFIELD'}</small></span>
                   <span class="arena-tile-check">✓</span>
                 </button>`;
-                }).join('')}
+      }).join('')}
               </div>
             </aside>
           </section>
@@ -575,52 +575,80 @@
         </div>${footer()}`;
     } else if (screen === 'about') {
       root.innerHTML = `<div class="home-art dim blur-bg"></div>${navHeader('CHRONICLES', 'RAGNAROK: TRINITY')}
-<article class="about-modern">
-  <div class="about-modern-content">
-    <div class="about-header">
-      <span class="eyebrow">CHRONICLES OF THE THREE REALMS</span>
-      <h2>Three factions.<br><em>One destiny.</em></h2>
-      <p>In a world where realms collide, three great factions are summoned to the sacred arena: the Divine Gods from the heavens above, the mystical Fantasy beings born of ancient magic, and the Mortal warriors forged in the fires of humanity. Each carries their own story, their own power, and their own reason to fight.</p>
+<div class="chronicles-wrapper">
+  
+  <div class="chronicles-hero">
+    <div class="c-hero-deco">
+      <span>TENTANG</span>
+      <i></i>
+    </div>
+    <div class="c-hero-title">
+      <h2>TIGA FRAKSI.</h2>
+      <h2 class="c-hl">SATU TAKDIR.</h2>
+    </div>
+    <p class="c-hero-desc">RAGNAROK TRINITY adalah puncak dari perselisihan kosmis di alam semesta. Ketika batas dimensi hancur, tiga ras agung—Dewa kahyangan, pahlawan gaib dari dunia Fantasi, dan Manusia bertekad baja—bertemu di satu arena pamungkas untuk memperebutkan kendali atas takdir semesta.</p>
+  </div>
+
+  <div class="chronicles-factions">
+    <div class="c-faction-card" style="animation-delay: 0.10s">
+      <div class="c-f-num">01</div>
+      <div class="c-f-icon">❂</div>
+      <div class="c-f-name">DEWA</div>
+      <div class="c-f-label">RAS DEWA · PENGUASA KAHYANGAN</div>
+      <div class="c-f-divider"></div>
+      <p>Entitas suci pencipta hukum semesta. Mereka turun dari kahyangan dengan kekuatan petir dan penghakiman absolut untuk menundukkan dimensi lain.</p>
+      <div class="c-f-divider"></div>
+      <div class="c-f-footer"><span>KEKUATAN LANGIT</span><span>01 / 03</span></div>
     </div>
     
-    <div class="factions-grid">
-      <div class="faction-card divine">
-        <div class="faction-icon">⚡</div>
-        <h3>DIVINE</h3>
-        <p>Celestial gods and heavenly beings. Wielders of sacred power, lightning, and divine judgment.</p>
-      </div>
-      <div class="faction-card fantasy">
-        <div class="faction-icon">✦</div>
-        <h3>FANTASY</h3>
-        <p>Mystic creatures of ancient legend. Masters of elemental magic, shapeshifting, and arcane arts.</p>
-      </div>
-      <div class="faction-card mortal">
-        <div class="faction-icon">⚔</div>
-        <h3>MORTAL</h3>
-        <p>Human warriors tempered by battle. Unyielding spirit, martial mastery, and unbreakable will.</p>
-      </div>
+    <div class="c-faction-card" style="animation-delay: 0.18s">
+      <div class="c-f-num">02</div>
+      <div class="c-f-icon">✦</div>
+      <div class="c-f-name">FANTASI</div>
+      <div class="c-f-label">DIMENSI MISTIS · LEGENDA KUNO</div>
+      <div class="c-f-divider"></div>
+      <p>Ras pahlawan dan entitas magis dari dimensi lain. Mereka bertarung dengan jurus gaib, sihir elemen, dan kekuatan yang melampaui nalar manusia.</p>
+      <div class="c-f-divider"></div>
+      <div class="c-f-footer"><span>KEKUATAN MISTIS</span><span>02 / 03</span></div>
     </div>
     
-    <div class="about-footer">
-      <div class="stats-row">
-        <div class="stat"><b>03</b><span>FACTIONS</span></div>
-        <div class="stat"><b>13</b><span>FIGHTERS</span></div>
-        <div class="stat"><b>∞</b><span>RIVALRIES</span></div>
-      </div>
-      <div class="about-credits">
-        <small>Visuals · Higgsfield &nbsp; Voices · ElevenLabs &nbsp; Typography · Cinzel / Rajdhani<br>Local fighting demo · Single player</small>
-        <button class="menu-primary btn-glow" data-cmd="home">BACK TO MAIN MENU <b>→</b></button>
-      </div>
+    <div class="c-faction-card" style="animation-delay: 0.26s">
+      <div class="c-f-num">03</div>
+      <div class="c-f-icon">⚔</div>
+      <div class="c-f-name">MANUSIA</div>
+      <div class="c-f-label">RAS MANUSIA · TEKAD BAJA</div>
+      <div class="c-f-divider"></div>
+      <p>Ras manusia biasa yang tidak punya sihir atau mukjizat ilahi. Namun, penguasaan bela diri murni dan tekad tak bisa patah menjadikan mereka petarung paling mematikan.</p>
+      <div class="c-f-divider"></div>
+      <div class="c-f-footer"><span>KEKUATAN MANUSIA</span><span>03 / 03</span></div>
     </div>
   </div>
-</article>`;
+
+  <div class="chronicles-hud">
+    <div class="c-hud-left">
+      <b>● ARSIP KOSMIS AKTIF</b>
+      <i></i>
+      <span>3 RAS TERDETEKSI</span>
+    </div>
+    <div class="c-hud-center">
+      <div class="c-stat"><b>03</b><span>RAS</span></div>
+      <div class="c-stat"><b>13</b><span>PETARUNG</span></div>
+      <div class="c-stat"><b>∞</b><span>RIVALITAS</span></div>
+    </div>
+    <div class="c-hud-right">
+      <button class="c-hud-btn" data-cmd="home">
+        <span>↪</span> KEMBALI KE MAIN MENU
+      </button>
+    </div>
+  </div>
+</div>`;
     } else if (screen === 'result') {
       const won = result.winner === 'player', winner = won ? result.player : result.enemy; root.innerHTML = `<div class="result-bg"></div>${navHeader('MATCH COMPLETE', MatchRules.stages[result.stage].name.toUpperCase())}<div class="result-layout"><img class="result-fighter" src="${fighters[winner].art}" alt="${fighters[winner].name}"><div class="result-copy"><span class="eyebrow">${won ? 'PLAYER 1' : 'COMPUTER'} TAKES THE MATCH</span><h1>${won ? 'VICTORY' : 'DEFEAT'}</h1><p>${fighters[winner].name} WINS</p><div class="final-score"><span>${result.playerWins}</span><i>—</i><span>${result.enemyWins}</span></div><small>${fighters[result.player].name} vs ${fighters[result.enemy].name} · ${MatchRules.difficulties[result.level].label}</small><button class="menu-primary" data-cmd="rematch">REMATCH <b>→</b></button><button class="result-secondary" data-cmd="reselect">CHARACTER SELECT</button><button class="result-secondary" data-cmd="home">MAIN MENU</button></div></div>`;
     }
     bind(); attachBackground();
   }
   function updatePreview(play = true) {
-    root.style.setProperty('--accent', (info(hover) || {}).color || '#e8b94a');
+    document.documentElement.style.setProperty('--accent', (info(hover) || {}).color || '#e8b94a');
     root.querySelectorAll('[data-fighter]').forEach(b => b.classList.toggle('highlight', b.dataset.fighter === hover));
     const panel = root.querySelector(step === 0 ? '#player-preview' : '#enemy-preview'); if (panel) panel.innerHTML = fighterPanel(hover, step === 0 ? 'player' : 'enemy');
     const f = info(hover), moves = root.querySelector('#fighter-moves'); if (moves) moves.innerHTML = f ? `<span>${f.style}</span>${soon(hover) ? '' : `<b>${f.ultimate}</b>`}` : '<span>NEW CHALLENGER</span><b>COMING LATER</b>';
@@ -628,7 +656,7 @@
   }
   function focusFighter(id) { if (hover === id || lockIn) return; hover = id; updatePreview(); }
   function confirm() {
-    if (lockIn) return; 
+    if (lockIn) return;
     const needsDL = fighters[hover] && dlcStatus[hover] === false;
     if (needsDL) {
       sfx('locked', true);
@@ -650,18 +678,18 @@
     lockIn = setTimeout(() => { lockIn = null; delete root.dataset.picking; if (step === 0) { player = hover; step = 1; hover = 'arco'; } else { enemy = hover; screen = 'arena'; step = 2; } rosterPage = Math.floor(roster.indexOf(hover) / 12); render(); }, transitionDelay);
   }
   function back() { if (lockIn) return; game.stopAnnouncer(); sfx('back', true); if (screen === 'arena') { screen = 'select'; step = 1; hover = enemy; } else if (screen === 'select' && step === 1) { step = 0; hover = player; } else screen = 'home'; if (screen === 'select') rosterPage = Math.floor(roster.indexOf(hover) / 12); render(); }
-  function start() { 
+  function start() {
     if (stage !== 'amikom' && dlcStatus['map_' + stage] === false) {
       sfx('locked', true);
       showDownloadModal(stage, true);
       return;
     }
-    
+
     // Create VS Screen Overlay
     const p1 = fighters[player] || fighters['arco'];
     const p2 = fighters[enemy] || fighters['fenr'];
     const st = MatchRules.stages[stage];
-    
+
     const vsHTML = `
       <div id="vs-screen" class="vs-screen" style="--c1: ${p1.color}; --c2: ${p2.color}; background-image: url('${st.image}');">
 
@@ -717,12 +745,12 @@
         <div class="vs-flash"></div>
       </div>
     `;
-    
+
     const vsNode = document.createElement('div');
     vsNode.innerHTML = vsHTML;
     const vsEl = vsNode.firstElementChild;
     document.body.appendChild(vsEl);
-    
+
     sfx('confirm', true);
     if (game.playSound) {
       game.playSound('vs_swoosh');
@@ -730,15 +758,15 @@
       setTimeout(() => game.playSound('vs_tension'), 600);
       setTimeout(() => game.playSound('vs_bersiap'), 1200);
     }
-    
+
     document.getElementById('load-state')?.classList.add('hidden'); // Hide the old loader just in case
-    
+
     // Hold VS screen for ~2.5s to let animation play out
     setTimeout(() => {
       const started = game.startMatch({ player, enemy, stage, level, mode });
       if (started) {
         document.querySelector('#arena').focus();
-        
+
         // Wait for game engine to finish loading and transition out of menu
         const checkLoaded = setInterval(() => {
           if (!document.body.classList.contains('in-menu')) {

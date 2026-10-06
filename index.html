@@ -143,56 +143,170 @@
                         class="cooldown-wipe"></span><em class="cooldown-num"></em></button></div>
         </section>
 
-        <div id="load-state" class="load-state"><span class="loading-glyph">?</span><strong>RAGNAROK TRINITY</strong><span
-                id="load-message">Menyiapkan arena…</span></div>
+        <div id="load-state" class="load-state"><span class="loading-glyph">?</span><strong>RAGNAROK
+                TRINITY</strong><span id="load-message">Menyiapkan arena…</span></div>
         <dialog id="settings-panel">
-            <div class="dialog-kicker">RAGNAROK TRINITY / SETTINGS</div>
-            <h2>Pengaturan arena</h2>
-            <p>Atur audio, tampilan, dan kontrol permainan.</p><label class="setting-row training-only"><span>Karakter
-                    pemain<small>Mengganti karakter memulai ulang latihan</small></span><select id="character-select">
-                    <option value="arco">ARCO - Mecha</option>
-                    <option value="fenr">FENR - Demi-Human</option>
-                    <option value="mira">MIRA - Mecha</option>
-                    <option value="cora">CORA - Demi-Human</option>
-                    <option value="naja">NAJA - Demi-Human</option>
-                    <option value="haldor">HALDOR - Mecha</option>
-                    <option value="zanni">ZANNI - Mecha</option>
-                    <option value="isolde">ISOLDE - Mecha</option>
-                    <option value="rhea">RHEA - Mecha</option>
-                    <option value="solan">SOLAN - Demi-Human</option>
-                    <option value="nib">NIB - Demi-Human</option>
-                    <option value="edda">EDDA - Demi-Human</option>
-                    <option value="yanfah">YANFAH - Mecha</option>
-                    <option value="dhyla">DHYLA - Divine</option>
-                    <option value="valkren">VALKREN - Mecha</option>
-                </select></label><label class="setting-row training-only"><span>Lawan aktif<small>Aktifkan serangan CPU
-                        saat latihan</small></span><input type="checkbox" id="ai-toggle" checked></label><label
-                class="setting-row"><span>Visualisasi hitbox<small>Area tubuh dan jangkauan
-                        serangan</small></span><input type="checkbox" id="hitbox-toggle"></label><label
-                class="setting-row"><span>Animasi latar menu<small>Video loop pada main menu</small></span><input
-                    type="checkbox" id="menu-video-toggle" checked></label><label class="volume-row"><span>Musik
-                    (BGM)</span><input type="range" id="music-slider" min="0" max="100" value="80"
-                    aria-label="Volume musik latar"><output id="music-value">80%</output></label><label
-                class="volume-row"><span>Efek Suara (SFX)</span><input type="range" id="sfx-slider" min="0" max="100"
-                    value="90" aria-label="Volume efek suara pukulan dan skill"><output
-                    id="sfx-value">90%</output></label><label class="volume-row"><span>Suara Karakter
-                    (Voice)</span><input type="range" id="voice-slider" min="0" max="100" value="90"
-                    aria-label="Volume suara cut-in karakter dan komentator"><output
-                    id="voice-value">90%</output></label>
-            <div class="dialog-buttons"><button id="sound-test">Tes audio</button><button id="audio-reset-btn">Reset
-                    audio</button><button id="fullscreen-btn">Layar penuh</button></div>
+            <div class="sp-header">
+                <div class="sp-eyebrow">RAGNAROK TRINITY / SETTINGS</div>
+                <h2 class="sp-title">Pengaturan<br>Arena</h2>
+                <p class="sp-desc">Atur audio, tampilan, dan kontrol permainan.</p>
+            </div>
+
+            <div class="sp-section training-only">
+                <div class="sp-section-label"><i></i>Karakter</div>
+                <label class="setting-row training-only">
+                    <span>Karakter pemain<small>Mengganti karakter memulai ulang latihan</small></span>
+                    <select id="character-select">
+                        <option value="arco">ARCO - Mecha</option>
+                        <option value="fenr">FENR - Demi-Human</option>
+                        <option value="mira">MIRA - Mecha</option>
+                        <option value="cora">CORA - Demi-Human</option>
+                        <option value="naja">NAJA - Demi-Human</option>
+                        <option value="haldor">HALDOR - Mecha</option>
+                        <option value="zanni">ZANNI - Mecha</option>
+                        <option value="isolde">ISOLDE - Mecha</option>
+                        <option value="rhea">RHEA - Mecha</option>
+                        <option value="solan">SOLAN - Demi-Human</option>
+                        <option value="nib">NIB - Demi-Human</option>
+                        <option value="edda">EDDA - Demi-Human</option>
+                        <option value="yanfah">YANFAH - Mecha</option>
+                        <option value="dhyla">DHYLA - Divine</option>
+                        <option value="valkren">VALKREN - Mecha</option>
+                    </select>
+                </label>
+                <label class="setting-row training-only">
+                    <span>Lawan aktif<small>Aktifkan serangan CPU saat latihan</small></span>
+                    <div class="sp-toggle-wrap"><input type="checkbox" id="ai-toggle" class="sp-toggle" checked><label
+                            for="ai-toggle" class="sp-toggle-track"><span class="sp-toggle-thumb"></span></label></div>
+                </label>
+            </div>
+
+            <div class="sp-section">
+                <div class="sp-section-label"><i></i>Tampilan</div>
+                <label class="setting-row">
+                    <span>Visualisasi hitbox<small>Area tubuh dan jangkauan serangan</small></span>
+                    <div class="sp-toggle-wrap"><input type="checkbox" id="hitbox-toggle" class="sp-toggle"><label
+                            for="hitbox-toggle" class="sp-toggle-track"><span class="sp-toggle-thumb"></span></label>
+                    </div>
+                </label>
+                <label class="setting-row">
+                    <span>Animasi latar menu<small>Video loop pada main menu</small></span>
+                    <div class="sp-toggle-wrap"><input type="checkbox" id="menu-video-toggle" class="sp-toggle"
+                            checked><label for="menu-video-toggle" class="sp-toggle-track"><span
+                                class="sp-toggle-thumb"></span></label></div>
+                </label>
+            </div>
+
+            <div class="sp-section">
+                <div class="sp-section-label"><i></i>Audio</div>
+                <label class="volume-row">
+                    <span class="vol-label">Musik</span>
+                    <div class="vol-track-wrap">
+                        <input type="range" id="music-slider" min="0" max="100" value="80"
+                            aria-label="Volume musik latar">
+                    </div>
+                    <output id="music-value">80%</output>
+                </label>
+                <label class="volume-row">
+                    <span class="vol-label">Efek Suara</span>
+                    <div class="vol-track-wrap">
+                        <input type="range" id="sfx-slider" min="0" max="100" value="90"
+                            aria-label="Volume efek suara pukulan dan skill">
+                    </div>
+                    <output id="sfx-value">90%</output>
+                </label>
+                <label class="volume-row">
+                    <span class="vol-label">Suara Karakter</span>
+                    <div class="vol-track-wrap">
+                        <input type="range" id="voice-slider" min="0" max="100" value="90"
+                            aria-label="Volume suara cut-in karakter dan komentator">
+                    </div>
+                    <output id="voice-value">90%</output>
+                </label>
+                <div class="sp-audio-btns">
+                    <button id="sound-test" class="sp-action-btn"><svg viewBox="0 0 20 20" fill="none"
+                            aria-hidden="true">
+                            <path d="M3 7h3l4-4v14l-4-4H3V7z" stroke="currentColor" stroke-width="1.4" />
+                            <path d="M14 6a5 5 0 0 1 0 8" stroke="currentColor" stroke-width="1.4"
+                                stroke-linecap="round" />
+                        </svg>Tes Audio</button>
+                    <button id="audio-reset-btn" class="sp-action-btn"><svg viewBox="0 0 20 20" fill="none"
+                            aria-hidden="true">
+                            <path d="M4 10a6 6 0 1 1 1.2 3.6" stroke="currentColor" stroke-width="1.4"
+                                stroke-linecap="round" />
+                            <path d="M4 14v-4h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>Reset Audio</button>
+                    <button id="fullscreen-btn" class="sp-action-btn"><svg viewBox="0 0 20 20" fill="none"
+                            aria-hidden="true">
+                            <path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4" stroke="currentColor" stroke-width="1.4"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>Layar Penuh</button>
+                </div>
+            </div>
+
             <details class="controls-help">
-                <summary>Kontrol keyboard</summary>
-                <p>A / D - Gerak &nbsp; 2× A / D - Lari<br>W - Lompat &nbsp; S - Menunduk / turun cepat<br>2× S - Salto
-                    &nbsp; SPACE - Kombo 3 pukulan<br>I / O - Skill &nbsp; P - Ultimate</p>
-            </details><button class="primary-button" id="close-settings">Kembali ke arena <span>↗</span></button>
+                <summary><svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <rect x="3" y="5" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.4" />
+                        <path d="M7 9h1M12 9h1M7 12h6" stroke="currentColor" stroke-width="1.2"
+                            stroke-linecap="round" />
+                    </svg>Kontrol Keyboard</summary>
+                <div class="controls-grid">
+                    <div class="ctrl-item"><kbd>A</kbd><kbd>D</kbd><span>Gerak · 2× Lari</span></div>
+                    <div class="ctrl-item"><kbd>W</kbd><span>Lompat</span></div>
+                    <div class="ctrl-item"><kbd>S</kbd><span>Menunduk · 2× Salto</span></div>
+                    <div class="ctrl-item"><kbd>Space</kbd><span>Kombo 3 pukulan</span></div>
+                    <div class="ctrl-item"><kbd>I</kbd><kbd>O</kbd><span>Skill</span></div>
+                    <div class="ctrl-item"><kbd>P</kbd><span>Ultimate</span></div>
+                </div>
+            </details>
+
+            <button class="sp-close-btn" id="close-settings">
+                <span>Kembali ke Arena</span>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+            </button>
         </dialog>
+
         <dialog id="pause-panel">
-            <div class="dialog-kicker">RAGNAROK TRINITY / PAUSE</div>
-            <h2>PAUSED</h2>
-            <p>Pertarungan dijeda. Siap melanjutkan?</p><button class="primary-button" id="resume-btn">Lanjut bertarung
-                <span>?</span></button><button class="text-button" id="restart-btn">Mulai ulang</button><button
-                class="text-button" id="back-menu">Kembali ke main menu</button>
+            <div class="pp-eyebrow">RAGNAROK TRINITY / PAUSE</div>
+            <div class="pp-icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48" fill="none">
+                    <rect x="10" y="8" width="10" height="32" rx="2" fill="currentColor" />
+                    <rect x="28" y="8" width="10" height="32" rx="2" fill="currentColor" />
+                </svg>
+            </div>
+            <h2 class="pp-title">Dijeda</h2>
+            <p class="pp-sub">Pertarungan dijeda. Siap melanjutkan?</p>
+            <div class="pp-divider"><i></i><span>— pilih aksi —</span><i></i></div>
+            <button class="pp-resume-btn" id="resume-btn">
+                <span class="pp-btn-bg"></span>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <polygon points="6,4 20,12 6,20" fill="currentColor" />
+                </svg>
+                Lanjut Bertarung
+            </button>
+            <div class="pp-secondary-actions">
+                <button class="pp-sec-btn" id="restart-btn">
+                    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path d="M4 10a6 6 0 1 1 1.2 3.6" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" />
+                        <path d="M4 14v-4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    Mulai Ulang
+                </button>
+                <div class="pp-sec-divider"></div>
+                <button class="pp-sec-btn pp-exit-btn" id="back-menu">
+                    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path d="M8 4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M13 7l4 3-4 3M7 10h10" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    Kembali ke Main Menu
+                </button>
+            </div>
         </dialog>
     </main>
     <section id="front-menu" aria-label="Main menu RAGNAROK TRINITY"></section>

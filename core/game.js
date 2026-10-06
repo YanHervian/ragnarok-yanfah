@@ -521,9 +521,10 @@
     if (menuOpen) { if (key === 'escape' && settingsOpen) closeSettings(); return; }
     if (key === 'escape') { if (settingsOpen) closeSettings(); else setPaused(!paused); return; }
     if (key === 'r') { reset(); return; }
-    if (!canAct() || keys.has(key)) return;
+    if (keys.has(key)) return;
     keys.add(key);
     if (key === 'a' || key === 'd') { const direction = key === 'a' ? -1 : 1; if (time - taps[key] <= CONFIG.doubleTapWindow) hero.runDirection = direction; else if (hero.runDirection !== direction) hero.runDirection = 0; taps[key] = time; taps[key === 'a' ? 'd' : 'a'] = -10; }
+    if (!canAct()) return;
     // A new left/right press cuts a basic attack short: right away after its hit, or as soon as the hit lands.
     if ((key === 'a' || key === 'd') && hero.action?.type === 'attack') { if (hero.action.fired) { hero.action = null; state(hero.grounded ? 'idle' : 'jump'); } else { hero.action.cancelInto = 'move'; hero.action.queued = 0; } }
     if (key === 'w') {
@@ -1504,9 +1505,11 @@
     else { manifest = window.MECHA_MANIFEST || window.SPRITE_MANIFEST; metrics = window.MECHA_METRICS; images.hero = images.arco || images.hero; Object.assign(cooldownMax, { skill1: BALANCE.skill1.cooldown, skill2: BALANCE.skill2.cooldown, ultimate: BALANCE.ultimate.cooldown }); }
     hudIdentity = '';
   }
+  const CHAR_COLORS = { arco: '#67e4dd', fenr: '#9ae56b', mira: '#ff85d9', cora: '#a87bff', naja: '#f2c96b', haldor: '#ff7b3c', zanni: '#d8e24a', isolde: '#7bc8ff', rhea: '#e8c07a', solan: '#ffd700', nib: '#8ecfff', edda: '#a4e88b', yanfah: '#00ffff', dhyla: '#ffc400', valkren: '#ff3333' };
   function selectCharacter(id) {
     if (!ready || match?.mode === 'versus' || !playable().includes(id) || (id === 'fenr' && !window.FENR_HUMAN_MANIFEST)) return false;
     selectedCharacter = id;
+    document.documentElement.style.setProperty('--teal', CHAR_COLORS[id] || '#67e4dd');
     // Lazy-load character assets if not yet loaded
     loadCharacterAssets(id, () => { if (selectedCharacter === id) syncPlayerForm(); });
     reset(); syncPlayerForm(); warmCutins(); $('#character-select').value = id; updateHud(); return true;
@@ -2700,7 +2703,7 @@
   let cutinWarm = [];
   function warmCutins() { cutinWarm = [...new Set([selectedCharacter, opponentCharacter])].map(id => CUTIN_ART[id]).filter(Boolean).map(src => { const im = new Image(); im.decoding = 'async'; im.src = src; return im; }); }
   function setPaused(value) { paused = value; clearInput(); syncUltimateVoice(); $('#pause-btn').textContent = value ? '▶' : 'Ⅱ'; const panel = $('#pause-panel'); if (value && !panel.open) panel.showModal(); if (!value && panel.open) panel.close(); if (!value) canvas.focus({ preventScroll: true }); }
-  function openSettings() { settingsOpen = true; clearInput(); if (typeof syncAudioSliders === 'function') syncAudioSliders(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); $('#close-settings').innerHTML = (menuOpen ? 'Kembali ke menu' : 'Kembali ke arena') + ' <span>↗</span>'; $('#settings-panel').showModal(); }
+  function openSettings() { settingsOpen = true; clearInput(); if (typeof syncAudioSliders === 'function') syncAudioSliders(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); $('#close-settings').innerHTML = (menuOpen ? 'Kembali ke menu' : 'Kembali ke arena'); $('#settings-panel').showModal(); }
   function closeSettings() { settingsOpen = false; $('#settings-panel').close(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); canvas.focus({ preventScroll: true }); }
   const handled = new Set(['w', 'a', 's', 'd', ' ', 'i', 'o', 'p', 'escape', 'r']);
   window.addEventListener('keydown', e => {
