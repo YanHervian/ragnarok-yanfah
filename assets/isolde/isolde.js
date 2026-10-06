@@ -1,4 +1,4 @@
-/* Shared ISOLDE moves (heron-leg lancer knight mecha, aether lance): player and AI use the same rules. */
+/* Shared ISOLDE moves (heron-leg lancer knight mecha, trinity lance): player and AI use the same rules. */
 (() => {
   'use strict';
   const getBal = () => window.GAME_BALANCE?.isolde;

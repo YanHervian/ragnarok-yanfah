@@ -1,15 +1,15 @@
 /* First-visit loader. Before the menu opens, every runtime file in precache.js (built by tools/build_dist.mjs) is
    downloaded once behind a progress bar, so later screens never wait for pictures.
-   - Secure pages (https, localhost): files go into Cache Storage ('aether-assets') with their content hash. A later visit
+   - Secure pages (https, localhost): files go into Cache Storage ('ragnarok-assets') with their content hash. A later visit
      only downloads files whose hash changed, and sw.js serves the pictures straight from that cache.
    - Plain http on a LAN IP (no Cache Storage / service worker there): the download still fills the browser's HTTP cache.
    - file:// or no list: nothing to do, the game boots as before.
-   The game and the menu wait for window.AETHER_PRELOAD before they request their own images (no double download). */
+   The game and the menu wait for window.RAGNAROK_PRELOAD before they request their own images (no double download). */
 (() => {
   'use strict';
-  const list = self.AETHER_PRECACHE, boot = document.getElementById('boot');
+  const list = self.RAGNAROK_PRECACHE, boot = document.getElementById('boot');
   const finish = () => { if (!boot) return; boot.classList.add('done'); setTimeout(() => boot.remove(), 500); };
-  if (!list || !boot || location.protocol === 'file:' || typeof fetch !== 'function') { window.AETHER_PRELOAD = Promise.resolve(); finish(); return; }
+  if (!list || !boot || location.protocol === 'file:' || typeof fetch !== 'function') { window.RAGNAROK_PRELOAD = Promise.resolve(); finish(); return; }
   const bar = boot.querySelector('.boot-bar i'), status = boot.querySelector('.boot-status');
   const mb = n => (n / 1e6).toFixed(1).replace('.', ',');
   let got = 0, downloading = false;
@@ -20,10 +20,10 @@
   }
   const secure = window.isSecureContext && 'caches' in window;
   if (secure && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
-  const INDEX = '__aether-index';
+  const INDEX = '__ragnarok-index';
 
   async function run() {
-    const cache = secure ? await caches.open('aether-assets').catch(() => null) : null;
+    const cache = secure ? await caches.open('ragnarok-assets').catch(() => null) : null;
     let index = {};
     if (cache) { try { const hit = await cache.match(INDEX); if (hit) index = await hit.json(); } catch (_) { index = {}; } }
     const todo = [];
@@ -56,27 +56,27 @@
       // Forget files from older deploys, then store the hash index for the next visit.
       // Make sure we DON'T delete DLC files that were downloaded on demand!
       const keep = new Set(list.files.map(f => new URL(f[0], location.href).href));
-      if (self.AETHER_DLC) {
-        Object.values(self.AETHER_DLC).forEach(dlc => {
+      if (self.RAGNAROK_DLC) {
+        Object.values(self.RAGNAROK_DLC).forEach(dlc => {
           dlc.files.forEach(f => keep.add(new URL(f[0], location.href).href));
         });
       }
       keep.add(new URL(INDEX, location.href).href);
       for (const req of await cache.keys()) if (!keep.has(req.url)) await cache.delete(req);
-      for (const url of Object.keys(index)) if (!keep.has(url)) delete index[url];
+      for (const url of Object.keys(index)) if (!keep.has(new URL(url, location.href).href)) delete index[url];
       await cache.put(INDEX, new Response(JSON.stringify(index), { headers: { 'Content-Type': 'application/json' } }));
     }
     downloading = false; got = list.total; paint();
   }
-  window.AETHER_PRELOAD = run().catch(() => {}).then(finish);
+  window.RAGNAROK_PRELOAD = run().catch(() => {}).then(finish);
 
   // DLC Downloader & Manager
   window.clearDLCCache = async function() {
     if (!secure || !('caches' in window)) return false;
-    const cache = await caches.open('aether-assets').catch(() => null);
+    const cache = await caches.open('ragnarok-assets').catch(() => null);
     if (!cache) return false;
     
-    // We only keep the files in AETHER_PRECACHE.files (Core files)
+    // We only keep the files in RAGNAROK_PRECACHE.files (Core files)
     const keepPaths = new Set(list.files.map(f => f[0]));
     const keepUrls = new Set(list.files.map(f => new URL(f[0], location.href).href));
     keepUrls.add(new URL(INDEX, location.href).href);
@@ -101,9 +101,9 @@
     return deletedCount > 0;
   };
   window.downloadDLC = async function(dlcId, onProgress) {
-    const dlc = self.AETHER_DLC && self.AETHER_DLC[dlcId];
+    const dlc = self.RAGNAROK_DLC && self.RAGNAROK_DLC[dlcId];
     if (!dlc || !secure || !('caches' in window)) return true; // fallback
-    const cache = await caches.open('aether-assets').catch(() => null);
+    const cache = await caches.open('ragnarok-assets').catch(() => null);
     if (!cache) return true;
     
     let got = 0;
@@ -167,9 +167,9 @@
   };
 
   window.isDLCDownloaded = async function(dlcId) {
-    const dlc = self.AETHER_DLC && self.AETHER_DLC[dlcId];
+    const dlc = self.RAGNAROK_DLC && self.RAGNAROK_DLC[dlcId];
     if (!dlc || !secure || !('caches' in window)) return true;
-    const cache = await caches.open('aether-assets').catch(() => null);
+    const cache = await caches.open('ragnarok-assets').catch(() => null);
     if (!cache) return true;
     
     for (const [url] of dlc.files) {

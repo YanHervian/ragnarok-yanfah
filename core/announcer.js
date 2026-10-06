@@ -3,7 +3,36 @@
   'use strict';
   function create({clips,canPlay,isPaused,onStart=()=>{},onActivity=()=>{}}){
     const bank={},failed=new Set();let queue=[],active=null,serial=0,playToken=0,starts=0,lastCue='',error='',volume=.45,muted=false;
-    function mix(){for(const [k, media] of Object.entries(bank)){const gain = clips[k]?.gain || 1; media.volume=Math.max(0,Math.min(1,volume*1.25*gain));media.muted=muted;}onActivity();}
+    let _ctx = null;
+    function getCtx() {
+      if(_ctx) return _ctx;
+      if(typeof window.AudioContext!=='undefined') _ctx=new window.AudioContext();
+      else if(typeof window.webkitAudioContext!=='undefined') _ctx=new window.webkitAudioContext();
+      return _ctx;
+    }
+    function mix(){
+      for(const [k, media] of Object.entries(bank)){
+        const gain = (clips[k]?.gain || 1) * (window.AUDIO_CONFIG?.announcer?.[k] ?? 1.0);
+        const ctx = getCtx();
+        if(ctx && !media.sourceNode){
+          try {
+            media.sourceNode = ctx.createMediaElementSource(media);
+            media.gainNode = ctx.createGain();
+            media.sourceNode.connect(media.gainNode);
+            media.gainNode.connect(ctx.destination);
+          } catch(e){}
+        }
+        if(media.gainNode){
+          media.gainNode.gain.value = muted ? 0 : volume * 1.25 * gain;
+          media.volume = 1;
+        } else {
+          media.volume = Math.max(0, Math.min(1, volume * 1.25 * gain));
+          media.muted = muted;
+        }
+      }
+      if(_ctx && _ctx.state === 'suspended') _ctx.resume().catch(()=>{});
+      onActivity();
+    }
     function clear(){serial++;playToken++;queue=[];if(active){active.media.pause();try{active.media.currentTime=0;}catch(_){}}active=null;onActivity();}
     function finish(){if(active)active.media.pause();active=null;playToken++;next();}
     function next(){
@@ -37,7 +66,7 @@
         const valid=(Array.isArray(keys)?keys:[keys]).filter(k=>Object.hasOwn(bank,k)&&!failed.has(k));
         if(!valid.length)return false;if(replace)clear();queue.push(...valid);queue=queue.slice(0,4);next();return true;
       },
-      clear,sync,setMix(v,m){volume=v;muted=m;for(const [k, media] of Object.entries(bank)){const gain = clips[k]?.gain || 1; media.volume=Math.max(0,Math.min(1,v*1.25*gain));media.muted=m;}},
+      clear,sync,setMix(v,m){volume=v;muted=m;for(const [k, media] of Object.entries(bank)){const gain = (clips[k]?.gain || 1) * (window.AUDIO_CONFIG?.announcer?.[k] ?? 1.0); media.volume=Math.max(0,Math.min(1,v*1.25*gain));media.muted=m;}},
       tick(dt){if(!active||!canPlay()||isPaused())return;active.elapsed+=dt;const duration=clips[active.key].duration||3;if(active.elapsed>duration+.4)finish();},
       get busy(){return !!active||queue.length>0;},
       get speaking(){return !!active&&!active.media.paused;},

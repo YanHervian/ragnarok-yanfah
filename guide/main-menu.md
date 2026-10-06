@@ -2,7 +2,7 @@
 
 Status: main menu menjadi layar awal. Implementasi UI ada di [menu.js](../menu.js)/[menu.css](../menu.css), aturan ronde/difficulty/arena di [match.js](../match.js), dan integrasi combat di [game.js](../game.js).
 
-Branding final: **AETHER CLASH — Mecha vs Demi-Human**, berpusat pada dua faksi dan roster yang akan berkembang. Home/About tidak memakai ARCO/FENR sebagai pasangan tokoh utama. Lihat [branding.md](branding.md); key art aktif `home-factions.png`, sedangkan artwork duo awal diarsipkan.
+Branding final: **RAGNAROK TRINITY — Mecha vs Demi-Human**, berpusat pada dua faksi dan roster yang akan berkembang. Home/About tidak memakai ARCO/FENR sebagai pasangan tokoh utama. Lihat [branding.md](branding.md); key art aktif `home-factions.png`, sedangkan artwork duo awal diarsipkan.
 
 Background Home memakai [video loop Seedance2.5 1080p](menu-video.md),7.5s,tanpa audio. Artwork statis menjadi poster/fallback; menu dan teks tetap elemen HTML. Pengaturan menyediakan checkbox Animasi latar menu.
 
@@ -34,7 +34,7 @@ Urutan fase: intro ROUNDn → FIGHT → fight → KO/result ronde → ronde beri
 
 ## CPU
 
-Keenam petarung bisa dipilih sebagai CPU. HALDOR memakai Forge Chain, Slag Shot (lob), Steam Ram dan Forge Quake (gelombang lava tiga kali ke dua arah); CPU lawan keluar dari titik jatuh lob bila membacanya tepat waktu. NAJA memakai Viper Lash, Sand Fang, Urumi Cyclone dan Dune Serpent (riak pasir yang memburu, tiga semburan kobra) dengan serangan per owner; CPU lawan keluar dari riak yang terkunci bila membacanya tepat waktu. CORA memakai Feather Waltz, Quill Volley, Wing Gust dan Night Murmuration (tiga gelombang gagak) dengan kawanan per owner. MIRA memakai Mitten Chain, Star Popper, Candy Crash dan Rocket Parade (12 roket) dengan formasi roket per owner. ARCO mempunyai tiga basic, Aether Bolt, Seismic Drive, dan empat drone Helios Squadron. FENR memakai kit manusia/werewolf serta Holden. Formasi drone pemain dan CPU memiliki owner terpisah sehingga mirror match tidak mencampur target atau efek. Voice tetap satu speaker aktif, dengan prioritas pemain.
+Keenam petarung bisa dipilih sebagai CPU. HALDOR memakai Forge Chain, Slag Shot (lob), Steam Ram dan Forge Quake (gelombang lava tiga kali ke dua arah); CPU lawan keluar dari titik jatuh lob bila membacanya tepat waktu. NAJA memakai Viper Lash, Sand Fang, Urumi Cyclone dan Dune Serpent (riak pasir yang memburu, tiga semburan kobra) dengan serangan per owner; CPU lawan keluar dari riak yang terkunci bila membacanya tepat waktu. CORA memakai Feather Waltz, Quill Volley, Wing Gust dan Night Murmuration (tiga gelombang gagak) dengan kawanan per owner. MIRA memakai Mitten Chain, Star Popper, Candy Crash dan Rocket Parade (12 roket) dengan formasi roket per owner. ARCO mempunyai tiga basic, Trinity Bolt, Seismic Drive, dan empat drone Helios Squadron. FENR memakai kit manusia/werewolf serta Holden. Formasi drone pemain dan CPU memiliki owner terpisah sehingga mirror match tidak mencampur target atau efek. Voice tetap satu speaker aktif, dengan prioritas pemain.
 
 | Level | Kecepatan | Reaksi | Recovery | Rantai | Ultimate setelah | Hindar / Punish | Kebal CPU / batas combo |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |

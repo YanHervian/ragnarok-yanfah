@@ -1,4 +1,4 @@
-# Panduan Lengkap: Membuat Karakter di Aether Clash
+# Panduan Lengkap: Membuat Karakter di Ragnarok Trinity
 
 ---
 
@@ -110,7 +110,7 @@ Karakter bisa dipilih dan dimainkan di arena dengan semua 14 animasi.
 
 ```powershell
 $char = "[nama]"
-$base = "c:\Users\ACER\Downloads\aether-clash-main\assets\$char"
+$base = "c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\$char"
 
 New-Item -ItemType Directory -Force -Path "$base\run\raw-original"
 New-Item -ItemType Directory -Force -Path "$base\run\raw"
@@ -142,7 +142,7 @@ Write-Host "Background harus MAGENTA #FF00FF. Kabari kalau sudah!"
 
 ```powershell
 $char = "[nama]"
-$base = "c:\Users\ACER\Downloads\aether-clash-main\assets\$char"
+$base = "c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\$char"
 
 # Step 1: Resize (lihat Panduan_Sprite_Karakter_AI.md)
 # Step 2: Jalankan sprite-gen
@@ -472,7 +472,7 @@ Efek visual muncul saat serangan, skill, dan ultimate.
 
 ```powershell
 $char = "[nama]"
-$base = "c:\Users\ACER\Downloads\aether-clash-main\assets\$char"
+$base = "c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\$char"
 New-Item -ItemType Directory -Force -Path "$base\ui\raw-original-skill"
 
 Write-Host "Taruh PNG efek di: $base\ui\raw-original-skill\"
@@ -486,7 +486,7 @@ Write-Host "Format: PNG transparan, sprite sheet horizontal 4-8 frame, 256x256 a
 
 ```powershell
 $char = "[nama]"
-$rawSkill = "c:\Users\ACER\Downloads\aether-clash-main\assets\$char\ui\raw-original-skill"
+$rawSkill = "c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\$char\ui\raw-original-skill"
 
 python -c "
 from PIL import Image
@@ -612,8 +612,8 @@ Portrait di HUD, ikon skill, cut-in ultimate.
 
 ```powershell
 $char = "[nama]"
-$base = "c:\Users\ACER\Downloads\aether-clash-main\assets\$char"
-$ref  = "c:\Users\ACER\Downloads\aether-clash-main\assets\dhyla"
+$base = "c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\$char"
+$ref  = "c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\dhyla"
 
 New-Item -ItemType Directory -Force -Path "$base\ui\raw-original-ui"
 
@@ -638,7 +638,7 @@ python -c "
 from PIL import Image
 import pathlib
 
-raw = pathlib.Path(r'c:\Users\ACER\Downloads\aether-clash-main\assets\[nama]\ui\raw-original-ui')
+raw = pathlib.Path(r'c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\[nama]\ui\raw-original-ui')
 out = raw.parent
 
 mapping = {
@@ -678,7 +678,7 @@ Suara ultimate, menang, dan select. Opsional: sfx skill.
 
 ```powershell
 $char = "[nama]"
-$base = "c:\Users\ACER\Downloads\aether-clash-main\assets\$char"
+$base = "c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\$char"
 New-Item -ItemType Directory -Force -Path "$base\audio"
 
 Write-Host "Taruh MP3 di: $base\audio\"

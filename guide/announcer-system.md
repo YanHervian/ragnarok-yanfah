@@ -1,6 +1,6 @@
 # Announcer sistem — Grady
 
-Status: **Grady dipilih pengguna dan dikunci sebagai voice over sistem AETHER CLASH**. Berlaku untuk seluruh roster sekarang dan karakter baru. Voice ultimate karakter tetap terpisah: Dylan untuk ARCO, Holden untuk FENR, Luna untuk MIRA, Anika untuk CORA.
+Status: **Grady dipilih pengguna dan dikunci sebagai voice over sistem RAGNAROK TRINITY**. Berlaku untuk seluruh roster sekarang dan karakter baru. Voice ultimate karakter tetap terpisah: Dylan untuk ARCO, Holden untuk FENR, Luna untuk MIRA, Anika untuk CORA.
 
 ## Identitas dan sumber
 

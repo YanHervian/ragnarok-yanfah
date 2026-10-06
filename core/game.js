@@ -1,4 +1,4 @@
-/* AETHER CLASH — standalone deterministic canvas combat runtime. */
+/* RAGNAROK TRINITY — standalone deterministic canvas combat runtime. */
 (() => {
   'use strict';
   const tW = t => (t === hero ? selectedCharacter : opponentCharacter) === 'valkren' ? 100 : 62;
@@ -13,18 +13,20 @@
   const approach = (v, target, amount) => v < target ? Math.min(target, v + amount) : Math.max(target, v - amount);
   const _bal = () => window.GAME_BALANCE?.arco;
   const BALANCE = {
-    get combo() { return [
-      { damage: _bal()?.combo[0] ?? 6, knockback: 75 },
-      { damage: _bal()?.combo[1] ?? 8, knockback: 100 },
-      { damage: _bal()?.combo[2] ?? 12, knockback: 180 }
-    ]; },
+    get combo() {
+      return [
+        { damage: _bal()?.combo[0] ?? 6, knockback: 75 },
+        { damage: _bal()?.combo[1] ?? 8, knockback: 100 },
+        { damage: _bal()?.combo[2] ?? 12, knockback: 180 }
+      ];
+    },
     get skill1() { return { damage: _bal()?.skill1?.damage ?? 16, cooldown: _bal()?.skill1?.cooldown ?? 10, knockback: 140 }; },
     get skill2() { return { damage: _bal()?.skill2?.damage ?? 24, cooldown: _bal()?.skill2?.cooldown ?? 20, knockback: 220, radius: 220 }; },
-    get ultimate() { return { damagePerDrone: (_bal()?.ultimate?.damage ?? 48)/4, cooldown: _bal()?.ultimate?.cooldown ?? 30, castTime: .50, knockback: 190 }; },
+    get ultimate() { return { damagePerDrone: (_bal()?.ultimate?.damage ?? 48) / 4, cooldown: _bal()?.ultimate?.cooldown ?? 30, castTime: .50, knockback: 190 }; },
     dummyMax: 400, heroMax: 400, hpPerBar: 100, basicCooldownRefund: .05
   };
   const cooldownMax = { skill1: BALANCE.skill1.cooldown, skill2: BALANCE.skill2.cooldown, ultimate: BALANCE.ultimate.cooldown };
-  const skillNames = { skill1: 'AETHER BOLT', skill2: 'SEISMIC DRIVE', ultimate: 'HELIOS SQUADRON' };
+  const skillNames = { skill1: 'TRINITY BOLT', skill2: 'SEISMIC DRIVE', ultimate: 'HELIOS SQUADRON' };
   const images = {}, F = window.Fenr, M = window.Mira && window.MIRA_MANIFEST ? window.Mira : null, C = window.Cora && window.CORA_MANIFEST ? window.Cora : null, N = window.Naja && window.NAJA_MANIFEST ? window.Naja : null, HD = window.Haldor && window.HALDOR_MANIFEST ? window.Haldor : null, Z = window.Zanni && window.ZANNI_MANIFEST ? window.Zanni : null, IS = window.Isolde && window.ISOLDE_MANIFEST ? window.Isolde : null, RH = window.Rhea && window.RHEA_MANIFEST ? window.Rhea : null, SO = window.Solan && window.SOLAN_MANIFEST ? window.Solan : null, NB = window.Nib && window.NIB_MANIFEST ? window.Nib : null, ED = window.Edda && window.EDDA_MANIFEST ? window.Edda : null, YF = window.Yanfah && window.YANFAH_MANIFEST ? window.Yanfah : null, DH = window.Dhyla && window.DHYLA_MANIFEST ? window.Dhyla : null, VK = window.Valkren && window.VALKREN_MANIFEST ? window.Valkren : null;
   // Kits that share one start/move/refund contract (mira.js, cora.js, naja.js, haldor.js, zanni.js, isolde.js, rhea.js, solan.js, nib.js, edda.js).
   const KITS = { ...(M ? { mira: M } : {}), ...(C ? { cora: C } : {}), ...(N ? { naja: N } : {}), ...(HD ? { haldor: HD } : {}), ...(Z ? { zanni: Z } : {}), ...(IS ? { isolde: IS } : {}), ...(RH ? { rhea: RH } : {}), ...(SO ? { solan: SO } : {}), ...(NB ? { nib: NB } : {}), ...(ED ? { edda: ED } : {}), ...(YF ? { yanfah: YF } : {}), ...(DH ? { dhyla: DH } : {}), ...(VK ? { valkren: VK } : {}) };
@@ -247,7 +249,11 @@
     land: 'land',
     ko: 'ko_slam',
     ko_slam: 'ko_slam',
-    ultimate: 'hit_heavy'
+    ultimate: 'hit_heavy',
+    vs_bersiap: 'vs_bersiap',
+    vs_impact: 'vs_impact',
+    vs_swoosh: 'vs_swoosh',
+    vs_tension: 'vs_tension'
   };
 
   // Pre-create audio element pool for instant, zero-delay HTML5 playback (works offline & on file:///)
@@ -354,7 +360,8 @@
     unlockAudio(); if (!audio || muted) return;
     // pick: the lock-in chime when a fighter is confirmed; blink: the soft tick of each following flash.
     const notes = { move: [580, 820], confirm: [440, 660, 880], back: [440, 300], locked: [155, 125], round: [330, 440], fight: [440, 880, 1320], pick: [523, 784, 1047, 1568], blink: [1175] }[kind] || [580];
-    const gap = kind === 'pick' ? .045 : .035, peak = kind === 'blink' ? .03 : kind === 'pick' ? .085 : .075, tail = kind === 'pick' ? .24 : .095;
+    const uiVolume = 7.0; // PENGUAT VOLUME UI (Bisa kamu naikkan jika masih kurang nyaring)
+    const gap = kind === 'pick' ? .045 : .035, peak = (kind === 'blink' ? .03 : kind === 'pick' ? .085 : .075) * uiVolume, tail = kind === 'pick' ? .24 : .095;
     for (const [i, n] of notes.entries()) { const at = audio.currentTime + i * gap, o = audio.createOscillator(), g = audio.createGain(); o.type = kind === 'locked' || kind === 'pick' ? 'triangle' : 'sine'; o.frequency.setValueAtTime(n, at); g.gain.setValueAtTime(.001, at); g.gain.exponentialRampToValueAtTime(peak, at + .005); g.gain.exponentialRampToValueAtTime(.001, at + tail); o.connect(g); g.connect(master); o.start(at); o.stop(at + tail + .015); audioSources++; }
   }
   function setMenuOpen(value) {
@@ -382,14 +389,14 @@
       syncPlayerForm();
       syncMusic();
       $('#ai-toggle').checked = aiEnabled; $('#character-select').value = selectedCharacter; document.body.classList.toggle('in-versus', mode === 'versus');
-      if (mode === 'versus') { announceTimer = 0; emitRoundCue('round', 1); } else announce('TRAINING READY', 1.3);
+      if (mode === 'versus') { announceTimer = 0; emitRoundCue('ronde', 1); } else announce('TRAINING READY', 1.3);
     });
     return true;
   }
   function emitRoundCue(cue, round) {
-    const event = { cue, round, text: cue === 'round' ? `Round ${round}` : 'Fight!' }; roundCues.push(event); if (roundCues.length > 12) roundCues.shift();
+    const event = { cue, round, text: cue === 'ronde' ? `Ronde ${round}` : 'Mulai!' }; roundCues.push(event); if (roundCues.length > 12) roundCues.shift();
     if (audio) menuSound(cue); if (roundAnnouncer) try { roundAnnouncer(event); } catch (_) { }
-    systemAnnouncer?.play(cue === 'round' ? `round_${round}` : 'fight', { replace: cue === 'round' });
+    systemAnnouncer?.play(cue === 'ronde' ? `ronde_${round}` : 'mulai', { replace: cue === 'ronde' });
   }
   function advanceMatch(dt) {
     if (!Rules || !match || match.mode !== 'versus') return;
@@ -398,14 +405,14 @@
       if (event.type === 'round-end') {
         clearInput(); stopUltimateVoice(); squad = enemySquad = parade = enemyParade = flock = enemyFlock = serpent = enemySerpent = quake = enemyQuake = finale = enemyFinale = skyfall = enemySkyfall = orrery = enemyOrrery = sunroar = enemySunroar = delivery = enemyDelivery = tortoise = enemyTortoise = null; fenrCutin = null; hero.action = dummy.action = null; projectiles.length = effects.length = 0; hitstop = cinematic = trauma = 0;
         if (hero.hp <= 0) state('down'); else state('idle'); if (currentDummyHP() > 0) { dummy.state = 'idle'; dummy.stateTime = 0; }
-        match.endText = event.doubleKO ? 'DOUBLE K.O.' : event.timeout ? 'TIME UP' : 'K.O.'; announceTimer = 0; sound('ko_slam');
-        const call = event.doubleKO ? 'double_ko' : event.timeout ? 'time_up' : 'ko';
-        const outcome = event.winner === 'draw' ? 'draw' : `${event.winner === 'player' ? selectedCharacter : opponentCharacter}_wins`;
+        match.endText = event.doubleKO ? 'K.O. GANDA' : event.timeout ? 'WAKTU HABIS' : 'K.O.'; announceTimer = 0; sound('ko_slam');
+        const call = event.doubleKO ? 'ko_ganda' : event.timeout ? 'waktu_habis' : 'ko';
+        const outcome = event.winner === 'draw' ? 'seri' : `${event.winner === 'player' ? selectedCharacter : opponentCharacter}_wins`;
         const speech = window.ANNOUNCER_MANIFEST?.clips;
         if (speech) match.koDuration = Math.max(2.2, (speech[call]?.duration || 0) + (speech[outcome]?.duration || 0) + .5);
         systemAnnouncer?.play([call, outcome]);
       }
-      if (event.type === 'next-round') { resetCombat(); announceTimer = 0; emitRoundCue('round', event.round); }
+      if (event.type === 'next-round') { resetCombat(); announceTimer = 0; emitRoundCue('ronde', event.round); }
       if (event.type === 'complete') window.FrontEnd?.showResult({ winner: match.winner, playerWins: match.playerWins, enemyWins: match.enemyWins, player: selectedCharacter, enemy: opponentCharacter, stage: stageId, level: difficulty, mode: 'versus' });
     }
   }
@@ -418,7 +425,7 @@
     $('#round-wins-player').textContent = versus ? '◆'.repeat(match.playerWins) + '◇'.repeat(2 - match.playerWins) : ''; $('#round-wins-enemy').textContent = versus ? '◆'.repeat(match.enemyWins) + '◇'.repeat(2 - match.enemyWins) : '';
     const card = $('#round-call'), show = !menuOpen && versus && ['intro', 'ko'].includes(match.phase);
     card.hidden = !show; card.dataset.phase = match?.phase || 'fight';
-    $('#round-call-title').textContent = !show ? '' : match.phase === 'intro' ? (match.fightCue ? 'FIGHT' : `ROUND ${match.round}`) : match.endText || 'K.O.';
+    $('#round-call-title').textContent = !show ? '' : match.phase === 'intro' ? (match.fightCue ? 'MULAI' : `RONDE ${match.round}`) : match.endText || 'K.O.';
     $('#round-call-detail').textContent = match?.phase === 'ko' ? (match.lastWinner === 'draw' ? 'DRAW  -  ROUND REPLAY' : (match.lastWinner === 'player' ? selectedCharacter : opponentCharacter).toUpperCase() + ' WINS THE ROUND') : 'FIRST TO TWO WINS';
     canvas.dataset.mode = match?.mode || 'training'; canvas.dataset.matchPhase = match?.phase || 'fight'; canvas.dataset.round = String(match?.round || 1); canvas.dataset.opponent = opponentCharacter; canvas.dataset.difficulty = difficulty; canvas.dataset.stage = stageId;
   }
@@ -2608,7 +2615,7 @@
     if (id === 'yanfah') return { name: 'YANFAH', cls: 'MECHA', deck: 'YANFAH', title: 'CYBER HACKER', portrait: 'assets/yanfah/ui/portrait.webp', names: YF.names, icons: ['basic', 'skill1', 'skill2', 'ultimate'].map(s => 'assets/yanfah/ui/icon-' + s + '.webp') };
     if (id === 'dhyla') return { name: 'DHYLA', cls: 'NATURE', deck: 'DHYLA', title: 'FUNGAL MAGE', portrait: 'assets/dhyla/ui/portrait.webp', names: DH.names, icons: ['attack', 'skill1', 'skill2', 'ultimate'].map(s => 'assets/dhyla/ui/icon-' + s + '.webp') };
     if (id === 'valkren') return { name: 'VALKREN', cls: 'MECHA', deck: 'VALKREN', title: 'HEAVY MECHA', portrait: 'assets/valkren/ui/portrait.webp', names: VK.names, icons: ['attack', 'skill1', 'skill2', 'ultimate'].map(s => 'assets/valkren/ui/icon-' + s + '.webp') };
-    return { name: 'ARCO', cls: 'MECHA', deck: 'ARCO', title: 'AETHER ARM', portrait: 'assets/ui/arco-avatar.webp', names: ['IRON CHAIN', 'AETHER BOLT', 'SEISMIC DRIVE', 'HELIOS SQUADRON'], icons: ['attack', 'skill1', 'skill2', 'squadron-icon'].map(s => 'assets/ui/' + s + '.webp') };
+    return { name: 'ARCO', cls: 'MECHA', deck: 'ARCO', title: 'TRINITY ARM', portrait: 'assets/ui/arco-avatar.webp', names: ['IRON CHAIN', 'TRINITY BOLT', 'SEISMIC DRIVE', 'HELIOS SQUADRON'], icons: ['attack', 'skill1', 'skill2', 'squadron-icon'].map(s => 'assets/ui/' + s + '.webp') };
   }
   function updateFighterIdentity() {
     if (!F) return;
@@ -2680,7 +2687,7 @@
     const ct = voiceFreezing ? 0.4 : (fenrCutin?.t ?? (arcoGroup || summon)?.t ?? 100);
     const visible = voiceFreezing || ct < SQUAD.cutinDuration; cutin.classList.toggle('fenr-cutin', cutinKey === 'fenr'); cutin.classList.toggle('mira-cutin', cutinKey === 'mira'); cutin.classList.toggle('cora-cutin', cutinKey === 'cora'); cutin.classList.toggle('naja-cutin', cutinKey === 'naja'); cutin.classList.toggle('haldor-cutin', cutinKey === 'haldor'); cutin.classList.toggle('zanni-cutin', cutinKey === 'zanni'); cutin.classList.toggle('isolde-cutin', cutinKey === 'isolde'); cutin.classList.toggle('rhea-cutin', cutinKey === 'rhea'); cutin.classList.toggle('solan-cutin', cutinKey === 'solan'); cutin.classList.toggle('nib-cutin', cutinKey === 'nib'); cutin.classList.toggle('edda-cutin', cutinKey === 'edda'); cutin.classList.toggle('yanfah-cutin', cutinKey === 'yanfah'); cutin.classList.toggle('dhyla-cutin', cutinKey === 'dhyla'); cutin.classList.toggle('valkren-cutin', cutinKey === 'valkren');
     const cutinArt = cutin.querySelector('.cutin-art'), cutinOwner = cutinKey === 'fenr' ? fenrCutin.owner : cutinKey === 'mira' || cutinKey === 'cora' || cutinKey === 'naja' || cutinKey === 'haldor' || cutinKey === 'zanni' || cutinKey === 'isolde' || cutinKey === 'rhea' || cutinKey === 'solan' || cutinKey === 'nib' || cutinKey === 'edda' || cutinKey === 'yanfah' || cutinKey === 'dhyla' || cutinKey === 'valkren' ? (summon.owner === 'enemy' ? 'RIVAL' : 'PLAYER') : '';
-    if (cutin.dataset.identity !== cutinKey + cutinOwner) { cutin.dataset.identity = cutinKey + cutinOwner; cutinArt.src = CUTIN_ART[cutinKey]; if (cutinArt.complete) cutinArt.style.visibility = ''; else { cutinArt.style.visibility = 'hidden'; cutinArt.onload = () => { cutinArt.style.visibility = ''; }; } cutin.querySelector('.cutin-kicker').textContent = { fenr: 'FENR / ' + cutinOwner, mira: 'MIRA / ' + cutinOwner, cora: 'CORA / ' + cutinOwner, naja: 'NAJA / ' + cutinOwner, haldor: 'HALDOR / ' + cutinOwner, zanni: 'ZANNI / ' + cutinOwner, isolde: 'ISOLDE / ' + cutinOwner, rhea: 'RHEA / ' + cutinOwner, solan: 'SOLAN / ' + cutinOwner, nib: 'NIB / ' + cutinOwner, edda: 'EDDA / ' + cutinOwner, yanfah: 'YANFAH / ' + cutinOwner, dhyla: 'DHYLA / ' + cutinOwner, valkren: 'MODE TEMPUR / ' + cutinOwner, arco: 'ARCO / AETHER COMMAND' }[cutinKey]; cutin.querySelector('strong').innerHTML = { fenr: 'FERAL<br><em>AWAKENING</em>', mira: 'ROCKET<br><em>PARADE</em>', cora: 'NIGHT<br><em>MURMURATION</em>', naja: 'DUNE<br><em>SERPENT</em>', haldor: 'FORGE<br><em>QUAKE</em>', zanni: 'GRAND<br><em>FINALE</em>', isolde: 'SKYFALL<br><em>LANCES</em>', rhea: 'GRAND<br><em>ORRERY</em>', solan: 'SUNMANE<br><em>ROAR</em>', nib: 'SPECIAL<br><em>DELIVERY</em>', edda: 'ELDER<br><em>TORTOISE</em>', yanfah: 'SYSTEM<br><em>BLUE SCREEN</em>', dhyla: 'AZAB<br><em>JAMUR</em>', valkren: 'SISTEM<br><em>OVERDRIVE</em>', arco: 'HELIOS<br><em>SQUADRON</em>' }[cutinKey]; cutin.querySelector('.cutin-detail').textContent = { fenr: 'THE BEAST WITHIN', mira: 'TWELVE-ROCKET SALVO', cora: 'THREE-PASS RAVEN STORM', naja: 'THREE-STRIKE SAND COBRA', haldor: 'THREE-SLAM MOLTEN SHOCKWAVE', zanni: 'THREE-RING BLADE BOOMERANG', isolde: 'THREE-LANCE ICE DIVE', rhea: 'THREE-PLANET ORBIT', solan: 'THREE-ROAR SHOCKWAVE', nib: 'THREE-PARCEL HOMING RUN', edda: 'THREE-STOMP SPIRIT WALK', yanfah: 'FATAL EXCEPTION HAS OCCURRED', dhyla: 'MAKAN NIH JAMUR JUMBO', valkren: 'PELEPASAN DAYA MAKSIMAL', arco: 'ORBITAL LASER STRIKE' }[cutinKey]; cutin.setAttribute('aria-label', { fenr: 'FENR ultimate: Feral Awakening', mira: 'MIRA ultimate: Rocket Parade', cora: 'CORA ultimate: Night Murmuration', naja: 'NAJA ultimate: Dune Serpent', haldor: 'HALDOR ultimate: Forge Quake', zanni: 'ZANNI ultimate: Grand Finale', isolde: 'ISOLDE ultimate: Skyfall Lances', rhea: 'RHEA ultimate: Grand Orrery', solan: 'SOLAN ultimate: Sunmane Roar', nib: 'NIB ultimate: Special Delivery', edda: 'EDDA ultimate: Elder Tortoise', yanfah: 'YANFAH ultimate: System Blue Screen', dhyla: 'DHYLA ultimate: Azab Jamur', valkren: 'VALKREN ultimate: Sistem Overdrive', arco: 'ARCO ultimate: Helios Squadron' }[cutinKey]); }
+    if (cutin.dataset.identity !== cutinKey + cutinOwner) { cutin.dataset.identity = cutinKey + cutinOwner; cutinArt.src = CUTIN_ART[cutinKey]; if (cutinArt.complete) cutinArt.style.visibility = ''; else { cutinArt.style.visibility = 'hidden'; cutinArt.onload = () => { cutinArt.style.visibility = ''; }; } cutin.querySelector('.cutin-kicker').textContent = { fenr: 'FENR / ' + cutinOwner, mira: 'MIRA / ' + cutinOwner, cora: 'CORA / ' + cutinOwner, naja: 'NAJA / ' + cutinOwner, haldor: 'HALDOR / ' + cutinOwner, zanni: 'ZANNI / ' + cutinOwner, isolde: 'ISOLDE / ' + cutinOwner, rhea: 'RHEA / ' + cutinOwner, solan: 'SOLAN / ' + cutinOwner, nib: 'NIB / ' + cutinOwner, edda: 'EDDA / ' + cutinOwner, yanfah: 'YANFAH / ' + cutinOwner, dhyla: 'DHYLA / ' + cutinOwner, valkren: 'MODE TEMPUR / ' + cutinOwner, arco: 'ARCO / TRINITY COMMAND' }[cutinKey]; cutin.querySelector('strong').innerHTML = { fenr: 'FERAL<br><em>AWAKENING</em>', mira: 'ROCKET<br><em>PARADE</em>', cora: 'NIGHT<br><em>MURMURATION</em>', naja: 'DUNE<br><em>SERPENT</em>', haldor: 'FORGE<br><em>QUAKE</em>', zanni: 'GRAND<br><em>FINALE</em>', isolde: 'SKYFALL<br><em>LANCES</em>', rhea: 'GRAND<br><em>ORRERY</em>', solan: 'SUNMANE<br><em>ROAR</em>', nib: 'SPECIAL<br><em>DELIVERY</em>', edda: 'ELDER<br><em>TORTOISE</em>', yanfah: 'SYSTEM<br><em>BLUE SCREEN</em>', dhyla: 'AZAB<br><em>JAMUR</em>', valkren: 'SISTEM<br><em>OVERDRIVE</em>', arco: 'HELIOS<br><em>SQUADRON</em>' }[cutinKey]; cutin.querySelector('.cutin-detail').textContent = { fenr: 'THE BEAST WITHIN', mira: 'TWELVE-ROCKET SALVO', cora: 'THREE-PASS RAVEN STORM', naja: 'THREE-STRIKE SAND COBRA', haldor: 'THREE-SLAM MOLTEN SHOCKWAVE', zanni: 'THREE-RING BLADE BOOMERANG', isolde: 'THREE-LANCE ICE DIVE', rhea: 'THREE-PLANET ORBIT', solan: 'THREE-ROAR SHOCKWAVE', nib: 'THREE-PARCEL HOMING RUN', edda: 'THREE-STOMP SPIRIT WALK', yanfah: 'FATAL EXCEPTION HAS OCCURRED', dhyla: 'MAKAN NIH JAMUR JUMBO', valkren: 'PELEPASAN DAYA MAKSIMAL', arco: 'ORBITAL LASER STRIKE' }[cutinKey]; cutin.setAttribute('aria-label', { fenr: 'FENR ultimate: Feral Awakening', mira: 'MIRA ultimate: Rocket Parade', cora: 'CORA ultimate: Night Murmuration', naja: 'NAJA ultimate: Dune Serpent', haldor: 'HALDOR ultimate: Forge Quake', zanni: 'ZANNI ultimate: Grand Finale', isolde: 'ISOLDE ultimate: Skyfall Lances', rhea: 'RHEA ultimate: Grand Orrery', solan: 'SOLAN ultimate: Sunmane Roar', nib: 'NIB ultimate: Special Delivery', edda: 'EDDA ultimate: Elder Tortoise', yanfah: 'YANFAH ultimate: System Blue Screen', dhyla: 'DHYLA ultimate: Azab Jamur', valkren: 'VALKREN ultimate: Sistem Overdrive', arco: 'ARCO ultimate: Helios Squadron' }[cutinKey]); }
     cutin.classList.toggle('visible', visible); cutin.setAttribute('aria-hidden', String(!visible));
     const slide = !visible ? -110 : ct < .16 ? -110 * Math.pow(1 - ct / .16, 3) : ct > .57 ? 110 * Math.pow((ct - .57) / .21, 2) : 0;
     cutin.style.transform = `translateX(${slide}%) rotate(-3deg)`;
@@ -2785,10 +2792,10 @@
     unlockAudio();
     sound('heavy');
     setTimeout(() => {
-      systemAnnouncer?.play('fight');
+      systemAnnouncer?.play('mulai');
     }, 120);
   };
-  function toggleFullscreen() { if (window.parent !== window) { try { if (window.parent.aetherFullscreen) { window.parent.aetherFullscreen(); return; } } catch (_) { } window.parent.postMessage({ type: 'aether-fullscreen' }, location.origin); return; } if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => { }); else document.exitFullscreen?.(); }
+  function toggleFullscreen() { if (window.parent !== window) { try { if (window.parent.ragnarokFullscreen) { window.parent.ragnarokFullscreen(); return; } } catch (_) { } window.parent.postMessage({ type: 'ragnarok-fullscreen' }, location.origin); return; } if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => { }); else document.exitFullscreen?.(); }
   $('#fullscreen-btn').onclick = toggleFullscreen;
   for (const button of document.querySelectorAll('[data-action]')) button.onclick = () => { unlockAudio(); const name = button.dataset.action; if (name === 'attack') startAttack(); else cast(name); canvas.focus({ preventScroll: true }); };
   function tick(stamp) { if (lastTime) { const elapsed = Math.min((stamp - lastTime) / 1000, .1); fps += (1 / Math.max(elapsed, .001) - fps) * .05; if (!window.__game?.manual) { accumulator += elapsed; while (accumulator >= 1 / 120) { step(1 / 120); accumulator -= 1 / 120; } } } lastTime = stamp; draw(); flushAudioQueue(); requestAnimationFrame(tick); }
@@ -2796,6 +2803,7 @@
   // Positions represent feet. No networking or persistent state is changed by this interface.
   window.__game = {
     hero, dummy, config: CONFIG, balance: BALANCE, particles, effects, projectiles, pose: heroPose, press: key => press(key, true), release, input(key, down) { if (down) press(key); else release(key); }, reset, cast, jump, attack: startAttack, clearInput, draw, manual: false,
+    playSound: sound,
     advance(seconds) { for (let i = 0; i < Math.round(seconds * 120); i++) step(1 / 120); draw(); return this.snapshot(); },
     snapshot() { return { ready, paused, settingsOpen, menuOpen, selectedCharacter, opponentCharacter, difficulty, stageId, match: match ? { ...match } : null, roundCues: [...roundCues], aiEnabled, time, stepCount, hero: JSON.parse(JSON.stringify(hero)), dummy: { ...dummy }, healthBars: { hero: hpLayers(hero.hp), dummy: hpLayers(currentDummyHP()) }, squad: squad ? JSON.parse(JSON.stringify(squad)) : null, enemySquad: enemySquad ? JSON.parse(JSON.stringify(enemySquad)) : null, parade: parade ? JSON.parse(JSON.stringify(parade)) : null, enemyParade: enemyParade ? JSON.parse(JSON.stringify(enemyParade)) : null, flock: flock ? JSON.parse(JSON.stringify(flock)) : null, enemyFlock: enemyFlock ? JSON.parse(JSON.stringify(enemyFlock)) : null, serpent: serpent ? JSON.parse(JSON.stringify(serpent)) : null, enemySerpent: enemySerpent ? JSON.parse(JSON.stringify(enemySerpent)) : null, quake: quake ? JSON.parse(JSON.stringify(quake)) : null, enemyQuake: enemyQuake ? JSON.parse(JSON.stringify(enemyQuake)) : null, finale: finale ? { ...finale } : null, enemyFinale: enemyFinale ? { ...enemyFinale } : null, skyfall: skyfall ? { ...skyfall } : null, enemySkyfall: enemySkyfall ? { ...enemySkyfall } : null, orrery: orrery ? { ...orrery } : null, enemyOrrery: enemyOrrery ? { ...enemyOrrery } : null, sunroar: sunroar ? { ...sunroar } : null, enemySunroar: enemySunroar ? { ...enemySunroar } : null, delivery: delivery ? { ...delivery } : null, enemyDelivery: enemyDelivery ? { ...enemyDelivery } : null, systemcrash: systemcrash ? JSON.parse(JSON.stringify(systemcrash)) : null, enemySystemcrash: enemySystemcrash ? JSON.parse(JSON.stringify(enemySystemcrash)) : null, tortoise: tortoise ? { ...tortoise, spirit: undefined } : null, enemyTortoise: enemyTortoise ? { ...enemyTortoise, spirit: undefined } : null, playable: playable(), cutinVisible: !!squad && squad.t < SQUAD.cutinDuration, totalDamage, comboHits, comboDamage, hitstop, cinematic, trauma, projectileCount: projectiles.length, audioState: audio?.state || 'uninitialized', audioSources, stageLoaded: !!images.stage, spriteLoaded: !!images.hero, manifestLoaded: !!manifest }; },
     startMatch, setMenuOpen, menuSound, openSettings, toggleFullscreen, music() { return music ? { on: musicOn, volume: musicVolume, playing: !music.paused, src: music.src, element: music } : null; }, onRoundCue(fn) { roundAnnouncer = typeof fn === 'function' ? fn : null; },
@@ -2923,7 +2931,7 @@
 
   resize(); requestAnimationFrame(tick);
   // Load only the essential shared assets on startup. Character-specific assets are lazy-loaded when each character is first selected or used as an opponent.
-  Promise.resolve(window.AETHER_PRELOAD).then(() => Promise.all([
+  Promise.resolve(window.RAGNAROK_PRELOAD).then(() => Promise.all([
     loadImage('hero', 'assets/mecha/run/sprite-sheet-alpha.webp', true),
     loadImage('stage', 'assets/stages/amikom-arena-wide.webp', true),
     loadImage('drone', 'assets/ui/drone.png', true),
@@ -2939,9 +2947,9 @@
     Promise.all(startTasks).then(() => {
       if (F) syncPlayerForm();
       ready = results.every(Boolean) && (!F || (!!window.FENR_HUMAN_MANIFEST && !!window.FENR_WOLF_MANIFEST)) && !!manifest && frames('idle').length > 0;
-      if (ready) { 
-        $('#load-state').classList.add('hidden'); 
-        announce('TRAINING READY', 1.65); 
+      if (ready) {
+        $('#load-state').classList.add('hidden');
+        announce('TRAINING READY', 1.65);
         // Silently preload all characters in the background to make matches start instantly
         setTimeout(() => {
           Object.keys(CHARACTER_ASSETS).forEach(id => loadCharacterAssets(id));

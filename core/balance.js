@@ -1,5 +1,5 @@
 /**
- * AETHER CLASH - PUSAT PENGATURAN KESEIMBANGAN KARAKTER (CHARACTER BALANCE)
+ * RAGNAROK TRINITY - PUSAT PENGATURAN KESEIMBANGAN KARAKTER (CHARACTER BALANCE)
  * 
  * File ini digunakan untuk mengatur Damage (Daya Rusak) dan Cooldown tiap karakter.
  * 

@@ -9,7 +9,7 @@ Dokumentasi ini menyimpan keputusan final dan cara menyiapkan karakter berikutny
 
 | Keperluan | Acuan |
 | --- | --- |
-| Branding umum AETHER CLASH, dunia Mecha vs Demi-Human | [branding.md](branding.md) |
+| Branding umum RAGNAROK TRINITY, dunia Mecha vs Demi-Human | [branding.md](branding.md) |
 | Framing kepala dan arah avatar pemain/musuh, termasuk transformasi | [avatar-standard.md](avatar-standard.md) |
 | Main menu, pemilihan pemain/lawan, arena, difficulty, ronde dan hasil pertandingan | [main-menu.md](main-menu.md) |
 | Background main menu looping Seedance2.5 1080p | [menu-video.md](menu-video.md) |

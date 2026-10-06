@@ -1,11 +1,11 @@
 <div align="center">
 
-# ⚔️ AETHER CLASH
+# ⚔️ RAGNAROK TRINITY
 
 **A 2D browser fighting game — Mecha vs Demi-Human.**
 Twelve chibi fighters, cinematic ultimates and a CPU that reads your moves. Runs in any modern browser, on desktop and mobile, with no install.
 
-[![Play Online](https://img.shields.io/badge/▶_Play-Online-f0b15e?style=for-the-badge)](https://bangtutorial.id/aether-clash/)
+[![Play Online](https://img.shields.io/badge/▶_Play-Online-f0b15e?style=for-the-badge)](https://bangtutorial.id/ragnarok-trinity/)
 [![YouTube Tutorial](https://img.shields.io/badge/YouTube-Tutorial-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=UN_0bNC2wTU)
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white)
@@ -19,7 +19,7 @@ Twelve chibi fighters, cinematic ultimates and a CPU that reads your moves. Runs
 [![Code license: MIT](https://img.shields.io/badge/code-MIT-blue?style=flat-square)](LICENSE)
 [![Assets license: CC BY-NC 4.0](https://img.shields.io/badge/assets-CC_BY--NC_4.0-lightgrey?style=flat-square)](LICENSE-ASSETS.md)
 
-<img src="docs/screenshots/menu.jpg" alt="AETHER CLASH main menu" width="860">
+<img src="docs/screenshots/menu.jpg" alt="RAGNAROK TRINITY main menu" width="860">
 
 </div>
 
@@ -81,7 +81,7 @@ The whole game — fighters, animations, voices and code — was made step by st
 
 | | Fighter | Faction | Style | Basic | Ultimate |
 | :-: | --- | --- | --- | --- | --- |
-| <img src="assets/ui/arco-avatar.webp" width="48"> | **ARCO** — The Aether Arm | Mecha | Brawler / drone summon | Iron Chain | Helios Squadron |
+| <img src="assets/ui/arco-avatar.webp" width="48"> | **ARCO** — The Trinity Arm | Mecha | Brawler / drone summon | Iron Chain | Helios Squadron |
 | <img src="assets/fenr/ui/portrait-human.webp" width="48"> | **FENR** — The Wolf Ranger | Demi-Human | Agile / werewolf transformation | Ranger Chain | Feral Awakening |
 | <img src="assets/mira/ui/portrait.webp" width="48"> | **MIRA** — The Candy Pilot | Mecha | Heavy mech / rocket barrage | Mitten Chain | Rocket Parade |
 | <img src="assets/cora/ui/portrait.webp" width="48"> | **CORA** — The Raven Dancer | Demi-Human | Agile / raven swarm | Feather Waltz | Night Murmuration |
@@ -126,8 +126,8 @@ In the menus: `W A S D` / arrow keys to select, `Enter` to confirm, `Esc` to go 
 The game is a set of static files, so there is nothing to install or build.
 
 ```bash
-git clone https://github.com/<your-username>/aether-clash.git
-cd aether-clash
+git clone https://github.com/<your-username>/ragnarok-trinity.git
+cd ragnarok-trinity
 
 # any static file server works, for example:
 python -m http.server 8000
@@ -144,11 +144,11 @@ Then open <http://localhost:8000/>.
 
 ## 🌐 Deployment
 
-Upload the folder to any static host (nginx, Apache, LiteSpeed, Caddy, GitHub Pages, Netlify and so on). All paths are relative, so it works at a domain root or in a subfolder such as `https://example.com/aether-clash/`.
+Upload the folder to any static host (nginx, Apache, LiteSpeed, Caddy, GitHub Pages, Netlify and so on). All paths are relative, so it works at a domain root or in a subfolder such as `https://example.com/ragnarok-trinity/`.
 
 Server checklist:
 
-- Open the game **with the trailing slash** (`/aether-clash/`) and redirect `/aether-clash` to it.
+- Open the game **with the trailing slash** (`/ragnarok-trinity/`) and redirect `/ragnarok-trinity` to it.
 - Serve `.js` as JavaScript, `.webp` as `image/webp`, `.mp3` as `audio/mpeg`, `.mp4` as `video/mp4` and `.ttf` as `font/ttf`.
 - Send `Cache-Control: no-cache` for the game files. The game keeps its own hashed copies in Cache Storage, so updates show up immediately.
 - Serve MP3/MP4 files with range requests (the default for static files) and without gzip.

@@ -128,4 +128,4 @@ window.NAMAKARAKTER_METRICS = window.NAMAKARAKTER_MANIFEST;
 ```
 
 ---
-**Kesimpulan:** Masalah utama dari pembuatan karakter AI adalah mereka **digambar terlalu besar di dalam kanvas**. Mengecilkannya (pre-scale) terlebih dahulu dengan script python di atas adalah rahasia untuk membuat ukuran mereka sejajar sempurna dengan grid 448x288 standar Aether Clash!
+**Kesimpulan:** Masalah utama dari pembuatan karakter AI adalah mereka **digambar terlalu besar di dalam kanvas**. Mengecilkannya (pre-scale) terlebih dahulu dengan script python di atas adalah rahasia untuk membuat ukuran mereka sejajar sempurna dengan grid 448x288 standar Ragnarok Trinity!

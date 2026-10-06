@@ -3,7 +3,7 @@
   'use strict';
   const root = document.querySelector('#front-menu'), game = window.__game;
   const fighters = {
-    arco: { name: 'ARCO', tag: 'THE AETHER ARM', race: 'MECHA', portrait: 'assets/ui/arco-avatar.webp', art: 'assets/menu/arco-select.webp', detail: 'Steel resolve. Unbreakable spirit.', basic: 'IRON CHAIN', ultimate: 'HELIOS SQUADRON', style: 'Brawler / drone summon', color: '#8ae3d3', cutin: 'assets/ui/ultimate-cutin.webp' },
+    arco: { name: 'ARCO', tag: 'THE TRINITY ARM', race: 'MECHA', portrait: 'assets/ui/arco-avatar.webp', art: 'assets/menu/arco-select.webp', detail: 'Steel resolve. Unbreakable spirit.', basic: 'IRON CHAIN', ultimate: 'HELIOS SQUADRON', style: 'Brawler / drone summon', color: '#8ae3d3', cutin: 'assets/ui/ultimate-cutin.webp' },
     fenr: { name: 'FENR', tag: 'THE WOLF RANGER', race: 'DEMI-HUMAN', portrait: 'assets/fenr/ui/portrait-human.webp', art: 'assets/menu/fenr-select.webp', detail: 'The wild never bows.', basic: 'RANGER CHAIN', ultimate: 'FERAL AWAKENING', style: 'Agile / werewolf transformation', color: '#eab27a' },
     ...(window.Mira && window.MIRA_MANIFEST ? { mira: { name: 'MIRA', tag: 'THE CANDY PILOT', race: 'MECHA', portrait: 'assets/mira/ui/portrait.webp', art: 'assets/menu/mira-select.webp', detail: 'Small pilot. Big robot. Bigger fireworks.', basic: 'MITTEN CHAIN', ultimate: 'ROCKET PARADE', style: 'Heavy mech / rocket barrage', color: '#d9b4ff' } } : {}),
     ...(window.Cora && window.CORA_MANIFEST ? { cora: { name: 'CORA', tag: 'THE RAVEN DANCER', race: 'DEMI-HUMAN', portrait: 'assets/cora/ui/portrait.webp', art: 'assets/menu/cora-select.webp', detail: 'Every feather is a blade.', basic: 'FEATHER WALTZ', ultimate: 'NIGHT MURMURATION', style: 'Agile / raven swarm', color: '#c4a6ff' } } : {}),
@@ -95,7 +95,7 @@
         </div>
       </div>
     `;
-    root.appendChild(modal);
+    document.body.appendChild(modal);
     
     modal.querySelector('.dlc-btn-cancel').onclick = () => { if (!isDownloading) modal.remove(); };
     modal.querySelector('.dlc-btn-download').onclick = async () => {
@@ -110,7 +110,6 @@
       });
       
       isDownloading = false;
-      modal.remove();
       if (success) {
         dlcStatus[dlcId] = true;
         render();
@@ -119,7 +118,19 @@
           const im = new Image(); im.src = f.art; im.decode().catch(()=>{});
           const cutin = new Image(); cutin.src = f.cutin || `assets/${id}/ui/cutin.webp`; cutin.decode().catch(()=>{});
         }
+        
+        modal.innerHTML = `
+          <div class="dlc-modal-content">
+            <h2 style="color: var(--accent, #3dd2a6);">BERHASIL</h2>
+            <p>Aset <strong>${name}</strong> telah berhasil diunduh dan siap digunakan.</p>
+            <div class="dlc-actions" style="margin-top: 24px;">
+              <button class="dlc-btn-download">TUTUP</button>
+            </div>
+          </div>
+        `;
+        modal.querySelector('.dlc-btn-download').onclick = () => modal.remove();
       } else {
+        modal.remove();
         window.alert('Gagal mengunduh aset. Periksa memori dan koneksi Anda.');
       }
     };
@@ -131,7 +142,7 @@
     modal.className = 'dlc-modal';
     modal.innerHTML = `
       <div class="dlc-modal-content">
-        <h2>AETHER DOWNLOAD MANAGER</h2>
+        <h2>RAGNAROK DOWNLOAD MANAGER</h2>
         <p>Unduh semua aset karakter dan map tambahan agar tidak perlu loading di tengah permainan.</p>
         <div class="dlc-multi-progress">
           <div class="dlc-multi-item" id="dl-prog-chars">
@@ -151,7 +162,7 @@
         </div>
       </div>
     `;
-    root.appendChild(modal);
+    document.body.appendChild(modal);
 
     const updateUI = (id, pct) => {
       const el = modal.querySelector('#' + id);
@@ -320,6 +331,11 @@
     return `<div class="fighter-plinth ${side} ${f ? '' : 'unknown'} ${soon(id) ? 'soon' : ''}">${f ? `<img class="selection-cutin" src="${f.cutin || `assets/${id}/ui/cutin.webp`}" alt="" onerror="this.style.display='none'" onload="this.style.display='block'">` : ''}<div class="plinth-light"></div>${f ? `<img class="selection-art" src="${f.art || f.portrait}" alt="${f.name}" style="${yStyle}" onload="this.style.opacity=1">` : ''}  <div class="fighter-copy"><span>${f?.tag || ''}</span><h2>${f?.name || '???'}</h2><p>${f?.race || ''}</p>${statsHtml}</div></div>`;
   }
   function render() {
+    if (screen === 'home' && root.dataset.screen === 'home') {
+      const status = root.querySelector('#menu-ready');
+      if (status) status.textContent = game.snapshot().ready ? 'READY' : 'LOADING…';
+      return;
+    }
     if (window._homeCycle) { clearInterval(window._homeCycle); window._homeCycle = null; }
     if (lockIn) { clearTimeout(lockIn); lockIn = null; } for (const t of lockTicks) clearTimeout(t); lockTicks = [];
     if (backgroundVideo) { videoPlayToken++; backgroundVideo.pause(); backgroundVideo.remove(); }
@@ -371,7 +387,7 @@
       root.innerHTML = `<div class="home-layout">
         <img class="home-char-cutin" src="${activeChar.cutin || `assets/${player}/ui/cutin.webp`}" alt="" onerror="this.style.display='none'" onload="this.style.display='block'">
         <header class="home-header">
-          <div class="home-logo"><span class="logo-top">AETHER</span><span class="logo-bot">CLASH</span></div>
+          <div class="home-logo"><span class="logo-top">RAGNAROK</span><span class="logo-bot">TRINITY</span></div>
           <nav class="home-tabs">
             <span class="tab-active">MAIN</span>
             <span>ROSTER</span>
@@ -496,6 +512,7 @@
       const st = MatchRules.stages[stage];
       const stageCount = String(stages.length).padStart(2, '0');
       const currentNumber = String(stageIndex + 1).padStart(2, '0');
+      const isStageDownloaded = stage === 'amikom' || dlcStatus['map_' + stage] !== false;
       const ready = game.snapshot().ready;
       root.innerHTML = `<div class="arena-screen-bg" style="background-image:url('${st.image}')"></div>${navHeader('SELECT ARENA', mode === 'versus' ? 'VERSUS COMPUTER / MATCH SETUP' : 'TRAINING / ARENA SETUP')}
         <div class="arena-content">
@@ -552,12 +569,51 @@
               ${mode === 'versus' ? `<div class="difficulty-buttons" role="group" aria-label="Tingkat kesulitan">${Object.entries(MatchRules.difficulties).map(([id, d], i) => `<button data-level="${id}" class="${id === level ? 'selected' : ''}" aria-pressed="${id === level}"><i>${'▰'.repeat(i + 1)}</i><b>${d.label}</b></button>`).join('')}</div>` : '<p class="training-note">Unlimited time · Passive rival · Reset anytime</p>'}
             </div>
             <div class="match-rules"><b>${mode === 'versus' ? 'FIRST TO 2 WINS' : 'MAKE EVERY HIT COUNT'}</b><span>${mode === 'versus' ? 'BEST OF 3 ROUNDS · 90 SECONDS' : 'COMBO TRACKER · FULL MOVE SET'}</span></div>
-            <button class="menu-primary start-battle" data-cmd="start" ${ready ? '' : 'disabled'}><span>${ready ? (mode === 'versus' ? 'LET’S FIGHT' : 'ENTER TRAINING') : 'PREPARING ARENA…'}</span><b>→</b></button>
+            <button class="menu-primary start-battle" data-cmd="start" ${ready ? '' : 'disabled'}><span>${!isStageDownloaded ? 'UNDUH MAP' : (ready ? (mode === 'versus' ? 'MULAI BATTLE' : 'ENTER TRAINING') : 'PREPARING ARENA…')}</span><b>→</b></button>
           </section>
           <p id="setup-error" role="status"></p>
         </div>${footer()}`;
     } else if (screen === 'about') {
-      root.innerHTML = `<div class="home-art dim"></div>${navHeader('CHRONICLES', 'RAGNAROK: TRINITY')}<article class="about-panel"><span class="eyebrow">CHRONICLES OF THE THREE REALMS</span><h2>Three factions.<br><em>One destiny.</em></h2><p>In a world where realms collide, three great factions are summoned to the sacred arena: the Divine Gods from the heavens above, the mystical Fantasy beings born of ancient magic, and the Mortal warriors forged in the fires of humanity. Each carries their own story, their own power, and their own reason to fight.</p><div class="about-fighters"><p><b>⚡ DIVINE</b><span>Celestial gods and heavenly beings. Wielders of sacred power, lightning, and divine judgment.</span></p><p><b>✦ FANTASY</b><span>Mystic creatures of ancient legend. Masters of elemental magic, shapeshifting, and arcane arts.</span></p><p><b>⚔ MORTAL</b><span>Human warriors tempered by battle. Unyielding spirit, martial mastery, and unbreakable will.</span></p></div><div class="about-stats"><span><b>03</b>FACTIONS</span><span><b>13</b>FIGHTERS</span><span><b>∞</b>RIVALRIES</span></div><small>Visuals · Higgsfield &nbsp; Voices · ElevenLabs &nbsp; Typography · Cinzel / Rajdhani<br>Local fighting demo · Single player</small><button class="menu-primary" data-cmd="home">BACK TO MAIN MENU <b>→</b></button></article>`;
+      root.innerHTML = `<div class="home-art dim blur-bg"></div>${navHeader('CHRONICLES', 'RAGNAROK: TRINITY')}
+<article class="about-modern">
+  <div class="about-modern-content">
+    <div class="about-header">
+      <span class="eyebrow">CHRONICLES OF THE THREE REALMS</span>
+      <h2>Three factions.<br><em>One destiny.</em></h2>
+      <p>In a world where realms collide, three great factions are summoned to the sacred arena: the Divine Gods from the heavens above, the mystical Fantasy beings born of ancient magic, and the Mortal warriors forged in the fires of humanity. Each carries their own story, their own power, and their own reason to fight.</p>
+    </div>
+    
+    <div class="factions-grid">
+      <div class="faction-card divine">
+        <div class="faction-icon">⚡</div>
+        <h3>DIVINE</h3>
+        <p>Celestial gods and heavenly beings. Wielders of sacred power, lightning, and divine judgment.</p>
+      </div>
+      <div class="faction-card fantasy">
+        <div class="faction-icon">✦</div>
+        <h3>FANTASY</h3>
+        <p>Mystic creatures of ancient legend. Masters of elemental magic, shapeshifting, and arcane arts.</p>
+      </div>
+      <div class="faction-card mortal">
+        <div class="faction-icon">⚔</div>
+        <h3>MORTAL</h3>
+        <p>Human warriors tempered by battle. Unyielding spirit, martial mastery, and unbreakable will.</p>
+      </div>
+    </div>
+    
+    <div class="about-footer">
+      <div class="stats-row">
+        <div class="stat"><b>03</b><span>FACTIONS</span></div>
+        <div class="stat"><b>13</b><span>FIGHTERS</span></div>
+        <div class="stat"><b>∞</b><span>RIVALRIES</span></div>
+      </div>
+      <div class="about-credits">
+        <small>Visuals · Higgsfield &nbsp; Voices · ElevenLabs &nbsp; Typography · Cinzel / Rajdhani<br>Local fighting demo · Single player</small>
+        <button class="menu-primary btn-glow" data-cmd="home">BACK TO MAIN MENU <b>→</b></button>
+      </div>
+    </div>
+  </div>
+</article>`;
     } else if (screen === 'result') {
       const won = result.winner === 'player', winner = won ? result.player : result.enemy; root.innerHTML = `<div class="result-bg"></div>${navHeader('MATCH COMPLETE', MatchRules.stages[result.stage].name.toUpperCase())}<div class="result-layout"><img class="result-fighter" src="${fighters[winner].art}" alt="${fighters[winner].name}"><div class="result-copy"><span class="eyebrow">${won ? 'PLAYER 1' : 'COMPUTER'} TAKES THE MATCH</span><h1>${won ? 'VICTORY' : 'DEFEAT'}</h1><p>${fighters[winner].name} WINS</p><div class="final-score"><span>${result.playerWins}</span><i>—</i><span>${result.enemyWins}</span></div><small>${fighters[result.player].name} vs ${fighters[result.enemy].name} · ${MatchRules.difficulties[result.level].label}</small><button class="menu-primary" data-cmd="rematch">REMATCH <b>→</b></button><button class="result-secondary" data-cmd="reselect">CHARACTER SELECT</button><button class="result-secondary" data-cmd="home">MAIN MENU</button></div></div>`;
     }
@@ -600,7 +656,105 @@
       showDownloadModal(stage, true);
       return;
     }
-    if (game.startMatch({ player, enemy, stage, level, mode })) { document.querySelector('#arena').focus(); } else { const error = root.querySelector('#setup-error'); if (error) error.textContent = 'Aset belum siap. Tunggu sebentar lalu coba lagi.'; sfx('locked', true); } 
+    
+    // Create VS Screen Overlay
+    const p1 = fighters[player] || fighters['arco'];
+    const p2 = fighters[enemy] || fighters['fenr'];
+    const st = MatchRules.stages[stage];
+    
+    const vsHTML = `
+      <div id="vs-screen" class="vs-screen" style="--c1: ${p1.color}; --c2: ${p2.color}; background-image: url('${st.image}');">
+
+        <!-- LAPISAN LATAR -->
+        <div class="vs-bg-dim"></div>
+        <div class="vs-panel vs-panel-p1"></div>
+        <div class="vs-panel vs-panel-p2"></div>
+        <div class="vs-halftone"></div>
+        <div class="vs-speed vs-speed-p1"></div>
+        <div class="vs-speed vs-speed-p2"></div>
+
+        <!-- TEKS RAKSASA DI BELAKANG KARAKTER -->
+        <div class="vs-ghost vs-ghost-p1">${p1.name}</div>
+        <div class="vs-ghost vs-ghost-p2">${p2.name}</div>
+
+        <!-- KARAKTER -->
+        <div class="vs-fighter vs-p1">
+          <img src="${p1.art}" alt="" style="filter: drop-shadow(0 0 24px ${p1.color}) drop-shadow(0 0 4px #000);">
+        </div>
+        <div class="vs-fighter vs-p2">
+          <img src="${p2.art}" alt="" style="filter: drop-shadow(0 0 24px ${p2.color}) drop-shadow(0 0 4px #000);">
+        </div>
+
+        <!-- GARIS DIAGONAL TENGAH -->
+        <div class="vs-slash"></div>
+
+        <!-- PLATE NAMA -->
+        <div class="vs-plate vs-plate-p1">
+          <span class="vs-tag"><b>P1</b> / ${p1.tag}</span>
+          <h1>${p1.name}</h1>
+        </div>
+        <div class="vs-plate vs-plate-p2">
+          <span class="vs-tag"><b>${mode === 'versus' ? 'CPU' : 'P2'}</b> / ${p2.tag}</span>
+          <h1>${p2.name}</h1>
+        </div>
+
+        <!-- LOGO VS -->
+        <div class="vs-center-logo" data-text="VS">
+          <span class="vs-logo-main">VS</span>
+        </div>
+
+        <!-- LOADING -->
+        <div class="vs-loading">
+          <div class="vs-loading-text">MEMUAT ARENA...</div>
+          <div class="vs-loading-bar"><i></i></div>
+        </div>
+
+        <!-- EFEK LAYAR PENUH -->
+        <div class="vs-bar vs-bar-top"></div>
+        <div class="vs-bar vs-bar-bottom"></div>
+        <div class="vs-scanlines"></div>
+        <div class="vs-vignette"></div>
+        <div class="vs-flash"></div>
+      </div>
+    `;
+    
+    const vsNode = document.createElement('div');
+    vsNode.innerHTML = vsHTML;
+    const vsEl = vsNode.firstElementChild;
+    document.body.appendChild(vsEl);
+    
+    sfx('confirm', true);
+    if (game.playSound) {
+      game.playSound('vs_swoosh');
+      setTimeout(() => game.playSound('vs_impact'), 350);
+      setTimeout(() => game.playSound('vs_tension'), 600);
+      setTimeout(() => game.playSound('vs_bersiap'), 1200);
+    }
+    
+    document.getElementById('load-state')?.classList.add('hidden'); // Hide the old loader just in case
+    
+    // Hold VS screen for ~2.5s to let animation play out
+    setTimeout(() => {
+      const started = game.startMatch({ player, enemy, stage, level, mode });
+      if (started) {
+        document.querySelector('#arena').focus();
+        
+        // Wait for game engine to finish loading and transition out of menu
+        const checkLoaded = setInterval(() => {
+          if (!document.body.classList.contains('in-menu')) {
+            clearInterval(checkLoaded);
+            vsEl.classList.add('fade-out');
+            setTimeout(() => vsEl.remove(), 500);
+          }
+        }, 100);
+
+      } else {
+        vsEl.remove();
+        const error = root.querySelector('#setup-error');
+        if (error) error.textContent = 'Aset belum siap. Tunggu sebentar lalu coba lagi.';
+        sfx('locked', true);
+      }
+    }, 2500);
   }
   function command(cmd) {
     if (lockIn) return;
@@ -648,6 +802,16 @@
     });
     root.querySelectorAll('[data-fighter]').forEach(b => { b.onpointerenter = () => focusFighter(b.dataset.fighter); b.onfocus = () => focusFighter(b.dataset.fighter); b.onclick = () => { focusFighter(b.dataset.fighter); if (!touch) confirm(); }; });
     root.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { stage = b.dataset.stage; sfx('move', true); render(); root.querySelector(`[data-stage="${stage}"]`).focus(); });
+    root.querySelectorAll('.arena-tile .dlc-icon-badge').forEach(b => {
+      b.onclick = (e) => {
+        e.stopPropagation();
+        const st = b.closest('[data-stage]').dataset.stage;
+        if (st && window.downloadDLC) {
+          sfx('locked', true);
+          showDownloadModal(st, true);
+        }
+      };
+    });
     root.querySelectorAll('[data-level]').forEach(b => b.onclick = () => { level = b.dataset.level; sfx('move', true); render(); root.querySelector(`[data-level="${level}"]`).focus(); });
   }
   document.addEventListener('keydown', e => {
@@ -688,7 +852,7 @@
   });
   window.FrontEnd = { syncBackground, home() { screen = 'home'; game.setMenuOpen(true); render(); }, showResult(data) { result = data; ({ player, enemy, stage, level, mode } = data); screen = 'result'; game.setMenuOpen(true); render(); }, assetsReady(ok = true) { if (game.snapshot().menuOpen) { render(); if (!ok) { const status = root.querySelector('#menu-ready'); if (status) status.textContent = 'ASSET ERROR · RELOAD REQUIRED'; } } } };
   // First paint after the loading screen's download, so menu pictures come straight from the cache.
-  Promise.resolve(window.AETHER_PRELOAD).then(render);
+  Promise.resolve(window.RAGNAROK_PRELOAD).then(render);
 })();
 
 

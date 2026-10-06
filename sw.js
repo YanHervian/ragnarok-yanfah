@@ -1,9 +1,9 @@
-/* AETHER CLASH service worker. preload.js fills the 'aether-assets' cache (with content hashes) on each visit, so this
+/* RAGNAROK TRINITY service worker. preload.js fills the 'ragnarok-assets' cache (with content hashes) on each visit, so this
    worker only has to answer from it:
    - pictures and fonts: cache first (instant screens, works offline);
    - pages, CSS and JS: network first, so a new deploy shows up at once; the cache is the offline fallback;
    - audio/video and range requests: left to the network and HTTP cache (Safari needs real 206 range answers). */
-const CACHE = 'aether-assets';
+const CACHE = 'ragnarok-assets-v2';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', event => {
