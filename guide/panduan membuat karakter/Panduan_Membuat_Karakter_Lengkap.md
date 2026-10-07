@@ -72,6 +72,7 @@ assets/[nama-karakter]/
 |   |   +-- ultimate.png
 |   |   +-- hurt.png
 |   |   +-- down.png
+|   |   +-- recover.png
 |   |
 |   +-- raw/                    <- AI OUTPUT: hasil resize
 |   +-- frames/                 <- AI OUTPUT: frame individual
@@ -104,7 +105,7 @@ assets/[nama-karakter]/
 ## Tahap 1 — Sprite & Karakter (Bisa Dimainkan)
 
 ### Apa yang dihasilkan:
-Karakter bisa dipilih dan dimainkan di arena dengan semua 14 animasi.
+Karakter bisa dipilih dan dimainkan di arena dengan semua 15 animasi.
 
 ### AI: Buat Folder Tahap 1
 
@@ -119,7 +120,7 @@ New-Item -ItemType Directory -Force -Path "$base\ui\raw-original-skill"
 New-Item -ItemType Directory -Force -Path "$base\ui\raw-original-ui"
 New-Item -ItemType Directory -Force -Path "$base\audio"
 
-Write-Host "Folder siap! Taruh 14 PNG di: $base\run\raw-original\"
+Write-Host "Folder siap! Taruh 15 PNG di: $base\run\raw-original\"
 Write-Host "Background harus MAGENTA #FF00FF. Kabari kalau sudah!"
 ```
 
@@ -135,7 +136,7 @@ Write-Host "Background harus MAGENTA #FF00FF. Kabari kalau sudah!"
 | State | Scale |
 |---|---|
 | idle, walk, crouch | 0.25 |
-| run, attack1-3, skill1-2, ultimate, hurt, down | 0.28 |
+| run, attack1-3, skill1-2, ultimate, hurt, down, recover | 0.28 |
 | jump, doublejump | 0.12 |
 
 ### AI: Proses Sprite
@@ -198,6 +199,12 @@ Copy-Item "$base\run\manifest.js" "$base\manifest.js"
     return true;
   }
   const vfx = {
+    // scaleOverrides digunakan untuk mengatur ukuran animasi (sprite) di dalam game
+    // tanpa mengubah gambar asli. 1.0 = normal, 1.5 = 50% lebih besar, dll.
+    scaleOverrides: {
+      // jump: 1.2,
+      // run: 1.05
+    },
     /**
      * KONFIGURASI EFEK VISUAL (VFX) — WAJIB DIISI DI FILE KARAKTER INI
      *
@@ -319,7 +326,9 @@ Copy-Item "$base\run\manifest.js" "$base\manifest.js"
 
 ### AI: Daftarkan ke `index.html` & `menu.js` (Layar Pemilihan Karakter)
 
-**1. Daftarkan Script di `index.html` (Sebelum `</body>`):**
+**1. Daftarkan Script & Option di `index.html`:**
+- Tambahkan `<option value="[nama]">[NAMA] - [Ras]</option>` di dalam `<select id="character-select">` (Cari teks 'Karakter pemain').
+- Tambahkan script ini sebelum `</body>`:
 ```html
 <script src="assets/[nama]/manifest.js?v=1"></script>
 <script src="assets/[nama]/[nama].js?v=1"></script>
@@ -402,6 +411,20 @@ else if (opponentCharacter === '[nama]') {
 }
 ```
 
+
+**Entry 8 — Logika UI Cut-in (baris ~2690 - 2703):**
+Ada beberapa tempat yang harus ditambah `[nama]`:
+- `voiceKind === '[nama]'`
+- `cutin.classList.toggle('[nama]-cutin', cutinKey === '[nama]');`
+- Tambahkan `cutinKey === '[nama]'` di dalam operator ternary untuk `cutinOwner`.
+- Tambahkan ke dalam objek teks kicker, strong, dan detail.
+- Tambahkan ke dalam `CUTIN_ART`.
+
+**Entry 9 — Info Deck Character (baris ~2621):**
+```js
+if (id === '[nama]') return { name: '[NAMA]', cls: '[RAS]', deck: '[NAMA]', title: 'THE [JULUKAN]', portrait: 'assets/[nama]/ui/portrait.webp', names: window.[NamaClass]?.names || [], icons: ['attack', 'skill1', 'skill2', 'ultimate'].map(s => 'assets/[nama]/ui/icon-' + s + '.webp') };
+```
+
 ### AI: Buat Fungsi Ultimate di `core/game.js`
 
 Tambah di dekat `updateValkrenUlt`:
@@ -442,7 +465,7 @@ update[Nama]Ult(dt, activeUlt.enemy?._charId === '[nama]' ? activeUlt.enemy : nu
 
 ### Checklist Tahap 1
 
-- [ ] 14 PNG ada di `run/raw-original/`
+- [ ] 15 PNG ada di `run/raw-original/`
 - [ ] Gambar di-resize dengan scale factor benar
 - [ ] `run/sprite-sheet-alpha.webp` sudah dibuat
 - [ ] `run/manifest.js` sudah ada
@@ -561,6 +584,22 @@ konfigurasi `vfx` sudah lengkap.
 | `slamSize` | number | Ukuran efek slam |
 | `slamX` | number | Geser kanan-kiri slam dari posisi karakter |
 | `slamY` | number | Geser atas-bawah slam dari garis tanah. Negatif = lebih tinggi dari tanah |
+
+### Mengatur Ukuran Animasi (scaleOverrides)
+Jika ukuran sprite karakter saat `run`, `jump`, atau state lain terasa terlalu kecil/besar, **jangan ubah `game.js`**. Tambahkan objek `scaleOverrides` di dalam `vfx`:
+
+```js
+const vfx = {
+  scaleOverrides: {
+    run: 1.2,        // Lari 20% lebih besar
+    jump: 0.8,       // Lompat 20% lebih kecil
+    doublejump: 0.8,
+    attack1: 1.05
+  },
+  attacks: [ ... ],
+};
+```
+Angka `1.0` adalah ukuran normal (sesuai `metrics.scale` di `manifest.js`).
 
 ### Contoh: Konfigurasi Lengkap
 

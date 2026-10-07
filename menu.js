@@ -17,7 +17,8 @@
     ...(window.Edda && window.EDDA_MANIFEST ? { edda: { name: 'EDDA', tag: 'THE SHELL SAGE', race: 'DEMI-HUMAN', portrait: 'assets/edda/ui/portrait.webp', art: 'assets/menu/edda-select.webp', detail: 'Slow to anger, impossible to knock down.', basic: 'STAFF FORMS', ultimate: 'ELDER TORTOISE', style: 'Counter defender / staff and shell guard', color: '#8fe3b4' } } : {}),
     ...(window.Yanfah && window.YANFAH_MANIFEST ? { yanfah: { name: 'YANFAH', tag: 'THE DATA WRAITH', race: 'MECHA', portrait: 'assets/yanfah/ui/portrait.webp', art: 'assets/menu/yanfah-select.webp', detail: 'System breach imminent.', basic: 'KEYBOARD SMASH', ultimate: 'SYSTEM BLUE SCREEN', style: 'Glitch / cyber attacks', color: '#00ffff' } } : {}),
     ...(window.Valkren && window.VALKREN_MANIFEST ? { valkren: { name: 'VALKREN', tag: 'HEAVY MECHA', race: 'MECHA', portrait: 'assets/valkren/ui/portrait.webp', art: 'assets/menu/valkren-select.webp', detail: 'Mesin tempur tak terhentikan.', basic: 'SABETAN BERAT', ultimate: 'SISTEM OVERDRIVE', style: 'Brute force / Area damage', color: '#ff0033' } } : {}),
-    ...(window.Dhyla && window.DHYLA_MANIFEST ? { dhyla: { name: 'DHYLA', tag: 'THE FUNGAL MAGE', race: 'NATURE', portrait: 'assets/dhyla/ui/portrait.webp', art: 'assets/menu/dhyla-select.webp', detail: 'Cute on the outside, lethal spores on the inside.', basic: 'MUSHROOM SLASH', ultimate: 'FUNGAL ERUPTION', style: 'Area control / magical mushrooms', color: '#ffd700' } } : {})
+    ...(window.Dhyla && window.DHYLA_MANIFEST ? { dhyla: { name: 'DHYLA', tag: 'THE FUNGAL MAGE', race: 'NATURE', portrait: 'assets/dhyla/ui/portrait.webp', art: 'assets/menu/dhyla-select.webp', detail: 'Cute on the outside, lethal spores on the inside.', basic: 'MUSHROOM SLASH', ultimate: 'FUNGAL ERUPTION', style: 'Area control / magical mushrooms', color: '#ffd700' } } : {}),
+    ...(window.Ramuru && window.RAMURU_MANIFEST ? { ramuru: { name: 'RAMURU', tag: 'THE NEW FIGHTER', race: 'MECHA', portrait: 'assets/ramuru/ui/portrait.webp', art: 'assets/menu/ramuru-select.webp', detail: 'The mysterious warrior.', basic: 'SERANGAN 1', ultimate: 'ULTIMATE', style: 'Balanced / All-rounder', color: '#ff00ff' } } : {})
   };
   // Showcase fighters (assets/showcase/showcase.js) fill roster slots with avatar and art; they cannot be confirmed yet.
   const showcase = Object.fromEntries(Object.entries(window.SHOWCASE_FIGHTERS || {}).filter(([id]) => !fighters[id]));
@@ -39,9 +40,10 @@
   opened.forEach(id => {
     const f = info(id);
     if (!f) return;
-    [f.portrait, f.art, f.cutin || `assets/${id}/ui/cutin.webp`].filter(Boolean).forEach(src => {
+    // Cukup preload portrait saja agar grid menu cepat dimuat.
+    // Art besar dan cutin biar dimuat on-demand saat di-hover/dipilih untuk mencegah ngelag/stuttering parah di awal.
+    [f.portrait].filter(Boolean).forEach(src => {
       const im = new Image(); im.src = src;
-      im.decode().catch(() => { }); // force background decoding
       warm.push(im);
     });
   });
@@ -196,7 +198,7 @@
           </div>
         </div>
       `;
-      root.appendChild(confirmModal);
+      document.body.appendChild(confirmModal);
 
       confirmModal.querySelector('#btn-no').onclick = () => confirmModal.remove();
       confirmModal.querySelector('#btn-yes').onclick = async () => {
@@ -796,7 +798,13 @@
       const chars = Object.keys(fighters).filter(c => dlcStatus[c] !== false);
       const stages = Object.keys(MatchRules?.stages || {}).filter(s => s === 'amikom' || dlcStatus['map_' + s] !== false);
       const rStage = stages[Math.floor(Math.random() * stages.length)] || 'amikom';
-      const rPlayer = chars[Math.floor(Math.random() * chars.length)] || 'arco';
+      const qmPref = localStorage.getItem('aether.qmChar') || 'random';
+      let rPlayer;
+      if (qmPref !== 'random' && chars.includes(qmPref)) {
+        rPlayer = qmPref;
+      } else {
+        rPlayer = chars[Math.floor(Math.random() * chars.length)] || 'arco';
+      }
       let rEnemy;
       do { rEnemy = chars[Math.floor(Math.random() * chars.length)] || 'arco'; } while (rEnemy === rPlayer && chars.length > 1);
       if (game.startMatch({ player: rPlayer, enemy: rEnemy, stage: rStage, level: 'medium', mode: 'training' })) { document.querySelector('#arena').focus(); }

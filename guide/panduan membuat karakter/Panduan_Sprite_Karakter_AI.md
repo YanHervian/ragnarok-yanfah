@@ -44,61 +44,41 @@ Gunakan skrip Python di bawah ini untuk menghapus background magenta AI yang kot
 # Simpan sebagai resize_ai_character.py dan jalankan
 import os, numpy as np
 from PIL import Image
+import cv2
 
-def process_image(img, scale_factor):
-    img_data = np.array(img).astype(np.float32)
-    bg = img_data[0,0] # Ambil warna background asli
-    
-    # Deteksi karakter (pisahkan dari background)
-    dist = np.abs(img_data[:,:,0] - bg[0]) + np.abs(img_data[:,:,1] - bg[1]) + np.abs(img_data[:,:,2] - bg[2])
-    mask = np.clip((dist - 15) / 30, 0, 1)
-    
-    premult = np.zeros_like(img_data)
-    for i in range(3):
-        premult[:,:,i] = img_data[:,:,i] * mask
-    premult = np.dstack([premult, mask * 255])
-    
-    premult_img = Image.fromarray(np.clip(premult, 0, 255).astype(np.uint8), 'RGBA')
-    
-    # Kecilkan ukuran karakter
-    new_w = int(img.width * scale_factor)
-    new_h = int(img.height * scale_factor)
-    resized_premult = premult_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-    
-    resized_data = np.array(resized_premult).astype(np.float32)
-    out_rgb = np.zeros((new_h, new_w, 3), dtype=np.uint8)
-    out_mask = resized_data[:,:,3]
-    for i in range(3):
-        safe_mask = np.where(out_mask > 0, out_mask / 255.0, 1.0)
-        out_rgb[:,:,i] = np.clip(resized_data[:,:,i] / safe_mask, 0, 255)
-        
-    out_rgba = Image.fromarray(np.dstack([out_rgb, out_mask.astype(np.uint8)]), 'RGBA')
-    
-    # Tempel di atas background magenta murni
+def remove_magenta_bg_and_extract_alpha(img):
+    img_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+    hsv = cv2.cvtColor(img_cv, cv2.COLOR_BGR2HSV)
+    lower_magenta = np.array([140, 100, 100])
+    upper_magenta = np.array([170, 255, 255])
+    mask = cv2.inRange(hsv, lower_magenta, upper_magenta)
+    mask = cv2.bitwise_not(mask)
+    mask_blurred = cv2.GaussianBlur(mask, (3, 3), 0)
+    b, g, r = cv2.split(img_cv)
+    rgba = [b, g, r, mask_blurred]
+    return Image.fromarray(cv2.cvtColor(cv2.merge(rgba, 4), cv2.COLOR_BGRA2RGBA))
+
+def process_image_hd(img, scale_factor):
+    img_transparent = remove_magenta_bg_and_extract_alpha(img)
+    new_w = int(img_transparent.width * scale_factor)
+    new_h = int(img_transparent.height * scale_factor)
+    resized_transparent = img_transparent.resize((new_w, new_h), Image.Resampling.LANCZOS)
     res = Image.new('RGB', img.size, (255, 0, 255))
     paste_x = (img.size[0] - new_w) // 2
     paste_y = (img.size[1] - new_h) // 2
-    res.paste(out_rgba, (paste_x, paste_y), out_rgba)
+    res.paste(resized_transparent, (paste_x, paste_y), resized_transparent)
     return res
 
 src_dir = r'C:\Path\To\assets\[nama_karakter]\run\raw-original'
 dst_dir = r'C:\Path\To\assets\[nama_karakter]\run\raw'
 os.makedirs(dst_dir, exist_ok=True)
 
-# Tentukan skala dinamis berdasarkan gerakan
 for f in os.listdir(src_dir):
     if f.endswith('.png'):
         img = Image.open(os.path.join(src_dir, f)).convert('RGB')
-        
-        scale = 0.25  # Default
-        if any(act in f for act in ['run', 'attack', 'skill', 'ultimate']):
-            scale = 0.28  # Sedikit diperbesar dari default
-        elif any(act in f for act in ['jump', 'doublejump']):
-            scale = 0.12 # Sangat kecil karena kanvasnya tinggi
-            
-        print(f'Mengecilkan {f} dengan skala {scale}')
-        res = process_image(img, scale)
-        res.save(os.path.join(dst_dir, f))
+        scale = 0.28 if any(act in f for act in ['run', 'attack', 'skill', 'ultimate']) else 0.12 if any(act in f for act in ['jump', 'doublejump']) else 0.25
+        print(f'Mengecilkan HD: {f} dengan skala {scale}')
+        process_image_hd(img, scale).save(os.path.join(dst_dir, f))
 ```
 
 ### C. Ekstrak dengan Konfigurasi Bawaan Yanfah

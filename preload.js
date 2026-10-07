@@ -47,7 +47,10 @@
             await cache.put(url, new Response(new Blob(chunks, { type }), { headers: { 'Content-Type': type } }));
             index[url] = hash;
           }
-        } catch (_) { /* a missing file must not block the game; it simply loads normally later */ }
+        } catch (_) { 
+          /* a missing file must not block the game; it simply loads normally later */ 
+          if (cache) index[url] = hash; // Tandai sukses di index agar tidak diulang-ulang terus di reload berikutnya
+        }
         got += Math.max(0, bytes - seen); paint();
       }
     }

@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "kind": "sprite-gen-request",
+  "engine": "component-row",
+  "character": {
+    "id": "yanfah",
+    "description": "young male hacker, black and white hoodie jacket, dark pants, sneakers, holding a WHITE LAPTOP COMPUTER as a weapon",
+    "base_image": "base-source.webp"
+  },
+  "cell": {
+    "shape": "rect",
+    "width": 448,
+    "height": 288,
+    "safe_margin_x": 10,
+    "safe_margin_y": 8
+  },
+  "chroma_key": {
+    "name": "magenta",
+    "hex": "#FF00FF",
+    "rgb": [
+      255,
+      0,
+      255
+    ],
+    "selection": "manual"
+  },
+  "states": {
+    "idle": {
+      "frames": 4,
+      "fps": 5,
+      "loop": true,
+      "action": "idle"
+    },
+    "walk": {
+      "frames": 4,
+      "fps": 9,
+      "loop": true,
+      "action": "walk"
+    },
+    "run": {
+      "frames": 4,
+      "fps": 11,
+      "loop": true,
+      "action": "run"
+    },
+    "jump": {
+      "frames": 1,
+      "fps": 10,
+      "loop": false,
+      "action": "jump"
+    },
+    "doublejump": {
+      "frames": 1,
+      "fps": 12,
+      "loop": false,
+      "action": "doublejump"
+    },
+    "crouch": {
+      "frames": 4,
+      "fps": 8,
+      "loop": false,
+      "action": "crouch"
+    },
+    "attack1": {
+      "frames": 4,
+      "fps": 12,
+      "loop": false,
+      "action": "attack1"
+    },
+    "attack2": {
+      "frames": 4,
+      "fps": 12,
+      "loop": false,
+      "action": "attack2"
+    },
+    "attack3": {
+      "frames": 4,
+      "fps": 10,
+      "loop": false,
+      "action": "attack3"
+    },
+    "skill1": {
+      "frames": 4,
+      "fps": 10,
+      "loop": false,
+      "action": "skill1"
+    },
+    "skill2": {
+      "frames": 4,
+      "fps": 10,
+      "loop": false,
+      "action": "skill2"
+    },
+    "ultimate": {
+      "frames": 4,
+      "fps": 8,
+      "loop": false,
+      "action": "ultimate"
+    },
+    "hurt": {
+      "frames": 4,
+      "fps": 10,
+      "loop": false,
+      "action": "hurt"
+    },
+    "down": {
+      "frames": 4,
+      "fps": 8,
+      "loop": false,
+      "action": "down"
+    },
+    "recover": {
+      "frames": 4,
+      "fps": 10,
+      "loop": false,
+      "action": "recover"
+    }
+  },
+  "style": "Hi-bit pixel art, clean readable pixel clusters, 1px dark outline. NOT chunky low-res blocks, NOT blurry painting.",
+  "layout": "taxonomy/v1",
+  "fit": {
+    "align_x": "foot-centroid",
+    "align_y": "bottom",
+    "pixel_unfake": false
+  },
+  "chroma": {
+    "mode": "rgb",
+    "unmix_reach": 4,
+    "spill_max_fraction": 0.005
+  }
+}
