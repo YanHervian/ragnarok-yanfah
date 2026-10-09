@@ -24,7 +24,7 @@
   const crescent = { speed:700, range:480 };
   // Leonine Leap: SOLAN springs forward (`dash` px/s) and slams the blade down; everything within `radius` px of the
   // impact point on the floor is hit. He does not need to touch the rival.
-  const leap = { dash:420, radius:120, ahead:70 };
+  const leap = { dash:850, radius:120, ahead:70 };
   // Sunmane Roar: three roars 0.38 s apart (inside the 0.42 s hurt stun); each sends a tall sound wave both ways along
   // the floor that cannot be jumped (`tall`) and fades after `range` px. A rival inside 480 px takes all three (48);
   // getting farther away than that before the roars dodges them.
@@ -32,7 +32,7 @@
   function move(name,index=1) {
     if(name==='attack')return {name:`attack${index}`,type:'attack',index,...combo[index-1]};
     if(name==='skill1')return {name,type:name,damage:getBal()?.skill1?.damage ?? 16,duration:.52,knockback:140,projectile:true,speed:crescent.speed,range:crescent.range,hitAt:.55};
-    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.74,knockback:280,reach:leap.ahead+leap.radius,dash:leap.dash,leap:true,hitAt:.6};
+    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.82,knockback:280,reach:190,dash:850,leap:true,hitAt:.60};
     return {name:'ultimate',type:'ultimate',duration:balance.castTime,damage:0,hitAt:1};
   }
   function start(a,name,index=1) {

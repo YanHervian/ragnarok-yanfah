@@ -97,7 +97,7 @@ window.GAME_BALANCE = {
     // ---------------------------------------------------------
     valkren: {
         movement: { walkSpeed: 270, runSpeed: 420, attackSpeed: 1.3 },
-        combo: [10, 14, 18], 
+        combo: [10, 14, 18],
         skill1: { damage: 25, cooldown: 14 },
         skill2: { damage: 35, cooldown: 22 },
         ultimate: { damage: 70, cooldown: 35 }
@@ -164,5 +164,12 @@ window.GAME_BALANCE = {
         skill1: { damage: 14, cooldown: 8 },
         skill2: { damage: 21, cooldown: 17 },
         ultimate: { damage: 38, cooldown: 28 }
+    },
+    ramuru: { // Slime Alchemist / Agile Swordsman
+        movement: { walkSpeed: 360, runSpeed: 580, attackSpeed: 0.85 },
+        combo: [6, 8, 10], // Tipe Cepat (Agile): Basic Attack 4-10
+        skill1: { damage: 15, cooldown: 10 }, // Tipe Cepat (Agile): Skill 12-20
+        skill2: { damage: 19, cooldown: 20 }, // Tipe Cepat (Agile): Skill 12-20
+        ultimate: { damage: 40, cooldown: 30 } // Tipe Cepat (Agile): Ultimate 30-45
     }
 };

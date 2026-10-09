@@ -5,7 +5,7 @@
   const tB = t => (t === hero ? selectedCharacter : opponentCharacter) === 'valkren' ? -40 : -22;
 
   const W = 1280, H = 720;
-  const CONFIG = { groundY: 584, walkSpeed: 320, runSpeed: 520, jumpSpeed: 830, doubleJumpSpeed: 790, gravity: 2900, fastFall: 1180, doubleTapWindow: .26, rollDuration: .28, ...window.STAGE_CONFIG };
+  const CONFIG = { groundY: 584, walkSpeed: 320, runSpeed: 520, jumpSpeed: 830, doubleJumpSpeed: 790, gravity: 2900, fastFall: 1180, doubleTapWindow: .35, rollDuration: .28, ...window.STAGE_CONFIG };
   const canvas = document.querySelector('#arena'), ctx = canvas.getContext('2d', { alpha: false });
   const $ = s => document.querySelector(s);
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -23,7 +23,7 @@
     get skill1() { return { damage: _bal()?.skill1?.damage ?? 16, cooldown: _bal()?.skill1?.cooldown ?? 10, knockback: 140 }; },
     get skill2() { return { damage: _bal()?.skill2?.damage ?? 24, cooldown: _bal()?.skill2?.cooldown ?? 20, knockback: 220, radius: 220 }; },
     get ultimate() { return { damagePerDrone: (_bal()?.ultimate?.damage ?? 48) / 4, cooldown: _bal()?.ultimate?.cooldown ?? 30, castTime: .50, knockback: 190 }; },
-    dummyMax: 400, heroMax: 400, hpPerBar: 100, basicCooldownRefund: .05
+    dummyMax: 300, heroMax: 300, hpPerBar: 100, basicCooldownRefund: .05
   };
   const cooldownMax = { skill1: BALANCE.skill1.cooldown, skill2: BALANCE.skill2.cooldown, ultimate: BALANCE.ultimate.cooldown };
   const skillNames = { skill1: 'TRINITY BOLT', skill2: 'SEISMIC DRIVE', ultimate: 'HELIOS SQUADRON' };
@@ -96,9 +96,12 @@
   // Background music: one looping HTMLAudio outside the effects/voice mix. Default 5%; Settings turns it on/off and sets
   // its own volume (remembered on this device). Like every sound it starts only after the first user gesture, pauses in a
   // hidden tab, follows the master mute, and dips while the announcer or an ultimate voice is speaking.
-  const MUSIC_PATH = 'assets/audio/music/midday-showdown.mp3';
+  const MUSIC_PATH = 'assets/audio/music/music-lobby.mp3';
   const AMIKOM_MUSIC_PATH = 'assets/audio/music/amikom-music.mp3';
   const JAMUR_MUSIC_PATH = 'assets/audio/music/jamur-music.mp3';
+  const LOBBY_MUSIC_PATH = 'assets/audio/music/music-lobby.mp3';
+  const VALKREN_MUSIC_PATH = 'assets/audio/music/valkren-music.mp3';
+  const RAMURU_MUSIC_PATH = 'assets/audio/music/ramuru-music.mp3';
   const prefs = { get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (_) { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (_) { } } };
   if (prefs.get('aether.audioVersion_v4', '0') !== '4') {
     prefs.set('aether.audioVersion_v4', '4');
@@ -116,13 +119,13 @@
       music = new Audio();
       music.loop = true;
       music.preload = 'auto';
-      music.dataset.targetSrc = MUSIC_PATH;
-      music.src = MUSIC_PATH;
+      music.dataset.targetSrc = LOBBY_MUSIC_PATH;
+      music.src = LOBBY_MUSIC_PATH;
     }
   } catch (_) { music = null; }
   function syncMusic() {
     if (!music) return;
-    const targetSrc = (!menuOpen && stageId === 'amikom') ? AMIKOM_MUSIC_PATH : ((!menuOpen && stageId === 'jamur') ? JAMUR_MUSIC_PATH : MUSIC_PATH);
+    const targetSrc = menuOpen ? LOBBY_MUSIC_PATH : (stageId === 'amikom' ? AMIKOM_MUSIC_PATH : (stageId === 'jamur' ? JAMUR_MUSIC_PATH : (stageId === 'valkren' ? VALKREN_MUSIC_PATH : (stageId === 'ramuru' ? RAMURU_MUSIC_PATH : MUSIC_PATH))));
     if (music.dataset.targetSrc !== targetSrc) {
       music.dataset.targetSrc = targetSrc;
       const wasPlaying = !music.paused;
@@ -141,7 +144,7 @@
     if (want && music.paused) music.play()?.catch?.(() => { });
     else if (!want && !music.paused) music.pause();
   }
-  const VOICE_NAMES = { arco: 'Dylan', fenr: 'Holden', mira: 'Luna', cora: 'Anika', naja: 'Soraya', haldor: 'Gideon', zanni: 'Julian', isolde: 'Vesper', rhea: 'Chloe', solan: 'Xavier', nib: 'Evan', edda: 'Opal', yanfah: 'Hacker', dhyla: 'Dhyla', valkren: 'Valkren' };
+  const VOICE_NAMES = { arco: 'Dylan', fenr: 'Holden', mira: 'Luna', cora: 'Anika', naja: 'Soraya', haldor: 'Gideon', zanni: 'Julian', isolde: 'Vesper', rhea: 'Chloe', solan: 'Xavier', nib: 'Evan', edda: 'Opal', yanfah: 'Hacker', dhyla: 'Dhyla', valkren: 'Valkren', ramuru: 'Ramuru' };
   const voiceBank = {};
   let voiceKind = 'arco', voiceName = 'Dylan', voiceActor = null, voiceClock = 0;
   let ultimateVoice = null, voiceActive = false, voiceSerial = 0, voicePlayToken = 0, voiceStarts = 0, voiceError = '';
@@ -162,7 +165,8 @@
         ...(ED ? [['edda', window.Edda?.audio?.ultimate || 'assets/edda/audio/edda-ultimate.mp3']] : []),
         ...(YF ? [['yanfah', window.Yanfah?.audio?.ultimate || 'assets/yanfah/audio/yanfah-ultimate.mp3']] : []),
         ...(DH ? [['dhyla', window.Dhyla?.audio?.ultimate || 'assets/dhyla/audio/dhyla-ultimate.mp3']] : []),
-        ...(VK ? [['valkren', window.Valkren?.audio?.ultimate || 'assets/valkren/audio/valkren-ultimate.mp3']] : [])
+        ...(VK ? [['valkren', window.Valkren?.audio?.ultimate || 'assets/valkren/audio/valkren-ultimate.mp3']] : []),
+        ...(window.Ramuru ? [['ramuru', window.Ramuru?.audio?.ultimate || 'assets/ramuru/audio/ramuru-ultimate.mp3']] : [])
       ];
       for (const [kind, path] of characters) {
         const media = new Audio(); media.preload = 'auto'; voiceBank[kind] = media;
@@ -358,12 +362,39 @@
 
   function menuSound(kind = 'move') {
     unlockAudio(); if (!audio || muted) return;
-    // pick: the lock-in chime when a fighter is confirmed; blink: the soft tick of each following flash.
-    const notes = { move: [580, 820], confirm: [440, 660, 880], back: [440, 300], locked: [155, 125], round: [330, 440], fight: [440, 880, 1320], pick: [523, 784, 1047, 1568], blink: [1175] }[kind] || [580];
-    const uiVolume = 7.0; // PENGUAT VOLUME UI (Bisa kamu naikkan jika masih kurang nyaring)
-    const gap = kind === 'pick' ? .045 : .035, peak = (kind === 'blink' ? .03 : kind === 'pick' ? .085 : .075) * uiVolume, tail = kind === 'pick' ? .24 : .095;
-    for (const [i, n] of notes.entries()) { const at = audio.currentTime + i * gap, o = audio.createOscillator(), g = audio.createGain(); o.type = kind === 'locked' || kind === 'pick' ? 'triangle' : 'sine'; o.frequency.setValueAtTime(n, at); g.gain.setValueAtTime(.001, at); g.gain.exponentialRampToValueAtTime(peak, at + .005); g.gain.exponentialRampToValueAtTime(.001, at + tail); o.connect(g); g.connect(master); o.start(at); o.stop(at + tail + .015); audioSources++; }
+    const notes = {
+      hover: [640, 860],
+      move: [580, 820],
+      confirm: [440, 660, 880],
+      back: [440, 300],
+      locked: [155, 125],
+      round: [330, 440],
+      fight: [440, 880, 1320],
+      pick: [523, 784, 1047, 1568],
+      blink: [1175],
+      toggle: [540, 720],
+      slider: [780]
+    }[kind] || [580];
+    const uiVolume = 7.0;
+    const gap = (kind === 'pick' ? .045 : (kind === 'hover' ? .022 : .035));
+    const peak = (kind === 'blink' ? .03 : (kind === 'hover' ? .045 : (kind === 'pick' ? .085 : .075))) * uiVolume;
+    const tail = (kind === 'pick' ? .24 : (kind === 'hover' ? .05 : (kind === 'slider' ? .035 : .095)));
+    for (const [i, n] of notes.entries()) {
+      const at = audio.currentTime + i * gap, o = audio.createOscillator(), g = audio.createGain();
+      o.type = kind === 'locked' || kind === 'pick' ? 'triangle' : 'sine';
+      o.frequency.setValueAtTime(n, at);
+      g.gain.setValueAtTime(.001, at);
+      g.gain.exponentialRampToValueAtTime(peak, at + .005);
+      g.gain.exponentialRampToValueAtTime(.001, at + tail);
+      o.connect(g);
+      g.connect(master);
+      o.start(at);
+      o.stop(at + tail + .015);
+      audioSources++;
+    }
   }
+  window.__menuSound = menuSound;
+  window.unlockAudio = unlockAudio;
   function setMenuOpen(value) {
     menuOpen = !!value; clearInput(); if (menuOpen) { systemAnnouncer?.clear(); stopUltimateVoice(); squad = enemySquad = parade = enemyParade = flock = enemyFlock = serpent = enemySerpent = quake = enemyQuake = finale = enemyFinale = skyfall = enemySkyfall = orrery = enemyOrrery = sunroar = enemySunroar = delivery = enemyDelivery = tortoise = enemyTortoise = null; fenrCutin = null; projectiles.length = effects.length = 0; setPaused(false); }
     document.body.classList.toggle('in-menu', menuOpen); $('#front-menu').hidden = !menuOpen;
@@ -440,12 +471,14 @@
     if (second) {
       if (hero.jumps >= 2) return false;
       hero.jumps = 2; hero.vy = -CONFIG.doubleJumpSpeed; hero.grounded = false; state('doublejump');
-      if (selectedCharacter !== 'dhyla' && selectedCharacter !== 'valkren' && selectedCharacter !== 'yanfah') {
+      const jd = KITS[selectedCharacter]?.vfx?.jumpDust;
+      if (!jd && selectedCharacter !== 'dhyla' && selectedCharacter !== 'valkren' && selectedCharacter !== 'yanfah') {
         effects.push({ type: 'airpulse', x: hero.x, y: hero.y - 8, life: .5, maxLife: .5 });
         spawnParticles(hero.x, hero.y - 7, '#b3fff2', 22, 190);
       }
       sound('double_jump');
-      if (selectedCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: hero.x, y: hero.y - 18, facing: hero.facing, life: .4, maxLife: .4, size: 170 });
+      if (jd) effects.push({ type: selectedCharacter + '-fx', asset: jd.asset, x: hero.x + hero.facing * (jd.x || 0), y: hero.y - 18 + (jd.y || 0), facing: hero.facing, life: .4, maxLife: .4, size: jd.size || 170 });
+      else if (selectedCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: hero.x, y: hero.y - 18, facing: hero.facing, life: .4, maxLife: .4, size: 170 });
       else if (selectedCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-jumpdust', x: hero.x, y: hero.y - 18, facing: hero.facing, life: .4, maxLife: .4, size: 170 });
       if (selectedCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-boost', x: hero.x, y: hero.y - 18, facing: hero.facing, life: .4, maxLife: .4, size: 170, maxAlpha: 0.8 });
       hero.rollDuration = CONFIG.rollDuration;
@@ -454,7 +487,9 @@
     if (!hero.grounded && hero.jumps >= 2) return false;
     if (!hero.grounded) return jump(true);
     hero.jumps = 1; hero.vy = -CONFIG.jumpSpeed; hero.grounded = false; hero.airTime = 0; state('jump'); dust(hero.x, 12); sound('jump');
-    if (selectedCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: hero.x, y: hero.y - 50, facing: hero.facing, life: .4, maxLife: .4, size: 170 });
+    const jd = KITS[selectedCharacter]?.vfx?.jumpDust;
+    if (jd) effects.push({ type: selectedCharacter + '-fx', asset: jd.asset, x: hero.x + hero.facing * (jd.x || 0), y: hero.y - 30 + (jd.y || 0), facing: hero.facing, life: .4, maxLife: .4, size: jd.size || 170 });
+    else if (selectedCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: hero.x, y: hero.y - 50, facing: hero.facing, life: .4, maxLife: .4, size: 170 });
     else if (selectedCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-jumpdust', x: hero.x, y: hero.y - 30, facing: hero.facing, life: .4, maxLife: .4, size: 170 });
     if (selectedCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-boost', x: hero.x, y: hero.y - 50, facing: hero.facing, life: .4, maxLife: .4, size: 170, maxAlpha: 0.8 });
     return true;
@@ -577,9 +612,11 @@
       dummy.vx = 0;
       spawnParticles(dummy.x - dir * 30, impactY, '#aaddff', 10, 180);
       sound('block');
-      if (opponentCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-guard', x: dummy.x + dummy.facing * 60, y: dummy.y - 70, facing: dummy.facing, life: .3, maxLife: .3, size: 200 });
-      if (opponentCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-guard', x: dummy.x + dummy.facing * 40, y: dummy.y - 70, facing: dummy.facing, life: .4, maxLife: .4, size: 130 });
-      if (opponentCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-hexshield', x: dummy.x + dummy.facing * 50, y: dummy.y - 70, facing: dummy.facing, life: .4, maxLife: .4, size: 150 });
+      const g = KITS[opponentCharacter]?.vfx?.guard;
+      if (g) effects.push({ type: opponentCharacter + '-fx', asset: g.asset, x: dummy.x + dummy.facing * (g.x || 50), y: dummy.y + (g.y || -70), facing: dummy.facing, life: .4, maxLife: .4, size: g.size || 150, maxAlpha: g.alpha || 1.0 });
+      else if (opponentCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-guard', x: dummy.x + dummy.facing * 60, y: dummy.y - 70, facing: dummy.facing, life: .3, maxLife: .3, size: 200 });
+      else if (opponentCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-guard', x: dummy.x + dummy.facing * 40, y: dummy.y - 70, facing: dummy.facing, life: .4, maxLife: .4, size: 130 });
+      else if (opponentCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-hexshield', x: dummy.x + dummy.facing * 50, y: dummy.y - 70, facing: dummy.facing, life: .4, maxLife: .4, size: 150 });
       damageNumbers.push({ x: dummy.x + (Math.random() - 0.5) * 40, y: dummy.y - 120, amount: 'DEFEND', life: 1.2, maxLife: 1.2, color: '#aaddff' });
       if (freezeWorld) hitstop = Math.max(hitstop, knockdown ? .06 : .03);
       return 'blocked'; // No damage taken
@@ -661,6 +698,7 @@
     if (selectedCharacter === 'yanfah') { yanfahStrike(hero, YF.move('attack', index)); return; }
     if (selectedCharacter === 'valkren') { valkrenStrike(hero, window.Valkren.move('attack', index)); return; }
     if (selectedCharacter === 'dhyla') { const _dh = window.Dhyla || DH; if (_dh) dhylaStrike(hero, _dh.move('attack', index)); return; }
+    if (selectedCharacter === 'ramuru') { const _rm = window.Ramuru || RM; if (_rm) ramuruStrike(hero, _rm.move('attack', index)); return; }
 
     const reach = attackRange(index), dx = (dummy.x - hero.x) * hero.facing, y = emitter(`attack${index}`).y;
     effects.push({ type: 'slash', x: hero.x + hero.facing * 48, y: y + 5, life: .22, maxLife: .22, facing: hero.facing, index, color: index === 3 ? '#ffe4a5' : '#cffbf0' });
@@ -688,6 +726,7 @@
     if (selectedCharacter === 'yanfah') { yanfahStrike(hero, action); return; }
     if (selectedCharacter === 'valkren') { valkrenStrike(hero, action); return; }
     if (selectedCharacter === 'dhyla') { dhylaStrike(hero, action); return; }
+    if (selectedCharacter === 'ramuru') { ramuruStrike(hero, action); return; }
     const name = action.type, origin = emitter(name);
     if (name === 'skill1') { projectiles.push({ x: origin.x, y: origin.y, vx: hero.facing * 920, life: 1.6, facing: hero.facing, hitSound: 'hit' }); effects.push({ type: 'muzzle', x: origin.x, y: origin.y, life: .25, maxLife: .25 }); spawnParticles(origin.x, origin.y, '#a9f8ef', 12, 140); }
     if (name === 'skill2') { const x = origin.x; effects.push({ type: 'slam', x, y: CONFIG.groundY - 2, life: .8, maxLife: .8 }); spawnParticles(x, CONFIG.groundY - 8, '#c7eafd', 40, 370); trauma = Math.min(1, trauma + .35); if (Math.abs(dummy.x - x) < BALANCE.skill2.radius && dummy.y > CONFIG.groundY - 125) hitDummy(BALANCE.skill2.damage, BALANCE.skill2.knockback, '#bfe9ff', hero.x, dummy.y - 65, false, true, 1, 0, false, 'hit'); }
@@ -829,7 +868,7 @@
 
     const id = actor === hero ? selectedCharacter : opponentCharacter;
     if (id === 'cora') startMurmuration(actor); else if (id === 'naja') startSerpent(actor); else if (id === 'haldor') startQuake(actor); else if (id === 'zanni') startFinale(actor); else if (id === 'isolde') startSkyfall(actor); else if (id === 'rhea') startOrrery(actor); else if (id === 'solan') startSunroar(actor); else if (id === 'nib') startDelivery(actor); else if (id === 'edda') startTortoise(actor); else if (id === 'yanfah') startSystemCrash(actor); else if (id === 'dhyla') startDhylaUlt(actor); else if (id === 'valkren') startValkrenUlt(actor);
-      else if (id === 'ramuru') startRamuruUlt(actor); else startRocketParade(actor);
+    else if (id === 'ramuru') startRamuruUlt(actor); else startRocketParade(actor);
   }
   // DHYLA Ultimate: stays grounded, spawns aura + env effect, deals damage at peak, then clears.
   function makeUltContext() {
@@ -847,9 +886,11 @@
           hero.hurtTime = 0.4;
           hero.vx = hero.facing * -150;
           spawnParticles(hero.x + hero.facing * 30, hero.y - 70, '#aaddff', 10, 180);
-          if (selectedCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-guard', x: hero.x + hero.facing * 60, y: hero.y - 70, facing: hero.facing, life: .3, maxLife: .3, size: 200 });
-          if (selectedCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-guard', x: hero.x + hero.facing * 40, y: hero.y - 70, facing: hero.facing, life: .4, maxLife: .4, size: 130 });
-          if (selectedCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-hexshield', x: hero.x + hero.facing * 50, y: hero.y - 70, facing: hero.facing, life: .4, maxLife: .4, size: 150 });
+          const g = KITS[selectedCharacter]?.vfx?.guard;
+          if (g) effects.push({ type: selectedCharacter + '-fx', asset: g.asset, x: hero.x + hero.facing * (g.x || 50), y: hero.y + (g.y || -70), facing: hero.facing, life: .4, maxLife: .4, size: g.size || 150, maxAlpha: g.alpha || 1.0 });
+          else if (selectedCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-guard', x: hero.x + hero.facing * 60, y: hero.y - 70, facing: hero.facing, life: .3, maxLife: .3, size: 200 });
+          else if (selectedCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-guard', x: hero.x + hero.facing * 40, y: hero.y - 70, facing: hero.facing, life: .4, maxLife: .4, size: 130 });
+          else if (selectedCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-hexshield', x: hero.x + hero.facing * 50, y: hero.y - 70, facing: hero.facing, life: .4, maxLife: .4, size: 150 });
           damageNumbers.push({ x: hero.x + (Math.random() - 0.5) * 40, y: hero.y - 120, amount: 'DEFEND', life: 1.2, maxLife: 1.2, color: '#aaddff' });
           sound('block');
           return 'blocked';
@@ -882,9 +923,11 @@
           const dir = sourceX <= dummy.x ? 1 : -1;
           dummy.vx = dir * 150;
           spawnParticles(dummy.x - dir * 30, impactY, '#aaddff', 10, 180);
-          if (opponentCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-guard', x: dummy.x + dummy.facing * 60, y: dummy.y - 70, facing: dummy.facing, life: .3, maxLife: .3, size: 200 });
-          if (opponentCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-guard', x: dummy.x + dummy.facing * 40, y: dummy.y - 70, facing: dummy.facing, life: .4, maxLife: .4, size: 130 });
-          if (opponentCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-hexshield', x: dummy.x + dummy.facing * 50, y: dummy.y - 70, facing: dummy.facing, life: .4, maxLife: .4, size: 150 });
+          const g = KITS[opponentCharacter]?.vfx?.guard;
+          if (g) effects.push({ type: opponentCharacter + '-fx', asset: g.asset, x: dummy.x + dummy.facing * (g.x || 50), y: dummy.y + (g.y || -70), facing: dummy.facing, life: .4, maxLife: .4, size: g.size || 150, maxAlpha: g.alpha || 1.0 });
+          else if (opponentCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-guard', x: dummy.x + dummy.facing * 60, y: dummy.y - 70, facing: dummy.facing, life: .3, maxLife: .3, size: 200 });
+          else if (opponentCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-guard', x: dummy.x + dummy.facing * 40, y: dummy.y - 70, facing: dummy.facing, life: .4, maxLife: .4, size: 130 });
+          else if (opponentCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-hexshield', x: dummy.x + dummy.facing * 50, y: dummy.y - 70, facing: dummy.facing, life: .4, maxLife: .4, size: 150 });
           damageNumbers.push({ x: dummy.x + (Math.random() - 0.5) * 40, y: dummy.y - 120, amount: 'DEFEND', life: 1.2, maxLife: 1.2, color: '#aaddff' });
           sound('block');
           return 'blocked';
@@ -1259,7 +1302,7 @@
     updateVisuals(dt);
     for (const name of Object.keys(rechargePulse)) rechargePulse[name] = Math.max(0, rechargePulse[name] - dt);
     if (hitstop > 0) { hitstop -= dt; return; }
-    updateSystemCrash(dt, systemcrash); updateSystemCrash(dt, enemySystemcrash); updateDhylaUlt(dt, activeUlt.player?._charId === 'dhyla' ? activeUlt.player : null); updateDhylaUlt(dt, activeUlt.enemy?._charId === 'dhyla' ? activeUlt.enemy : null); updateValkrenUlt(dt, activeUlt.player?._charId === 'valkren' ? activeUlt.player : null); updateValkrenUlt(dt, activeUlt.enemy?._charId === 'valkren' ? activeUlt.enemy : null);
+    updateSystemCrash(dt, systemcrash); updateSystemCrash(dt, enemySystemcrash); updateDhylaUlt(dt, activeUlt.player?._charId === 'dhyla' ? activeUlt.player : null); updateDhylaUlt(dt, activeUlt.enemy?._charId === 'dhyla' ? activeUlt.enemy : null); updateValkrenUlt(dt, activeUlt.player?._charId === 'valkren' ? activeUlt.player : null); updateValkrenUlt(dt, activeUlt.enemy?._charId === 'valkren' ? activeUlt.enemy : null); updateRamuruUlt(dt, activeUlt.player?._charId === 'ramuru' ? activeUlt.player : null); updateRamuruUlt(dt, activeUlt.enemy?._charId === 'ramuru' ? activeUlt.enemy : null);
     updateSquadron(dt); updateSquadron(dt, enemySquad); updateParade(dt, parade); updateParade(dt, enemyParade); updateMurmuration(dt, flock); updateMurmuration(dt, enemyFlock); updateSerpent(dt, serpent); updateSerpent(dt, enemySerpent); updateQuake(dt, quake); updateFinale(dt, finale); updateFinale(dt, enemyFinale); updateSkyfall(dt, skyfall); updateSkyfall(dt, enemySkyfall); updateOrrery(dt, orrery); updateOrrery(dt, enemyOrrery); updateSunroar(dt, sunroar); updateSunroar(dt, enemySunroar); updateDelivery(dt, delivery); updateDelivery(dt, enemyDelivery); updateTortoise(dt, tortoise); updateTortoise(dt, enemyTortoise); updateQuake(dt, enemyQuake);
     if (fenrCutin) { fenrCutin.t += dt; if (fenrCutin.t > .78) fenrCutin = null; }
 
@@ -1308,10 +1351,14 @@
     if (hero.hp <= 0) { hero.koTime = Math.max(0, hero.koTime - dt); state('down'); if (!hero.koTime && match?.mode !== 'versus') { hero.hp = BALANCE.heroMax; hero.invuln = .9; state(hero.grounded ? 'idle' : 'jump'); } }
     if (hero.action) {
       const a = hero.action; a.t += dt; state(a.name);
-      if ((selectedCharacter === 'fenr' || selectedCharacter === 'mira' || selectedCharacter === 'haldor' || selectedCharacter === 'isolde' || selectedCharacter === 'solan' || selectedCharacter === 'nib' || selectedCharacter === 'yanfah') && a.dash && a.t > a.duration * .2 && a.t < a.duration * .6) hero.vx = hero.facing * a.dash;
+      const dw = a.dashWindow || [0.2, 0.6];
+      if (a.dash) {
+        if (a.t > a.duration * dw[0] && a.t < a.duration * dw[1]) hero.vx = hero.facing * a.dash;
+        else if (a.t >= a.duration * dw[1]) hero.vx = approach(hero.vx, 0, dt * 12000);
+      }
       if (a.type !== 'ultimate' && a.type !== 'yanfah-ult' && !a.fired && a.t >= a.duration * (a.hitAt || (a.type === 'skill2' ? .53 : .5))) { a.fired = true; if (a.type === 'attack') meleeHit(a.index); else fireSkill(a); }
       if (a.fired && a.cancelInto && hero.action === a) { const into = a.cancelInto; hero.action = null; state(hero.grounded ? 'idle' : 'jump'); if (into === 'jump') jump(); }
-      if (a.t >= a.duration || (a.type === 'skill1' && a.fired)) { const queued = a.queued && a.index < 3, remaining = Math.max(0, a.queued - 1); const next = (a.index || 0) + 1; hero.action = null; if (queued) { startAttack(next); hero.action.queued = remaining; } else state(hero.grounded ? 'idle' : 'jump'); }
+      if (a.t >= a.duration) { const queued = a.queued && a.index < 3, remaining = Math.max(0, a.queued - 1); const next = (a.index || 0) + 1; hero.action = null; if (queued) { startAttack(next); hero.action.queued = remaining; } else state(hero.grounded ? 'idle' : 'jump'); }
     }
     const oldHeroX = hero.x;
     hero.x = clamp(hero.x + hero.vx * dt, 70, stageW() - 70);
@@ -1419,7 +1466,8 @@
       }
       if (p.spent) { if (p.life <= 0) projectiles.splice(i, 1); continue; }
       if (p.owner === 'enemy') {
-        if (Math.min(oldX, p.x) <= hero.x + 28 && Math.max(oldX, p.x) >= hero.x - 28 && Math.abs(p.y - (hero.y - 85)) < (p.tall || 75)) {
+        const w = p.hitboxWidth ?? (p.size ? p.size / 2 : 28);
+        if (Math.min(oldX, p.x) <= hero.x + w && Math.max(oldX, p.x) >= hero.x - w && Math.abs(p.y - (hero.y - 85)) < (p.tall || 75)) {
           if (p.yanfahUltTrigger) {
             if (hero.isBlocking) {
               if (enemySystemcrash) enemySystemcrash.timeout = 2.0;
@@ -1449,7 +1497,8 @@
         if (p.life <= 0 || p.x < -100 || p.x > stageW() + 100) projectiles.splice(i, 1); continue;
       }
       // Swept x interval keeps a high-speed bolt from tunneling through a target.
-      if (Math.min(oldX, p.x) <= dummy.x + 30 && Math.max(oldX, p.x) >= dummy.x - 30 && Math.abs(p.y - (dummy.y - (F ? 95 : 68))) < (p.tall || (F ? 90 : 66)) && dummy.state !== 'down' && dummy.state !== 'recover') {
+      const w = p.hitboxWidth ?? (p.size ? p.size / 2 : 30);
+      if (Math.min(oldX, p.x) <= dummy.x + w && Math.max(oldX, p.x) >= dummy.x - w && Math.abs(p.y - (dummy.y - (F ? 95 : 68))) < (p.tall || (F ? 90 : 66)) && dummy.state !== 'down' && dummy.state !== 'recover') {
         if (p.yanfahUltTrigger) {
           if (dummy.isBlocking) {
             if (systemcrash) systemcrash.timeout = 2.0;
@@ -1779,16 +1828,29 @@
     }
 
     if (move.type === 'attack') {
-      let offsetX = 90;  // Geser Kiri/Kanan
-      let offsetY = -90; // Geser Atas/Bawah
-
-      if (move.index === 1) { offsetX = 190; offsetY = -140; }
-      else if (move.index === 2) { offsetX = 140; offsetY = - 300; }
-      else if (move.index === 3) { offsetX = 120; offsetY = - 30; }
-
-      const ox = actor.x + actor.facing * offsetX;
-      const oy = actor.y + offsetY;
-      effects.push({ type: 'valkren-fx', asset: 'valkren-meleeswipe', x: ox, y: oy, facing: actor.facing, life: .25, maxLife: .25, size: 100 });
+      const vfx = window.Valkren?.vfx?.attacks?.[move.index - 1];
+      if (vfx) {
+        if (vfx.asset) {
+          const vx = actor.x + actor.facing * (vfx.x ?? em?.x ?? 50);
+          const vy = actor.y + (vfx.y ?? em?.y ?? -100);
+          effects.push({ type: 'valkren-fx', asset: vfx.asset, x: vx, y: vy, facing: actor.facing * (vfx.flipX || 1), rotation: vfx.rotation ? (vfx.rotation * Math.PI / 180) : 0, life: .25, maxLife: .25, size: vfx.size || 100 });
+        }
+        if (vfx.slamAsset) {
+          const ox = actor.x + actor.facing * (em?.x ?? 50);
+          const sx = ox + actor.facing * (vfx.slamX || 0);
+          const sy = (CONFIG.groundY - 30) + (vfx.slamY || 0);
+          effects.push({ type: 'valkren-fx', asset: vfx.slamAsset, x: sx, y: sy, facing: actor.facing, life: .4, maxLife: .4, size: vfx.slamSize || 280 });
+        }
+      } else {
+        let offsetX = 90;
+        let offsetY = -90;
+        if (move.index === 1) { offsetX = 190; offsetY = -140; }
+        else if (move.index === 2) { offsetX = 140; offsetY = - 300; }
+        else if (move.index === 3) { offsetX = 120; offsetY = - 30; }
+        const ox = actor.x + actor.facing * offsetX;
+        const oy = actor.y + offsetY;
+        effects.push({ type: 'valkren-fx', asset: 'valkren-meleeswipe', x: ox, y: oy, facing: actor.facing, life: .25, maxLife: .25, size: 100 });
+      }
     }
 
     const dx = (target.x - actor.x) * actor.facing;
@@ -1801,6 +1863,65 @@
       else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund); }
     }
     if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.type === 'skill2' || move.index === 3 ? 'heavy' : 'hit');
+  }
+  function ramuruStrike(actor, move) {
+    if (!move) return;
+    const enemy = actor === dummy, target = enemy ? hero : dummy, em = window.RAMURU_METRICS?.emitters?.[move.name];
+    const ox = actor.x + actor.facing * (em?.x ?? 50), oy = actor.y + (em?.y ?? -80), hy = clamp(oy, actor.y - 170, actor.y - 30);
+
+    if (move.type === 'skill1') {
+      const cfg = window.Ramuru?.vfx?.skills?.skill1 || { asset: 'ramuru-dash', size: 350, x: 0, y: 0, dustAsset: 'ramuru-dust', dustSize: 250, dustX: -30, dustY: -10 };
+
+      const dx = (target.x - actor.x) * actor.facing;
+      const reach = move.reach || 190;
+      const near = dx > (tB(target) - 2) && dx < reach + tW(target);
+      
+      if (!near || Math.abs(target.y - actor.y) >= 180) { return; }
+      
+      const connected = enemy ? window.__game.receiveHit(move.damage, { spawnImpact: true }) : hitDummy(move.damage, move.knockback, '#00bfff', actor.x, target.y - 60, false, true, 1, 0, false, 'hit');
+      if (connected && connected !== 'blocked' && !target.isBlocking) sound('hit');
+      return;
+    }
+
+    if (move.type === 'skill2') {
+      const cfg = window.Ramuru?.vfx?.skills?.skill2 || { asset: 'ramuru-bind', size: 220, x: 40, y: -60, warningAsset: 'ramuru-warning', warningSize: 280, warningX: 10, warningY: -20 };
+      const reach = move.reach || 190;
+      effects.push({ type: 'ramuru-fx', asset: cfg.warningAsset, x: ox + actor.facing * cfg.warningX, y: CONFIG.groundY + cfg.warningY, life: .4, maxLife: .4, size: cfg.warningSize, behind: true });
+      const dx = (target.x - ox) * actor.facing;
+      if (dx > -50 && dx < reach + 50 && Math.abs(target.y - CONFIG.groundY) < 120) {
+        effects.push({ type: 'ramuru-fx', asset: cfg.asset, x: target.x + actor.facing * cfg.x, y: CONFIG.groundY + cfg.y, life: .6, maxLife: .6, size: cfg.size });
+        if (enemy) window.__game.receiveHit(move.damage); else hitDummy(move.damage, move.knockback, '#00bfff', actor.x, target.y + cfg.y, false, true, 1, 0, false, 'hit');
+      }
+      return;
+    }
+
+    if (move.type === 'attack') {
+      const vfx = window.Ramuru?.vfx?.attacks?.[move.index - 1];
+      if (vfx) {
+        if (vfx.asset) {
+          const vx = actor.x + actor.facing * (vfx.x ?? em?.x ?? 50);
+          const vy = actor.y + (vfx.y ?? em?.y ?? -100);
+          effects.push({ type: 'ramuru-fx', asset: vfx.asset, x: vx, y: vy, facing: actor.facing * (vfx.flipX || 1), rotation: vfx.rotation ? (vfx.rotation * Math.PI / 180) : 0, life: .3, maxLife: .3, size: vfx.size || 100 });
+        }
+        if (vfx.slamAsset) {
+          const sx = ox + actor.facing * (vfx.slamX || 0);
+          const sy = (CONFIG.groundY - 30) + (vfx.slamY || 0);
+          effects.push({ type: 'ramuru-fx', asset: vfx.slamAsset, x: sx, y: sy, facing: actor.facing, life: .4, maxLife: .4, size: vfx.slamSize || 280 });
+        }
+      }
+    }
+
+    const dx = (target.x - actor.x) * actor.facing;
+    if (dx <= tB(target) || dx >= move.reach + tW(target) || Math.abs(target.y - actor.y) > 180) { sound('whoosh'); return; }
+
+    const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, '#00bfff', actor.x, hy, false, true);
+    if (connected && move.type === 'attack') {
+      const hitCfg = window.Ramuru?.vfx?.hit || { asset: 'ramuru-hit', size: 150, x: -10, y: 0 };
+      effects.push({ type: 'ramuru-fx', asset: hitCfg.asset || 'ramuru-hit', x: target.x + actor.facing * (hitCfg.x ?? -10), y: hy + (hitCfg.y ?? 0), facing: actor.facing, life: .3, maxLife: .3, size: hitCfg.size || 150 });
+      if (enemy) window.Ramuru.refund(dummy);
+      else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund); }
+    }
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.index === 3 ? 'heavy' : 'hit');
   }
   function dhylaStrike(actor, move) {
     if (!move) return;
@@ -1959,6 +2080,7 @@
     if (opponentCharacter === 'yanfah') { yanfahStrike(dummy, a); return; }
     if (opponentCharacter === 'dhyla') { dhylaStrike(dummy, a); return; }
     if (opponentCharacter === 'valkren') { valkrenStrike(dummy, a); return; }
+    if (opponentCharacter === 'ramuru') { ramuruStrike(dummy, a); return; }
     const em = window.MECHA_METRICS.emitters[a.name], x = dummy.x + dummy.facing * em.x, y = dummy.y + em.y, dx = (hero.x - dummy.x) * dummy.facing;
     if (a.type === 'skill1') { projectiles.push({ x, y, vx: dummy.facing * 920, life: 1.6, facing: dummy.facing, owner: 'enemy', damage: 16, hitSound: 'hit' }); effects.push({ type: 'muzzle', x, y, life: .25, maxLife: .25 }); }
     else if (a.type === 'skill2') { effects.push({ type: 'slam', x, y: CONFIG.groundY - 2, life: .8, maxLife: .8 }); if (Math.abs(hero.x - x) < 220 && Math.abs(hero.y - CONFIG.groundY) < 125) window.__game.receiveHit(24, { hitSound: 'hit' }); }
@@ -2010,7 +2132,7 @@
     }
     return null;
   }
-  function cpuJump(double) { dummy.vy = -CONFIG.jumpSpeed; dummy.y -= 1; dummy.jumps = 1; dummy.vx = 0; dummy.state = 'jump'; dummy.stateTime = 0; cpu.doubleAt = double ? time + .16 : 0; if (opponentCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: dummy.x, y: CONFIG.groundY - 10, facing: dummy.facing, life: .4, maxLife: .4, size: 280 }); else if (opponentCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-jumpdust', x: dummy.x, y: CONFIG.groundY - 10, facing: dummy.facing, life: .4, maxLife: .4, size: 280 }); }
+  function cpuJump(double) { dummy.vy = -CONFIG.jumpSpeed; dummy.y -= 1; dummy.jumps = 1; dummy.vx = 0; dummy.state = 'jump'; dummy.stateTime = 0; cpu.doubleAt = double ? time + .16 : 0; const jd = KITS[opponentCharacter]?.vfx?.jumpDust; if (jd) effects.push({ type: opponentCharacter + '-fx', asset: jd.asset, x: dummy.x + dummy.facing * (jd.x || 0), y: CONFIG.groundY - 10 + (jd.y || 0), facing: dummy.facing, life: .4, maxLife: .4, size: jd.size || 280 }); else if (opponentCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: dummy.x, y: CONFIG.groundY - 10, facing: dummy.facing, life: .4, maxLife: .4, size: 280 }); else if (opponentCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-jumpdust', x: dummy.x, y: CONFIG.groundY - 10, facing: dummy.facing, life: .4, maxLife: .4, size: 280 }); }
   function cpuStart(name, index = 1) {
     if (!startEnemyAction(name, index)) return false;
     dummy.vx = 0; cpu.plan = null;
@@ -2057,9 +2179,13 @@
     if (['hurt', 'down', 'recover'].includes(dummy.state)) { dummy.action = null; cpu.plan = null; dummy.aiThink = Math.max(dummy.aiThink, P.reaction + P.wake); return; }
     if (dummy.action) {
       const a = dummy.action; a.t += dt; dummy.state = a.name;
-      if (a.dash && a.t > a.duration * .2 && a.t < a.duration * .6) dummy.vx = dummy.facing * a.dash;
+      const dw = a.dashWindow || [0.2, 0.6];
+      if (a.dash) {
+        if (a.t > a.duration * dw[0] && a.t < a.duration * dw[1]) dummy.vx = dummy.facing * a.dash;
+        else if (a.t >= a.duration * dw[1]) dummy.vx = approach(dummy.vx, 0, dt * 12000);
+      }
       if (!a.fired && a.type !== 'ultimate' && a.t >= a.duration * a.hitAt) { a.fired = true; enemyStrike(a); }
-      if (a.t >= a.duration || (opponentCharacter !== 'fenr' && a.type === 'skill1' && a.fired)) {
+      if (a.t >= a.duration) {
         dummy.action = null; dummy.state = 'idle'; dummy.stateTime = 0; dummy.aiThink = P.recovery;
         if (hero.hp > 0) cpuFollowUp(a, P);
       }
@@ -2068,7 +2194,7 @@
     const airborne = dummy.y < CONFIG.groundY || dummy.vy < 0;
     if (!aiEnabled || hero.hp <= 0) { dummy.vx = approach(dummy.vx, 0, dt * 1500); if (!airborne) dummy.state = 'idle'; return; }
     if (airborne) {
-      if (cpu.doubleAt && time >= cpu.doubleAt && dummy.jumps < 2) { dummy.jumps = 2; dummy.vy = -CONFIG.doubleJumpSpeed; cpu.doubleAt = 0; sound('double_jump'); if (opponentCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: dummy.x, y: dummy.y, facing: dummy.facing, life: .4, maxLife: .4, size: 280 }); else if (opponentCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-jumpdust', x: dummy.x, y: dummy.y, facing: dummy.facing, life: .4, maxLife: .4, size: 280 }); }
+      if (cpu.doubleAt && time >= cpu.doubleAt && dummy.jumps < 2) { dummy.jumps = 2; dummy.vy = -CONFIG.doubleJumpSpeed; cpu.doubleAt = 0; sound('double_jump'); const jd = KITS[opponentCharacter]?.vfx?.jumpDust; if (jd) effects.push({ type: opponentCharacter + '-fx', asset: jd.asset, x: dummy.x + dummy.facing * (jd.x || 0), y: dummy.y + (jd.y || 0), facing: dummy.facing, life: .4, maxLife: .4, size: jd.size || 280 }); else if (opponentCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-dust', x: dummy.x, y: dummy.y, facing: dummy.facing, life: .4, maxLife: .4, size: 280 }); else if (opponentCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-jumpdust', x: dummy.x, y: dummy.y, facing: dummy.facing, life: .4, maxLife: .4, size: 280 }); }
       dummy.state = 'jump'; return;
     }
     const dx = hero.x - dummy.x, dist = Math.abs(dx); dummy.facing = dx >= 0 ? 1 : -1;
@@ -2194,18 +2320,41 @@
     const allowSkill = P.skillEvery === 1 || Math.floor(dummy.aiTime / 2) % P.skillEvery === 0;
     if (dummy.aiTime > P.ultimateAfter && dummy.form === 'human' && dummy.cooldowns.ultimate <= 0 && cpuStart('ultimate')) { dummy.aiThink = P.reaction; return; }
     const pick = cpuPick(P, dist, allowSkill);
-    if (pick && random() < P.aggression && (cpuLands(pick.m, true) || (hero.hurtTime <= 0 && random() < P.mistakes))) {
-      if (cpuStart(pick.name, pick.index)) { if (pick.name === 'attack') dummy.aiChain++; dummy.aiThink = P.reaction; return; }
+    if (pick) {
+      if (random() < P.aggression) {
+        if ((cpuLands(pick.m, true) || (hero.hurtTime <= 0 && random() < P.mistakes))) {
+          if (cpuStart(pick.name, pick.index)) { if (pick.name === 'attack') dummy.aiChain++; dummy.aiThink = P.reaction; return; }
+        }
+        dummy.aiThink = Math.min(P.reaction, 1 / 60);
+      } else {
+        dummy.aiThink = P.reaction;
+      }
+    } else {
+      dummy.aiThink = dist < 260 ? Math.min(P.reaction, 1 / 60) : P.reaction * .5;
     }
-    // Not landable yet (player protected or hesitation): check again very soon instead of idling a full beat.
-    dummy.aiThink = pick || dist < 260 ? Math.min(P.reaction, 1 / 60) : P.reaction * .5;
   }
   function opponentPose() {
     const m = opponentCharacter === 'arco' ? window.MECHA_MANIFEST : opponentCharacter === 'mira' ? window.MIRA_MANIFEST : opponentCharacter === 'cora' ? window.CORA_MANIFEST : opponentCharacter === 'naja' ? window.NAJA_MANIFEST : opponentCharacter === 'haldor' ? window.HALDOR_MANIFEST : opponentCharacter === 'zanni' ? window.ZANNI_MANIFEST : opponentCharacter === 'isolde' ? window.ISOLDE_MANIFEST : opponentCharacter === 'rhea' ? window.RHEA_MANIFEST : opponentCharacter === 'solan' ? window.SOLAN_MANIFEST : opponentCharacter === 'nib' ? window.NIB_MANIFEST : opponentCharacter === 'edda' ? window.EDDA_MANIFEST : opponentCharacter === 'yanfah' ? window.YANFAH_MANIFEST : opponentCharacter === 'dhyla' ? window.DHYLA_MANIFEST : opponentCharacter === 'ramuru' ? window.RAMURU_MANIFEST : opponentCharacter === 'valkren' ? window.VALKREN_MANIFEST : dummy.form === 'wolf' ? window.FENR_WOLF_MANIFEST : window.FENR_HUMAN_MANIFEST;
     const name = m?.frame_layout?.rows?.[dummy.state] ? dummy.state : 'idle', list = m?.frame_layout?.rows?.[name] || [];
     let index = 0;
+    if (dummy.action?.frameTimes) {
+      const p = dummy.action.t / dummy.action.duration;
+      let accum = 0;
+      for (let i = 0; i < dummy.action.frameTimes.length; i++) {
+        accum += dummy.action.frameTimes[i];
+        if (p <= accum || i === dummy.action.frameTimes.length - 1) { index = i; break; }
+      }
+    }
+    // Fallback logic for old dash attacks
+    else if (dummy.action?.dash) {
+      const p = dummy.action.t / dummy.action.duration;
+      const df = dummy.action.dashFrame !== undefined ? dummy.action.dashFrame : 1;
+      if (p < 0.2) index = Math.floor(p / 0.2 * df);
+      else if (p < 0.6) index = df;
+      else index = Math.min(list.length - 1, df + 1 + Math.floor((p - 0.6) / 0.4 * (list.length - df - 1)));
+    }
     // Projectile casts that release at 50% show wind-up -> thrust -> full extension, like the player's pose.
-    if (dummy.action?.type === 'skill1' && opponentCharacter !== 'fenr') index = Math.min(2, list.length - 1, Math.floor(dummy.action.t / (dummy.action.duration * .5) * 3));
+    else if (dummy.action?.type === 'skill1' && opponentCharacter !== 'fenr') index = Math.min(2, list.length - 1, Math.floor(dummy.action.t / (dummy.action.duration * .5) * 3));
     else if (dummy.action) index = Math.floor(dummy.action.t / dummy.action.duration * list.length);
     else if (name === 'walk' || name === 'run') index = Math.floor(dummy.walkPhase * list.length) % list.length;
     else if (name === 'down') index = Math.floor(dummy.stateTime / .55 * list.length);
@@ -2280,6 +2429,21 @@
     } else if (hero.state === 'walk' || hero.state === 'run') {
       index = Math.floor(hero.walkPhase * list.length) % list.length;
     }
+    else if (hero.action?.frameTimes) {
+      const p = hero.action.t / hero.action.duration;
+      let accum = 0;
+      for (let i = 0; i < hero.action.frameTimes.length; i++) {
+        accum += hero.action.frameTimes[i];
+        if (p <= accum || i === hero.action.frameTimes.length - 1) { index = i; break; }
+      }
+    }
+    else if (hero.action?.dash) {
+      const p = hero.action.t / hero.action.duration;
+      const df = hero.action.dashFrame !== undefined ? hero.action.dashFrame : 1;
+      if (p < 0.2) index = Math.floor(p / 0.2 * df);
+      else if (p < 0.6) index = df;
+      else index = Math.min(list.length - 1, df + 1 + Math.floor((p - 0.6) / 0.4 * (list.length - df - 1)));
+    }
     else if (hero.action?.type === 'skill1') index = Math.min(2, list.length - 1, Math.floor(hero.action.t / (hero.action.duration * .5) * 3));
     else if (hero.action) index = Math.min(list.length - 1, Math.floor(hero.action.t / hero.action.duration * list.length));
     else if (row.loop === false) index = Math.min(list.length - 1, Math.floor(hero.animTime * (row.fps || 8)));
@@ -2310,11 +2474,18 @@
     ctx.restore();
 
     if (hero.state === 'crouch') {
-      if (selectedCharacter === 'valkren' && images['fx-valkren-guard']) {
+      const g = KITS[selectedCharacter]?.vfx?.guard;
+      if (g && images['fx-' + selectedCharacter + '-guard']) {
         ctx.save();
-        const offsetX = 60;
-        const offsetY = -70;
-        ctx.translate(Math.round(hero.x + hero.facing * offsetX), Math.round(hero.y + offsetY));
+        ctx.translate(Math.round(hero.x + hero.facing * (g.x || 50)), Math.round(hero.y + (g.y || -70)));
+        ctx.scale(hero.facing, 1);
+        ctx.globalAlpha = g.alpha || 1.0;
+        const size = g.size || 150;
+        ctx.drawImage(images['fx-' + selectedCharacter + '-guard'], -size / 2, -size / 2, size, size);
+        ctx.restore();
+      } else if (selectedCharacter === 'valkren' && images['fx-valkren-guard']) {
+        ctx.save();
+        ctx.translate(Math.round(hero.x + hero.facing * 60), Math.round(hero.y - 70));
         ctx.scale(hero.facing, 1);
         ctx.globalAlpha = 0.8;
         const size = 200;
@@ -2322,9 +2493,7 @@
         ctx.restore();
       } else if (selectedCharacter === 'dhyla' && images['fx-dhyla-guard']) {
         ctx.save();
-        const offsetX = 40;
-        const offsetY = -70;
-        ctx.translate(Math.round(hero.x + hero.facing * offsetX), Math.round(hero.y + offsetY));
+        ctx.translate(Math.round(hero.x + hero.facing * 40), Math.round(hero.y - 70));
         ctx.scale(hero.facing, 1);
         ctx.globalAlpha = 1.0;
         const size = 130;
@@ -2332,9 +2501,7 @@
         ctx.restore();
       } else if (selectedCharacter === 'yanfah' && images['fx-yanfah-hexshield']) {
         ctx.save();
-        const offsetX = 50;
-        const offsetY = -70;
-        ctx.translate(Math.round(hero.x + hero.facing * offsetX), Math.round(hero.y + offsetY));
+        ctx.translate(Math.round(hero.x + hero.facing * 50), Math.round(hero.y - 70));
         ctx.scale(hero.facing, 1);
         ctx.globalAlpha = 1.0;
         const size = 150;
@@ -2366,11 +2533,18 @@
 
     if (dummy.state === 'crouch') {
       const facing = dummy.facing || -1;
-      if (opponentCharacter === 'valkren' && images['fx-valkren-guard']) {
+      const g = KITS[opponentCharacter]?.vfx?.guard;
+      if (g && images['fx-' + opponentCharacter + '-guard']) {
         ctx.save();
-        const offsetX = 60;
-        const offsetY = -70;
-        ctx.translate(Math.round(dummy.x + facing * offsetX), Math.round(dummy.y + offsetY));
+        ctx.translate(Math.round(dummy.x + facing * (g.x || 50)), Math.round(dummy.y + (g.y || -70)));
+        ctx.scale(facing, 1);
+        ctx.globalAlpha = g.alpha || 1.0;
+        const size = g.size || 150;
+        ctx.drawImage(images['fx-' + opponentCharacter + '-guard'], -size / 2, -size / 2, size, size);
+        ctx.restore();
+      } else if (opponentCharacter === 'valkren' && images['fx-valkren-guard']) {
+        ctx.save();
+        ctx.translate(Math.round(dummy.x + facing * 60), Math.round(dummy.y - 70));
         ctx.scale(facing, 1);
         ctx.globalAlpha = 0.8;
         const size = 200;
@@ -2378,9 +2552,7 @@
         ctx.restore();
       } else if (opponentCharacter === 'dhyla' && images['fx-dhyla-guard']) {
         ctx.save();
-        const offsetX = 40;
-        const offsetY = -70;
-        ctx.translate(Math.round(dummy.x + facing * offsetX), Math.round(dummy.y + offsetY));
+        ctx.translate(Math.round(dummy.x + facing * 40), Math.round(dummy.y - 70));
         ctx.scale(facing, 1);
         ctx.globalAlpha = 1.0;
         const size = 130;
@@ -2388,9 +2560,7 @@
         ctx.restore();
       } else if (opponentCharacter === 'yanfah' && images['fx-yanfah-hexshield']) {
         ctx.save();
-        const offsetX = 50;
-        const offsetY = -70;
-        ctx.translate(Math.round(dummy.x + facing * offsetX), Math.round(dummy.y + offsetY));
+        ctx.translate(Math.round(dummy.x + facing * 50), Math.round(dummy.y - 70));
         ctx.scale(facing, 1);
         ctx.globalAlpha = 1.0;
         const size = 150;
@@ -2406,6 +2576,7 @@
   function drawEffects(layer = 'front') {
     for (const p of projectiles) {
       if ((p.behind ? 'behind' : 'front') !== layer) continue;
+      if (p.invisible) continue;
       if (p.asset && images['fx-' + p.asset]) { const w = p.size || 84, h = p.size || 76; ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.facing, 1); if (p.vy && !p.noRotate) ctx.rotate(Math.atan2(p.vy, Math.abs(p.vx))); if (p.spin) ctx.rotate(realTime * p.spin); ctx.drawImage(images['fx-' + p.asset], -w / 2, -h / 2, w, h); ctx.restore(); continue; }
       ctx.save(); ctx.translate(Math.round(p.x), Math.round(p.y)); ctx.scale(p.facing, 1);
       const glow = ctx.createLinearGradient(-75, 0, 15, 0); glow.addColorStop(0, '#73f2dd00'); glow.addColorStop(1, '#affff1bb'); ctx.fillStyle = glow; ctx.beginPath(); ctx.moveTo(-80, -5); ctx.lineTo(10, -11); ctx.lineTo(25, 0); ctx.lineTo(10, 11); ctx.lineTo(-80, 5); ctx.fill();
@@ -2462,7 +2633,9 @@
           ctx.globalAlpha = Math.min(1, t * 8, (1 - t) * 8);
           ctx.drawImage(img, -w / 2, -h / 2, w, h);
         } else {
-          ctx.scale(e.facing || 1, 1); if (e.rotation) ctx.rotate(e.rotation); const size = e.size * (.75 + t * .4); ctx.drawImage(images['fx-' + e.asset], -size / 2, -size / 2, size, size);
+          ctx.scale(e.facing || 1, 1); if (e.rotation) ctx.rotate(e.rotation); 
+          if (e.blend) ctx.globalCompositeOperation = e.blend;
+          const size = e.size * (.75 + t * .4); ctx.drawImage(images['fx-' + e.asset], -size / 2, -size / 2, size, size);
         }
       }
       // EDDA's tortoise spirit keeps one size; it fades in and out and lifts before each stomp.
@@ -2626,6 +2799,7 @@
     if (id === 'yanfah') return { name: 'YANFAH', cls: 'MECHA', deck: 'YANFAH', title: 'CYBER HACKER', portrait: 'assets/yanfah/ui/portrait.webp', names: YF.names, icons: ['basic', 'skill1', 'skill2', 'ultimate'].map(s => 'assets/yanfah/ui/icon-' + s + '.webp') };
     if (id === 'dhyla') return { name: 'DHYLA', cls: 'NATURE', deck: 'DHYLA', title: 'FUNGAL MAGE', portrait: 'assets/dhyla/ui/portrait.webp', names: DH.names, icons: ['attack', 'skill1', 'skill2', 'ultimate'].map(s => 'assets/dhyla/ui/icon-' + s + '.webp') };
     if (id === 'valkren') return { name: 'VALKREN', cls: 'MECHA', deck: 'VALKREN', title: 'HEAVY MECHA', portrait: 'assets/valkren/ui/portrait.webp', names: VK.names, icons: ['attack', 'skill1', 'skill2', 'ultimate'].map(s => 'assets/valkren/ui/icon-' + s + '.webp') };
+    if (id === 'ramuru') return { name: 'RAMURU', cls: 'FANTASI', deck: 'RAMURU', title: 'PENDEKAR MISTERIUS', portrait: 'assets/ramuru/ui/portrait.webp', names: RM?.names || [], icons: ['attack', 'skill1', 'skill2', 'ultimate'].map(s => 'assets/ramuru/ui/icon-' + s + '.webp') };
     return { name: 'ARCO', cls: 'MECHA', deck: 'ARCO', title: 'TRINITY ARM', portrait: 'assets/ui/arco-avatar.webp', names: ['IRON CHAIN', 'TRINITY BOLT', 'SEISMIC DRIVE', 'HELIOS SQUADRON'], icons: ['attack', 'skill1', 'skill2', 'squadron-icon'].map(s => 'assets/ui/' + s + '.webp') };
   }
   function updateFighterIdentity() {
@@ -2698,7 +2872,7 @@
     const ct = voiceFreezing ? 0.4 : (fenrCutin?.t ?? (arcoGroup || summon)?.t ?? 100);
     const visible = voiceFreezing || ct < SQUAD.cutinDuration; cutin.classList.toggle('fenr-cutin', cutinKey === 'fenr'); cutin.classList.toggle('mira-cutin', cutinKey === 'mira'); cutin.classList.toggle('cora-cutin', cutinKey === 'cora'); cutin.classList.toggle('naja-cutin', cutinKey === 'naja'); cutin.classList.toggle('haldor-cutin', cutinKey === 'haldor'); cutin.classList.toggle('zanni-cutin', cutinKey === 'zanni'); cutin.classList.toggle('isolde-cutin', cutinKey === 'isolde'); cutin.classList.toggle('rhea-cutin', cutinKey === 'rhea'); cutin.classList.toggle('solan-cutin', cutinKey === 'solan'); cutin.classList.toggle('nib-cutin', cutinKey === 'nib'); cutin.classList.toggle('edda-cutin', cutinKey === 'edda'); cutin.classList.toggle('yanfah-cutin', cutinKey === 'yanfah'); cutin.classList.toggle('dhyla-cutin', cutinKey === 'dhyla'); cutin.classList.toggle('valkren-cutin', cutinKey === 'valkren'); cutin.classList.toggle('ramuru-cutin', cutinKey === 'ramuru');
     const cutinArt = cutin.querySelector('.cutin-art'), cutinOwner = cutinKey === 'fenr' ? fenrCutin.owner : cutinKey === 'mira' || cutinKey === 'cora' || cutinKey === 'naja' || cutinKey === 'haldor' || cutinKey === 'zanni' || cutinKey === 'isolde' || cutinKey === 'rhea' || cutinKey === 'solan' || cutinKey === 'nib' || cutinKey === 'edda' || cutinKey === 'yanfah' || cutinKey === 'dhyla' || cutinKey === 'valkren' || cutinKey === 'ramuru' ? (summon.owner === 'enemy' ? 'RIVAL' : 'PLAYER') : '';
-    if (cutin.dataset.identity !== cutinKey + cutinOwner) { cutin.dataset.identity = cutinKey + cutinOwner; cutinArt.src = CUTIN_ART[cutinKey]; if (cutinArt.complete) cutinArt.style.visibility = ''; else { cutinArt.style.visibility = 'hidden'; cutinArt.onload = () => { cutinArt.style.visibility = ''; }; } cutin.querySelector('.cutin-kicker').textContent = { fenr: 'FENR / ' + cutinOwner, mira: 'MIRA / ' + cutinOwner, cora: 'CORA / ' + cutinOwner, naja: 'NAJA / ' + cutinOwner, haldor: 'HALDOR / ' + cutinOwner, zanni: 'ZANNI / ' + cutinOwner, isolde: 'ISOLDE / ' + cutinOwner, rhea: 'RHEA / ' + cutinOwner, solan: 'SOLAN / ' + cutinOwner, nib: 'NIB / ' + cutinOwner, edda: 'EDDA / ' + cutinOwner, yanfah: 'YANFAH / ' + cutinOwner, dhyla: 'DHYLA / ' + cutinOwner, valkren: 'MODE TEMPUR / ' + cutinOwner, ramuru: 'RAMURU / ' + cutinOwner, arco: 'ARCO / TRINITY COMMAND' }[cutinKey]; cutin.querySelector('strong').innerHTML = { fenr: 'FERAL<br><em>AWAKENING</em>', mira: 'ROCKET<br><em>PARADE</em>', cora: 'NIGHT<br><em>MURMURATION</em>', naja: 'DUNE<br><em>SERPENT</em>', haldor: 'FORGE<br><em>QUAKE</em>', zanni: 'GRAND<br><em>FINALE</em>', isolde: 'SKYFALL<br><em>LANCES</em>', rhea: 'GRAND<br><em>ORRERY</em>', solan: 'SUNMANE<br><em>ROAR</em>', nib: 'SPECIAL<br><em>DELIVERY</em>', edda: 'ELDER<br><em>TORTOISE</em>', yanfah: 'SYSTEM<br><em>BLUE SCREEN</em>', dhyla: 'AZAB<br><em>JAMUR</em>', valkren: 'SISTEM<br><em>OVERDRIVE</em>', ramuru: 'SYSTEM<br><em>OVERRIDE</em>', arco: 'HELIOS<br><em>SQUADRON</em>' }[cutinKey]; cutin.querySelector('.cutin-detail').textContent = { fenr: 'THE BEAST WITHIN', mira: 'TWELVE-ROCKET SALVO', cora: 'THREE-PASS RAVEN STORM', naja: 'THREE-STRIKE SAND COBRA', haldor: 'THREE-SLAM MOLTEN SHOCKWAVE', zanni: 'THREE-RING BLADE BOOMERANG', isolde: 'THREE-LANCE ICE DIVE', rhea: 'THREE-PLANET ORBIT', solan: 'THREE-ROAR SHOCKWAVE', nib: 'THREE-PARCEL HOMING RUN', edda: 'THREE-STOMP SPIRIT WALK', yanfah: 'FATAL EXCEPTION HAS OCCURRED', dhyla: 'MAKAN NIH JAMUR JUMBO', valkren: 'PELEPASAN DAYA MAKSIMAL', ramuru: 'THE NEW ERA', arco: 'ORBITAL LASER STRIKE' }[cutinKey]; cutin.setAttribute('aria-label', { fenr: 'FENR ultimate: Feral Awakening', mira: 'MIRA ultimate: Rocket Parade', cora: 'CORA ultimate: Night Murmuration', naja: 'NAJA ultimate: Dune Serpent', haldor: 'HALDOR ultimate: Forge Quake', zanni: 'ZANNI ultimate: Grand Finale', isolde: 'ISOLDE ultimate: Skyfall Lances', rhea: 'RHEA ultimate: Grand Orrery', solan: 'SOLAN ultimate: Sunmane Roar', nib: 'NIB ultimate: Special Delivery', edda: 'EDDA ultimate: Elder Tortoise', yanfah: 'YANFAH ultimate: System Blue Screen', dhyla: 'DHYLA ultimate: Azab Jamur', valkren: 'VALKREN ultimate: Sistem Overdrive', ramuru: 'RAMURU ultimate: System Override', arco: 'ARCO ultimate: Helios Squadron' }[cutinKey]); }
+    if (cutin.dataset.identity !== cutinKey + cutinOwner) { cutin.dataset.identity = cutinKey + cutinOwner; cutinArt.src = CUTIN_ART[cutinKey]; if (cutinArt.complete) cutinArt.style.visibility = ''; else { cutinArt.style.visibility = 'hidden'; cutinArt.onload = () => { cutinArt.style.visibility = ''; }; } cutin.querySelector('.cutin-kicker').textContent = { fenr: 'FENR / ' + cutinOwner, mira: 'MIRA / ' + cutinOwner, cora: 'CORA / ' + cutinOwner, naja: 'NAJA / ' + cutinOwner, haldor: 'HALDOR / ' + cutinOwner, zanni: 'ZANNI / ' + cutinOwner, isolde: 'ISOLDE / ' + cutinOwner, rhea: 'RHEA / ' + cutinOwner, solan: 'SOLAN / ' + cutinOwner, nib: 'NIB / ' + cutinOwner, edda: 'EDDA / ' + cutinOwner, yanfah: 'YANFAH / ' + cutinOwner, dhyla: 'DHYLA / ' + cutinOwner, valkren: 'MODE TEMPUR / ' + cutinOwner, ramuru: 'RAMURU / ' + cutinOwner, arco: 'ARCO / TRINITY COMMAND' }[cutinKey]; cutin.querySelector('strong').innerHTML = { fenr: 'FERAL<br><em>AWAKENING</em>', mira: 'ROCKET<br><em>PARADE</em>', cora: 'NIGHT<br><em>MURMURATION</em>', naja: 'DUNE<br><em>SERPENT</em>', haldor: 'FORGE<br><em>QUAKE</em>', zanni: 'GRAND<br><em>FINALE</em>', isolde: 'SKYFALL<br><em>LANCES</em>', rhea: 'GRAND<br><em>ORRERY</em>', solan: 'SUNMANE<br><em>ROAR</em>', nib: 'SPECIAL<br><em>DELIVERY</em>', edda: 'ELDER<br><em>TORTOISE</em>', yanfah: 'SYSTEM<br><em>BLUE SCREEN</em>', dhyla: 'AZAB<br><em>JAMUR</em>', valkren: 'SISTEM<br><em>OVERDRIVE</em>', ramuru: 'TEBASAN<br><em>TSUNAMI</em>', arco: 'HELIOS<br><em>SQUADRON</em>' }[cutinKey]; cutin.querySelector('.cutin-detail').textContent = { fenr: 'THE BEAST WITHIN', mira: 'TWELVE-ROCKET SALVO', cora: 'THREE-PASS RAVEN STORM', naja: 'THREE-STRIKE SAND COBRA', haldor: 'THREE-SLAM MOLTEN SHOCKWAVE', zanni: 'THREE-RING BLADE BOOMERANG', isolde: 'THREE-LANCE ICE DIVE', rhea: 'THREE-PLANET ORBIT', solan: 'THREE-ROAR SHOCKWAVE', nib: 'THREE-PARCEL HOMING RUN', edda: 'THREE-STOMP SPIRIT WALK', yanfah: 'FATAL EXCEPTION HAS OCCURRED', dhyla: 'MAKAN NIH JAMUR JUMBO', valkren: 'PELEPASAN DAYA MAKSIMAL', ramuru: 'PEDANG AIR RAKSASA', arco: 'ORBITAL LASER STRIKE' }[cutinKey]; cutin.setAttribute('aria-label', { fenr: 'FENR ultimate: Feral Awakening', mira: 'MIRA ultimate: Rocket Parade', cora: 'CORA ultimate: Night Murmuration', naja: 'NAJA ultimate: Dune Serpent', haldor: 'HALDOR ultimate: Forge Quake', zanni: 'ZANNI ultimate: Grand Finale', isolde: 'ISOLDE ultimate: Skyfall Lances', rhea: 'RHEA ultimate: Grand Orrery', solan: 'SOLAN ultimate: Sunmane Roar', nib: 'NIB ultimate: Special Delivery', edda: 'EDDA ultimate: Elder Tortoise', yanfah: 'YANFAH ultimate: System Blue Screen', dhyla: 'DHYLA ultimate: Azab Jamur', valkren: 'VALKREN ultimate: Sistem Overdrive', ramuru: 'RAMURU ultimate: Tebasan Tsunami', arco: 'ARCO ultimate: Helios Squadron' }[cutinKey]); }
     cutin.classList.toggle('visible', visible); cutin.setAttribute('aria-hidden', String(!visible));
     const slide = !visible ? -110 : ct < .16 ? -110 * Math.pow(1 - ct / .16, 3) : ct > .57 ? 110 * Math.pow((ct - .57) / .21, 2) : 0;
     cutin.style.transform = `translateX(${slide}%) rotate(-3deg)`;
@@ -2850,9 +3024,11 @@
         hero.vx = 0;
         spawnParticles(hero.x + hero.facing * 30, hero.y - 70, '#aaddff', 10, 180);
         sound('block');
-        if (selectedCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-guard', x: hero.x + hero.facing * 60, y: hero.y - 70, facing: hero.facing, life: .3, maxLife: .3, size: 200 });
-        if (selectedCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-guard', x: hero.x + hero.facing * 40, y: hero.y - 70, facing: hero.facing, life: .4, maxLife: .4, size: 130 });
-        if (selectedCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-hexshield', x: hero.x + hero.facing * 50, y: hero.y - 70, facing: hero.facing, life: .4, maxLife: .4, size: 150 });
+        const g = KITS[selectedCharacter]?.vfx?.guard;
+        if (g) effects.push({ type: selectedCharacter + '-fx', asset: g.asset, x: hero.x + hero.facing * (g.x || 50), y: hero.y + (g.y || -70), facing: hero.facing, life: .4, maxLife: .4, size: g.size || 150, maxAlpha: g.alpha || 1.0 });
+        else if (selectedCharacter === 'valkren') effects.push({ type: 'valkren-fx', asset: 'valkren-guard', x: hero.x + hero.facing * 60, y: hero.y - 70, facing: hero.facing, life: .3, maxLife: .3, size: 200 });
+        else if (selectedCharacter === 'dhyla') effects.push({ type: 'dhyla-fx', asset: 'dhyla-guard', x: hero.x + hero.facing * 40, y: hero.y - 70, facing: hero.facing, life: .4, maxLife: .4, size: 130 });
+        else if (selectedCharacter === 'yanfah') effects.push({ type: 'yanfah-fx', asset: 'yanfah-hexshield', x: hero.x + hero.facing * 50, y: hero.y - 70, facing: hero.facing, life: .4, maxLife: .4, size: 150 });
         damageNumbers.push({ x: hero.x + (Math.random() - 0.5) * 40, y: hero.y - 120, amount: 'DEFEND', life: 1.2, maxLife: 1.2, color: '#aaddff' });
         if (options.freeze !== false) hitstop = knockdown ? .06 : .03;
         return 'blocked'; // No damage taken
@@ -2928,7 +3104,7 @@
       fx: {
         prefix: 'fx-ramuru-',
         dir: 'assets/ramuru/ui/fx-',
-        names: ['slash', 'hit', 'projectile', 'explosion', 'warning', 'eruption', 'ultaura', 'ultenv', 'guard', 'dust']
+        names: ['slash1', 'slash2', 'slam', 'hit', 'guard', 'dust', 'dash', 'bind', 'cast', 'ultaura', 'ultenv']
       }
     }
   };
@@ -2982,30 +3158,30 @@
       window.FrontEnd?.assetsReady(ready);
     });
   });
-})();
 
-
-function startRamuruUlt(actor) {
-  const ctx = makeUltContext();
-  const group = window.Ramuru?.ultimate?.start
-    ? window.Ramuru.ultimate.start(actor, ctx)
-    : { t: 0, owner: actor === hero ? 'player' : 'enemy', facing: actor.facing, casterX: actor.x, phase: 'cutin', hit: false };
-  group._charId = 'ramuru';
-  if (actor === hero) activeUlt.player = group;
-  else activeUlt.enemy = group;
-  cinematic = .9; announceTimer = 0;
-  startUltimateVoice('ramuru', actor);
-}
-
-function updateRamuruUlt(dt, s) {
-  if (!s) return;
-  const ctx = makeUltContext();
-  const next = window.Ramuru?.ultimate?.update
-    ? window.Ramuru.ultimate.update(dt, s, ctx)
-    : null;
-  if (!next) {
-    if (s === activeUlt.enemy) activeUlt.enemy = null;
-    else if (s === activeUlt.player) activeUlt.player = null;
+  function startRamuruUlt(actor) {
+    const ctx = makeUltContext();
+    const group = window.Ramuru?.ultimate?.start
+      ? window.Ramuru.ultimate.start(actor, ctx)
+      : { t: 0, owner: actor === hero ? 'player' : 'enemy', facing: actor.facing, casterX: actor.x, phase: 'cutin', hit: false };
+    group._charId = 'ramuru';
+    if (actor === hero) activeUlt.player = group;
+    else activeUlt.enemy = group;
+    cinematic = .9; announceTimer = 0;
+    startUltimateVoice('ramuru', actor);
   }
-}
+
+  function updateRamuruUlt(dt, s) {
+    if (!s) return;
+    const ctx = makeUltContext();
+    const next = window.Ramuru?.ultimate?.update
+      ? window.Ramuru.ultimate.update(dt, s, ctx)
+      : null;
+    if (!next) {
+      if (s === activeUlt.enemy) activeUlt.enemy = null;
+      else if (s === activeUlt.player) activeUlt.player = null;
+    }
+  }
+
+})();
 

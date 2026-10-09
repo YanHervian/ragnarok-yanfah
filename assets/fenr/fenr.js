@@ -35,8 +35,8 @@
   function move(a, name, index = 1) {
     const wolf = a.form === 'wolf', kit = kits[wolf ? 'wolf' : 'human'];
     if (name === 'attack') return { name: `attack${index}`, type: 'attack', index, damage: kit.combo[index - 1], reach: kit.reach[index - 1], duration: [.38, .44, .55][index - 1] * atkSpd(), knockback: 80 + index * 25, fx: wolf ? 'bite' : 'claw', hitAt: .5 };
-    if (name === 'skill1') return { name, type: name, damage: kit.skill1, reach: wolf ? 175 : 600, duration: wolf ? .66 : .48, knockback: 150, fx: wolf ? 'bite' : 'gale', projectile: !wolf, dash: wolf ? 230 : 0, hitAt: wolf ? .58 : .5 };
-    if (name === 'skill2') return { name, type: name, damage: kit.skill2, reach: wolf ? 205 : 155, duration: wolf ? .85 : .68, knockback: 190, fx: wolf ? 'howl' : 'rush', area: wolf, dash: wolf ? 0 : 190, hitAt: .56 };
+    if (name === 'skill1') return { name, type: name, damage: kit.skill1, reach: wolf ? 190 : 600, duration: wolf ? .82 : .48, knockback: 150, fx: wolf ? 'bite' : 'gale', projectile: !wolf, dash: wolf ? 850 : 0, hitAt: wolf ? .60 : .5 };
+    if (name === 'skill2') return { name, type: name, damage: kit.skill2, reach: wolf ? 205 : 190, duration: wolf ? .85 : .82, knockback: 190, fx: wolf ? 'howl' : 'rush', area: wolf, dash: wolf ? 0 : 850, hitAt: .60 };
     return { name: 'ultimate', type: 'ultimate', duration: balance.castTime, damage: 0, hitAt: 1 };
   }
   function start(a, name, index = 1) {

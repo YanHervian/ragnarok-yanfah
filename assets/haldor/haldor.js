@@ -31,7 +31,7 @@
     if(name==='attack')return {name:`attack${index}`,type:'attack',index,...combo[index-1]};
     if(name==='skill1')return {name,type:name,damage:getBal()?.skill1?.damage ?? 16,duration:.56,knockback:150,projectile:true,lob:true,speed:(slag.minRange+slag.maxRange)/2/slag.flight,hitAt:.55};
     // Steam Ram: a piston-boosted shoulder charge; the biggest knockback in his kit.
-    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.7,knockback:320,reach:118,dash:340,hitAt:.6};
+    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.82,knockback:320,reach:190,dash:850,hitAt:.60};
     return {name:'ultimate',type:'ultimate',duration:balance.castTime,damage:0,hitAt:1};
   }
   function start(a,name,index=1) {

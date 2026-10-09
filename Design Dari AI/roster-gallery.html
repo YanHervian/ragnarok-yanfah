@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Roster Gallery — Ragnarok Trinity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Rajdhani:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="roster-gallery.css">
+</head>
+<body>
+<div class="selection-backdrop"></div>
+
+<header class="select-header">
+  <button class="menu-back" data-cmd="back">&larr; BACK</button>
+  <div>
+    <span class="eyebrow">CHARACTER BROWSER</span>
+    <h1>Roster Gallery</h1>
+  </div>
+  <div class="brand">RAGNAROK<small>TRINITY</small></div>
+</header>
+
+<main class="select-stage" id="stage">
+
+  <div id="player-preview">
+    <div class="fighter-panel">
+      <img class="selection-art" id="p-art" src="assets/edda/ui/art.webp" alt="EDDA">
+      <div class="fighter-info">
+        <div class="fighter-tags"><span class="tag" id="p-title">The Shell Sage</span><span class="tag race" id="p-race">Demi-human</span></div>
+        <h2 class="fighter-name" id="p-name">Edda</h2>
+        <p class="fighter-desc" id="p-desc">Counter defender / staff and shell guard</p>
+        <div class="stat-list">
+          <div class="stat">POWER<div class="stat-bar"><i id="s-power" style="--v:60%"></i></div></div>
+          <div class="stat">SPEED<div class="stat-bar"><i id="s-speed" style="--v:45%"></i></div></div>
+          <div class="stat">AGILITY<div class="stat-bar"><i id="s-agility" style="--v:20%"></i></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="roster-center">
+    <div class="roster-grid">
+      <!-- Duplikasi blok .tile-wrap untuk setiap karakter. Semua info ada di data-attribute. -->
+      <div class="tile-wrap" style="--tile-accent:#7be0b0">
+        <button class="roster-tile highlight" data-fighter="edda" data-accent="#7be0b0"
+          data-title="The Shell Sage" data-race="Demi-human" data-desc="Counter defender / staff and shell guard"
+          data-ult="Elder Tortoise" data-power="60" data-speed="45" data-agility="20">
+          <img class="portrait-image" src="assets/edda/ui/portrait.webp" alt="Edda"><span class="roster-name-tag">EDDA</span>
+        </button>
+      </div>
+      <div class="tile-wrap" style="--tile-accent:#4cc9ff">
+        <button class="roster-tile" data-fighter="arco" data-accent="#4cc9ff"
+          data-title="The Azure Blade" data-race="Human" data-desc="Rushdown swordsman / aerial pressure"
+          data-ult="Sky Rend" data-power="70" data-speed="85" data-agility="80">
+          <img class="portrait-image" src="assets/arco/ui/portrait.webp" alt="Arco"><span class="roster-name-tag">ARCO</span>
+        </button>
+      </div>
+      <div class="tile-wrap" style="--tile-accent:#ff9a3c">
+        <button class="roster-tile" data-fighter="fenr" data-accent="#ff9a3c"
+          data-title="The Ember Wolf" data-race="Beastkin" data-desc="Grappler / close-range mix-ups"
+          data-ult="Howling Pyre" data-power="90" data-speed="60" data-agility="55">
+          <img class="portrait-image" src="assets/fenr/ui/portrait.webp" alt="Fenr"><span class="roster-name-tag">FENR</span>
+        </button>
+      </div>
+    </div>
+
+    <nav class="roster-pager" aria-label="Pages">
+      <button class="pager-btn">&lt;&lt;</button><span>PAGE 1</span><button class="pager-btn">&gt;&gt;</button>
+    </nav>
+    <div class="roster-caption" id="c-desc">Counter defender / staff and shell guard</div>
+    <div class="ult-row"><span class="ult-badge">ULT</span><span id="c-ult">Elder Tortoise</span></div>
+  </div>
+</main>
+
+<footer class="select-footer">
+  <span class="keys"><kbd>WASD</kbd> / <kbd>&uarr;&darr;&larr;&rarr;</kbd> SELECT &nbsp; <kbd>ESC</kbd> BACK</span>
+  <span class="meta">LOCAL PLAY &nbsp;&bull;&nbsp; BUILD 02</span>
+</footer>
+
+<script>
+/* Hover/fokus pada tile -> ubah --accent global dan isi panel preview */
+const stage = document.documentElement;
+const $ = id => document.getElementById(id);
+function show(t){
+  const d = t.dataset, name = d.fighter.toUpperCase();
+  stage.style.setProperty('--accent', d.accent);
+  document.querySelectorAll('.roster-tile.highlight').forEach(x=>x.classList.remove('highlight'));
+  t.classList.add('highlight');
+  const art = $('p-art'); art.src = `assets/${d.fighter}/ui/art.webp`; art.alt = name;
+  art.style.animation='none'; art.offsetWidth; art.style.animation='';
+  $('p-name').textContent = name; $('p-title').textContent = d.title; $('p-race').textContent = d.race;
+  $('p-desc').textContent = d.desc; $('c-desc').textContent = d.desc; $('c-ult').textContent = d.ult;
+  ['power','speed','agility'].forEach(k=>$('s-'+k).style.setProperty('--v', d[k]+'%'));
+}
+document.querySelectorAll('.roster-tile').forEach(t=>{
+  t.addEventListener('mouseenter',()=>show(t));
+  t.addEventListener('focus',()=>show(t));
+});
+</script>
+</body>
+</html>

@@ -91,12 +91,12 @@ window.RAMURU_MANIFEST = {
       "crouch": {
         "row": 5,
         "frames": 4,
-        "fps": 8,
+        "fps": 60,
         "durations_ms": [
-          125,
-          125,
-          125,
-          125
+          16,
+          16,
+          16,
+          16
         ],
         "loop": false,
         "frame_variant": "hd"

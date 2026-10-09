@@ -14,7 +14,8 @@
   const stages={
     amikom:{name:'Amikom Arena',short:'AMIKOM',subtitle:'ARENA',image:'assets/stages/amikom-arena-wide.webp',groundY:599,tag:'Creative IT Campus',time:'SUNNY DAYLIGHT'},
     jamur:{name:'Jamur Arena',short:'JAMUR',subtitle:'ARENA',image:'assets/stages/jamur-arena-wide.png',groundY:599,tag:'The Fungal Domain',time:'SUNNY DAYLIGHT'},
-    valkren:{name:'Valkren Arena',short:'VALKREN',subtitle:'ARENA',image:'assets/stages/valkren-map.webp',groundY:599,tag:'The Final Showdown',time:'SUNNY DAYLIGHT'}
+    valkren:{name:'Valkren Arena',short:'VALKREN',subtitle:'ARENA',image:'assets/stages/valkren-map.webp',groundY:599,tag:'The Final Showdown',time:'SUNNY DAYLIGHT'},
+      ramuru:{name:'Ramuru Arena',short:'RAMURU',subtitle:'ARENA',image:'assets/stages/ramuru-map.webp',groundY:599,tag:'Federasi Jura Tempest',time:'SUNNY DAYLIGHT'}
   };
   function introTiming(m){const clips=window.ANNOUNCER_MANIFEST?.clips;m.fightAt=Math.max(1.05,(clips?.['ronde_'+m.round]?.duration||0)+.12);m.introDuration=Math.max(1.85,m.fightAt+(clips?.mulai?.duration||0)+.10);}
   function create(mode='training') {const m={mode,phase:mode==='versus'?'intro':'fight',round:1,playerWins:0,enemyWins:0,seconds:90,phaseTime:0,fightCue:false,lastWinner:null,winner:null,koDuration:2.2};introTiming(m);return m;}
@@ -40,3 +41,5 @@
   }
   window.MatchRules={create,tick,difficulties,stages};
 })();
+
+

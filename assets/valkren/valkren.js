@@ -4,15 +4,15 @@
   const getBal = () => window.GAME_BALANCE?.valkren;
   const atkSpd = () => getBal()?.movement?.attackSpeed ?? 1.0;
 
-  const balance = { 
-    get cooldowns() { 
-      return { 
-        skill1: getBal()?.skill1?.cooldown ?? 12, 
-        skill2: getBal()?.skill2?.cooldown ?? 22, 
-        ultimate: getBal()?.ultimate?.cooldown ?? 40 
-      }; 
-    }, 
-    castTime: .8, basicRefund: .05 
+  const balance = {
+    get cooldowns() {
+      return {
+        skill1: getBal()?.skill1?.cooldown ?? 12,
+        skill2: getBal()?.skill2?.cooldown ?? 22,
+        ultimate: getBal()?.ultimate?.cooldown ?? 40
+      };
+    },
+    castTime: .8, basicRefund: .05
   };
   const names = ['SABETAN BERAT', 'TEMBAKAN PLASMA', 'HANTAMAN BUMI', 'SISTEM OVERDRIVE'];
 
@@ -25,7 +25,7 @@
   function move(name, index = 1) {
     if (name === 'attack') return { name: `attack${index}`, type: 'attack', index, ...combo[index - 1] };
     if (name === 'skill1') return { name, type: name, damage: getBal()?.skill1?.damage ?? 20, duration: .60, knockback: 80, projectile: true, speed: 1200, hitAt: .6 };
-    if (name === 'skill2') return { name, type: name, damage: getBal()?.skill2?.damage ?? 35, duration: .80, knockback: 350, reach: 450, area: true, dash: 0, hitAt: .75 };
+    if (name === 'skill2') return { name, type: name, damage: getBal()?.skill2?.damage ?? 35, duration: .80, knockback: 350, reach: 450, area: true, hitAt: .75 };
     return { name: 'ultimate', type: 'valkren-ult', duration: balance.castTime, damage: 0, hitAt: .5 };
   }
 
@@ -42,8 +42,8 @@
         const skillMult = typeof window.AUDIO_CONFIG?.skills?.valkren?.skill1 === 'number' ? window.AUDIO_CONFIG.skills.valkren.skill1 : 1.0;
         const sfxVolumeConfig = Number(localStorage.getItem('aether.sfxVolume') || 90) / 100;
         el.volume = Math.max(0, Math.min(1, sfxVolumeConfig * masterMult * skillMult));
-        el.play().catch(()=>{});
-      } catch (e) {}
+        el.play().catch(() => { });
+      } catch (e) { }
     }
     if (name === 'skill2' && window.Valkren.audio.skill2) {
       try {
@@ -52,8 +52,8 @@
         const skillMult = typeof window.AUDIO_CONFIG?.skills?.valkren?.skill2 === 'number' ? window.AUDIO_CONFIG.skills.valkren.skill2 : 1.0;
         const sfxVolumeConfig = Number(localStorage.getItem('aether.sfxVolume') || 90) / 100;
         el.volume = Math.max(0, Math.min(1, sfxVolumeConfig * masterMult * skillMult));
-        el.play().catch(()=>{});
-      } catch (e) {}
+        el.play().catch(() => { });
+      } catch (e) { }
     }
 
     return true;
@@ -61,9 +61,9 @@
 
   const vfx = {
     attacks: [
-      { x: 150, y: -162, size: 180, asset: 'valkren-meleeswipe', flipX: 1 },
-      { x: 150, y: -200, size: 200, asset: 'valkren-meleeswipe', flipX: 1, rotation: -45 },
-      { x: 175, y: -144, size: 240, asset: 'valkren-meleeswipe', flipX: 1, rotation: 90 }
+      { x: 190, y: -155, size: 100, asset: 'valkren-meleeswipe', flipX: 1 },
+      { x: 150, y: -350, size: 100, asset: 'valkren-meleeswipe', flipX: 1, rotation: -45 },
+      { x: 110, y: -0, size: 100, asset: 'valkren-meleeswipe', flipX: 1, rotation: 90 }
     ],
     hasJumpSmoke: true
   };
@@ -137,10 +137,11 @@
   function refund(a) { for (const name of Object.keys(balance.cooldowns)) a.cooldowns[name] = Math.max(0, a.cooldowns[name] - balance.cooldowns[name] * balance.basicRefund); }
 
   window.Valkren = {
-  audio: {
-    skill1: 'assets/valkren/audio/valkren-skill1.mp3',
-    skill2: 'assets/valkren/audio/valkren-skill2.mp3',
-    ultimate: 'assets/valkren/audio/valkren-ultimate.mp3',
-    hit: null
-  }, balance, names, combo, vfx, ultimate, move, start, refund };
+    audio: {
+      skill1: 'assets/valkren/audio/valkren-skill1.mp3',
+      skill2: 'assets/valkren/audio/valkren-skill2.mp3',
+      ultimate: 'assets/valkren/audio/valkren-ultimate.mp3',
+      hit: null
+    }, balance, names, combo, vfx, ultimate, move, start, refund
+  };
 })();

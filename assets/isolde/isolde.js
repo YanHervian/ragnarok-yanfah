@@ -31,7 +31,7 @@
     if(name==='attack')return {name:`attack${index}`,type:'attack',index,...combo[index-1]};
     if(name==='skill1')return {name,type:name,damage:getBal()?.skill1?.damage ?? 16,duration:.5,knockback:130,projectile:true,speed:piercer.speed,range:240,hitAt:.55};
     // Stilt Charge: a long, fast lance-first charge on the springy heron legs.
-    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.72,knockback:300,reach:150,dash:560,hitAt:.58};
+    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.82,knockback:300,reach:190,dash:850,hitAt:.60};
     return {name:'ultimate',type:'ultimate',duration:balance.castTime,damage:0,hitAt:1};
   }
   function start(a,name,index=1) {

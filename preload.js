@@ -19,7 +19,7 @@
     status.textContent = downloading ? `Mengunduh aset game · ${Math.floor(p * 100)}% · ${mb(got)} / ${mb(list.total)} MB` : 'Memuat…';
   }
   const secure = window.isSecureContext && 'caches' in window;
-  if (secure && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (secure && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { });
   const INDEX = '__ragnarok-index';
 
   async function run() {
@@ -40,15 +40,15 @@
           const res = await fetch(url, { cache: 'no-cache' });
           if (!res.ok) throw new Error(String(res.status));
           const chunks = [], reader = res.body && res.body.getReader ? res.body.getReader() : null;
-          if (reader) for (;;) { const { done, value } = await reader.read(); if (done) break; chunks.push(value); seen += value.byteLength; got += value.byteLength; paint(); }
+          if (reader) for (; ;) { const { done, value } = await reader.read(); if (done) break; chunks.push(value); seen += value.byteLength; got += value.byteLength; paint(); }
           else { const buf = new Uint8Array(await res.arrayBuffer()); chunks.push(buf); seen = buf.byteLength; got += seen; }
           if (cache) {
             const type = res.headers.get('Content-Type') || '';
             await cache.put(url, new Response(new Blob(chunks, { type }), { headers: { 'Content-Type': type } }));
             index[url] = hash;
           }
-        } catch (_) { 
-          /* a missing file must not block the game; it simply loads normally later */ 
+        } catch (_) {
+          /* a missing file must not block the game; it simply loads normally later */
           if (cache) index[url] = hash; // Tandai sukses di index agar tidak diulang-ulang terus di reload berikutnya
         }
         got += Math.max(0, bytes - seen); paint();
@@ -71,47 +71,23 @@
     }
     downloading = false; got = list.total; paint();
   }
-  window.RAGNAROK_PRELOAD = run().catch(() => {}).then(finish);
+  window.RAGNAROK_PRELOAD = run().catch(() => { }).then(finish);
 
   // DLC Downloader & Manager
-  window.clearDLCCache = async function() {
+  window.clearDLCCache = async function () {
     if (!secure || !('caches' in window)) return false;
-    const cache = await caches.open('ragnarok-assets').catch(() => null);
-    if (!cache) return false;
-    
-    // We only keep the files in RAGNAROK_PRECACHE.files (Core files)
-    const keepPaths = new Set(list.files.map(f => f[0]));
-    const keepUrls = new Set(list.files.map(f => new URL(f[0], location.href).href));
-    keepUrls.add(new URL(INDEX, location.href).href);
-    
-    let deletedCount = 0;
-    const keys = await cache.keys();
-    for (const req of keys) {
-      if (!keepUrls.has(req.url)) {
-        await cache.delete(req);
-        deletedCount++;
-      }
-    }
-    
-    // Reset index memory for deleted items (index uses the relative path f[0] as keys)
-    let index = {};
-    try { const hit = await cache.match(INDEX); if (hit) index = await hit.json(); } catch (_) {}
-    for (const path of Object.keys(index)) {
-      if (!keepPaths.has(path)) delete index[path];
-    }
-    await cache.put(INDEX, new Response(JSON.stringify(index), { headers: { 'Content-Type': 'application/json' } }));
-    
-    return deletedCount > 0;
+    await caches.delete('ragnarok-assets');
+    return true;
   };
-  window.downloadDLC = async function(dlcId, onProgress) {
+  window.downloadDLC = async function (dlcId, onProgress) {
     const dlc = self.RAGNAROK_DLC && self.RAGNAROK_DLC[dlcId];
     if (!dlc || !secure || !('caches' in window)) return true; // fallback
     const cache = await caches.open('ragnarok-assets').catch(() => null);
     if (!cache) return true;
-    
+
     let got = 0;
     const todo = [];
-    
+
     for (const [url, bytes, hash] of dlc.files) {
       if (await cache.match(url)) {
         got += bytes;
@@ -119,13 +95,13 @@
         todo.push([url, bytes, hash]);
       }
     }
-    
+
     if (todo.length === 0) {
       if (onProgress) onProgress(1);
       return true;
     }
     if (onProgress) onProgress(got / dlc.total);
-    
+
     let next = 0;
     async function worker() {
       while (next < todo.length) {
@@ -136,19 +112,19 @@
           if (!res.ok) throw new Error(String(res.status));
           const chunks = [], reader = res.body && res.body.getReader ? res.body.getReader() : null;
           if (reader) {
-            for (;;) { 
-              const { done, value } = await reader.read(); 
-              if (done) break; 
-              chunks.push(value); 
-              seen += value.byteLength; 
-              got += value.byteLength; 
-              if (onProgress) onProgress(Math.min(1, got / Math.max(1, dlc.total))); 
+            for (; ;) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              chunks.push(value);
+              seen += value.byteLength;
+              got += value.byteLength;
+              if (onProgress) onProgress(Math.min(1, got / Math.max(1, dlc.total)));
             }
-          } else { 
-            const buf = new Uint8Array(await res.arrayBuffer()); 
-            chunks.push(buf); 
-            seen = buf.byteLength; 
-            got += seen; 
+          } else {
+            const buf = new Uint8Array(await res.arrayBuffer());
+            chunks.push(buf);
+            seen = buf.byteLength;
+            got += seen;
           }
           const type = res.headers.get('Content-Type') || '';
           await cache.put(url, new Response(new Blob(chunks, { type }), { headers: { 'Content-Type': type } }));
@@ -159,7 +135,7 @@
         if (onProgress) onProgress(Math.min(1, got / Math.max(1, dlc.total)));
       }
     }
-    
+
     try {
       await Promise.all(Array.from({ length: 4 }, worker));
       if (onProgress) onProgress(1);
@@ -169,14 +145,14 @@
     }
   };
 
-  window.isDLCDownloaded = async function(dlcId) {
+  window.isDLCDownloaded = async function (dlcId) {
     const dlc = self.RAGNAROK_DLC && self.RAGNAROK_DLC[dlcId];
     if (!dlc || !secure || !('caches' in window)) return true;
     const cache = await caches.open('ragnarok-assets').catch(() => null);
     if (!cache) return true;
-    
-    for (const [url] of dlc.files) {
-      if (!(await cache.match(url))) return false;
+
+    if (dlc.files.length > 0) {
+      return !!(await cache.match(dlc.files[0][0]));
     }
     return true;
   };

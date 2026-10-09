@@ -22,6 +22,11 @@ Generate a single-frame pixel art dash effect. Image: A fluid, semi-transparent 
 
 Generate a single-frame pixel art area control effect. Image: Darker blue and cyan slime tendrils erupting upward from the ground in a circular cluster. The slime looks viscous and grasping. Include floating bright cyan energy particles moving upward, simulating life-steal or energy absorption. No character visible, ONLY the slime trap on the ground. Canvas: 512x512 px. Solid black (#000000) background.
 
+### 11. Skill 2 Cast (Water Aura / Casting Ring)
+
+Generate a single-frame pixel art magical casting effect. Image: A swirling aura of bright cyan water and glitchy tech-squares circulating around an empty center. It looks like a concentrated ring of liquid energy gathering power just before unleashing a spell. The water flows upward and outward in a vortex shape. No character visible, ONLY the swirling water aura. Canvas: 512x512 px. Solid black (#000000) background.
+
+
 ### 6. Ultimate Cast (Massive Water Blade)
 
 Generate a single-frame pixel art weapon enhancement effect. Image: A gigantic, glowing cyan vertical energy blade made entirely of roaring water and slime. It has a bright white-hot liquid core and heavy water splashing off its edges. It feels immensely heavy and powerful. No character or handle visible, ONLY the giant water blade shape suspended in the air. Canvas: 512x512 px. Solid black (#000000) background.

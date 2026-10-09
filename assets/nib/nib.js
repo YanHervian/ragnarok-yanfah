@@ -23,7 +23,7 @@
   // Express Letter: the fastest projectile in the roster, but it only flies `range` px.
   const letter = { speed:1100, range:400 };
   // Rooftop Slip: a very fast low dash strike; when it connects NIB slips past the rival and turns to face them.
-  const slip = { dash:650, behind:70 };
+  const slip = { dash:850, behind:70 };
   // Special Delivery: three paper-plane parcels leave the satchel 0.38 s apart (inside the 0.42 s hurt stun) and home
   // in on the rival at `speed` px/s, turning at most `turn` rad/s. Each hits once for 16 (48). A late sidestep or jump
   // makes a plane overshoot, and it gives up after `life` s.
@@ -31,7 +31,7 @@
   function move(name,index=1) {
     if(name==='attack')return {name:`attack${index}`,type:'attack',index,...combo[index-1]};
     if(name==='skill1')return {name,type:name,damage:getBal()?.skill1?.damage ?? 16,duration:.45,knockback:110,projectile:true,speed:letter.speed,range:letter.range,hitAt:.55};
-    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.6,knockback:160,reach:100,dash:slip.dash,slip:true,hitAt:.45};
+    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.82,knockback:160,reach:190,dash:850,slip:true,hitAt:.60};
     return {name:'ultimate',type:'ultimate',duration:balance.castTime,damage:0,hitAt:1};
   }
   function start(a,name,index=1) {

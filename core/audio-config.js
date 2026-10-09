@@ -66,7 +66,10 @@ window.AUDIO_CONFIG = {
     ko: 4.5,            // Suara pengumuman saat ada yang mati ("K.O.")
     ko_ganda: 4.5,      // Suara pengumuman saat keduanya mati ("Double K.O.")
     seri: 4.5,          // Suara pengumuman saat hasil imbang / seimbang ("Draw")
-    waktu_habis: 4.5    // Suara pengumuman saat timer habis ("Time's up!")
+    waktu_habis: 4.5,   // Suara pengumuman saat timer habis ("Time's up!")
+
+    // Khusus Suara Karakter Ramuru yang terlalu kecil
+    ramuru_wins: 3.0    // Suara saat Ramuru menang
   },
 
   // Volume Spesifik Skill Karakter (Multiplier tambahan per karakter)
@@ -83,6 +86,10 @@ window.AUDIO_CONFIG = {
     valkren: {
       skill1: 1.0, // Tembakan Plasma
       skill2: 1.0  // Hantaman Bumi (Orbital Strike)
+    },
+    ramuru: {
+      skill1: 1.0,
+      skill2: 1.0
     }
   },
 

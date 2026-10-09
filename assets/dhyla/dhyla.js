@@ -26,7 +26,7 @@
   function move(name, index = 1) {
     if (name === 'attack') return { name: `attack${index}`, type: 'attack', index, ...combo[index - 1] };
     if (name === 'skill1') return { name, type: name, damage: getBal()?.skill1?.damage ?? 16, duration: .46, knockback: 60, projectile: true, speed: 840, feathers: [5, 5, 6], spread: .1, hitAt: .5 };
-    if (name === 'skill2') return { name, type: name, damage: getBal()?.skill2?.damage ?? 24, duration: .45, knockback: 300, reach: 190, area: true, dash: 850, hitAt: .75 };
+    if (name === 'skill2') return { name, type: name, damage: getBal()?.skill2?.damage ?? 24, duration: .45, knockback: 300, reach: 190, area: true, hitAt: .75 };
     return { name: 'ultimate', type: 'dhyla-ult', duration: balance.castTime, damage: 0, hitAt: .4 };
   }
   function start(a, name, index = 1) {

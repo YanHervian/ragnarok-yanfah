@@ -1,41 +1,76 @@
-# Panduan Lengkap: Membuat Karakter di Ragnarok Trinity
+# Panduan Membuat Karakter — Aether Clash
+
+> **Versi:** Oktober 2026 — Diaudit berdasarkan kode Ramuru, Valkren, Dhyla, dan Yanfah.
 
 ---
 
-## INSTRUKSI UNTUK AI — BACA INI DULU SEBELUM MULAI
+## UNTUK AI — BACA DULU, JANGAN LANGSUNG EKSEKUSI
 
-> Jika kamu adalah AI yang menerima file panduan ini dari developer, **wajib ikuti alur di bawah ini** sebelum melakukan apapun.
+Kamu adalah asisten yang memandu pembuatan karakter baru dari awal sampai selesai.
 
-### Alur Wajib saat Developer Menyerahkan Panduan Ini:
+**ATURAN KERAS:**
+1. **SELALU tanya terlebih dahulu** sebelum eksekusi apapun di tiap tahap.
+2. **JANGAN edit `core/game.js`** untuk mengatur posisi, ukuran, warna, atau timing efek visual. Semua itu diatur di `assets/[nama]/[nama].js`.
+3. **JANGAN lanjut ke tahap berikutnya** sebelum semua checklist selesai dan developer konfirmasi.
+4. **Ganti semua placeholder** (`[nama]`, `[NAMA]`, `[NamaClass]`, dll) sebelum kode dieksekusi.
+5. **Bump cache** di `index.html` setiap kali ada perubahan file yang dipakai game.
 
-**LANGKAH 0 — Validasi Awal (Tanya Developer)**
+---
 
-Tanyakan pertanyaan berikut satu per satu:
+## LANGKAH 0 — Wawancara Awal (WAJIB, TANYA SEMUA SEBELUM MULAI)
 
-1. "Kamu mau buat karakter baru ya? Siapa nama karakternya? (contoh: dhyla, valkren, rael)"
-2. "Kamu sekarang sudah di tahap mana?"
-   - Tahap 1 — Baru mau mulai, belum ada sprite sama sekali
-   - Tahap 2 — Sprite sudah selesai, mau tambah efek visual (FX)
-   - Tahap 3 — FX sudah ada, mau buat UI (portrait, ikon, cutin)
-   - Tahap 4 — UI sudah ada, mau tambah audio/suara
-   - Semua asset sudah siap, tinggal integrasi ke game
-3. "Kamu sudah punya folder karakter di `assets/[nama]/` atau belum?"
+Sebelum melakukan APAPUN, tanyakan semua pertanyaan ini ke developer:
 
-**Berdasarkan jawaban developer, AI harus:**
-- Buatkan folder lengkap sesuai tahap (lihat perintah di tiap tahap)
-- Kasih tahu developer: *"Silakan taruh file PNG kamu di folder raw-source berikut..."*
-- **Tunggu konfirmasi developer** sebelum mulai proses apapun
-- Setelah developer konfirmasi file sudah ada, AI mulai proses
-- Jangan langsung lompat ke integrasi engine sebelum semua aset diproses
+```
+1.  Nama karakternya?     (contoh: ramuru)           -> [nama]
+2.  Nama class-nya?       (contoh: Ramuru)            -> [NamaClass]
+3.  Singkatan 2 huruf?    (contoh: RM)               -> [AB]
+4.  Nama tampil di game?  (contoh: 'Ramuru')          -> [NamaDisplay]
+5.  Ras karakter?         (Manusia/Fantasi/Dewa)      -> [RAS]
+6.  Julukan singkat?      (contoh: THE SLIME ALCHEMIST) -> [JULUKAN]
+7.  Warna tema (hex)?     (contoh: #00bfff)           -> [KodeWarnaHex]
+8.  Mulai dari tahap mana?
+    -> Tahap 1: Sprite (dari nol)
+    -> Tahap 2: FX/Efek Visual
+    -> Tahap 3: UI (Portrait, Icon, Cutin)
+    -> Tahap 4: Audio
+9.  Skill 1 bertipe apa?
+    -> PROYEKTIL: tembakan terbang ke depan
+    -> DASH: karakter melesat maju menabrak musuh
+    -> AREA: diam di tempat, serangan menghantam area     -> [TipeSkill1]
+10. Skill 2 bertipe apa?
+    -> Area, Ground, atau Lainnya                         -> [TipeSkill2]
+```
+
+Setelah semua dijawab:
+- Tulis ringkasan: *"Baik! Saya akan buat karakter [NamaDisplay] ([nama]) ras [RAS] warna [KodeWarnaHex]. Skill 1: [TipeSkill1], Skill 2: [TipeSkill2]. Mulai Tahap [X]."*
+- **Tunggu konfirmasi developer** sebelum lanjut.
+
+---
+
+## Referensi Singkatan
+
+| Variabel | Penjelasan | Contoh (Ramuru) |
+|---|---|---|
+| `[nama]` | Nama huruf kecil | `ramuru` |
+| `[NAMA]` | Nama HURUF BESAR | `RAMURU` |
+| `[NamaClass]` | Nama object `window.X` | `Ramuru` |
+| `[AB]` | Singkatan 2 huruf variabel kit | `RM` |
+| `[NamaDisplay]` | Nama tampil di game | `'Ramuru'` |
+| `[RAS]` | Ras karakter | `Manusia` |
+| `[JULUKAN]` | Julukan | `THE SLIME ALCHEMIST` |
+| `[KodeWarnaHex]` | Warna tema efek hit/partikel | `#00bfff` |
+| `[TipeSkill1]` | Tipe skill 1 | `DASH` |
+| `[TipeSkill2]` | Tipe skill 2 | `AREA` |
 
 ---
 
 ## Konsep Pipeline Asset
 
 ```
-USER TARUH PNG MENTAHAN          AI PROSES                    HASIL FINAL
-di folder raw-source        =>   resize/crop/convert      =>  di lokasi yang dipakai game
-(tidak dipakai langsung)         WebP/sprite-gen              (WebP, manifest.js, dll)
+USER TARUH PNG MENTAHAN        AI PROSES               HASIL FINAL
+di folder raw-source      =>   resize/sprite-gen   =>  WebP + manifest.js
+(tidak langsung dipakai)                               (dipakai game)
 ```
 
 **Tiga folder raw-source:**
@@ -102,16 +137,31 @@ assets/[nama-karakter]/
 
 ---
 
-## Tahap 1 — Sprite & Karakter (Bisa Dimainkan)
+## TAHAP 1 — Sprite & Karakter (Bisa Dimainkan)
 
-### Apa yang dihasilkan:
-Karakter bisa dipilih dan dimainkan di arena dengan semua 15 animasi.
+**Hasil akhir tahap ini:** Karakter bisa dipilih dan dimainkan di arena dengan semua animasi.
 
-### AI: Buat Folder Tahap 1
+---
+
+### STOP & TANYA — Sebelum mulai Tahap 1
+
+Tanyakan ini ke developer sebelum eksekusi:
+
+```
+1. "Sudah ada folder assets/[nama]/ belum?"
+2. "15 PNG sprite sudah siap untuk ditaruh di folder?"
+   Jika BELUM: buat folder dulu, minta developer taruh file, tunggu konfirmasi.
+   Jika SUDAH: lanjut proses.
+3. "Ada perubahan ukuran sprite yang diinginkan, atau pakai scale default?"
+```
+
+---
+
+### 1.1 — Buat Folder
 
 ```powershell
 $char = "[nama]"
-$base = "c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\$char"
+$base = "c:\Users\ACER\Downloads\aether-clash-main\assets\$char"
 
 New-Item -ItemType Directory -Force -Path "$base\run\raw-original"
 New-Item -ItemType Directory -Force -Path "$base\run\raw"
@@ -120,47 +170,76 @@ New-Item -ItemType Directory -Force -Path "$base\ui\raw-original-skill"
 New-Item -ItemType Directory -Force -Path "$base\ui\raw-original-ui"
 New-Item -ItemType Directory -Force -Path "$base\audio"
 
-Write-Host "Folder siap! Taruh 15 PNG di: $base\run\raw-original\"
-Write-Host "Background harus MAGENTA #FF00FF. Kabari kalau sudah!"
+Write-Host "Folder siap! Taruh 15 PNG sprite di: $base\run\raw-original\"
+Write-Host "Background sprite WAJIB: MAGENTA #FF00FF"
+Write-Host "Kabari kalau sudah selesai menaruh file!"
 ```
 
-### Asset yang dibutuhkan developer (Tahap 1):
+**STOP. Tunggu konfirmasi developer bahwa semua PNG sudah ada.**
 
-**Format sprite:**
-- Canvas 21:9 (contoh 2016x864 px), 4 pose horizontal
+---
+
+### 1.2 — Format PNG Sprite yang Benar
+
+**Format sprite animasi (15 state wajib):**
+- `idle.png`, `walk.png`, `run.png`, `crouch.png`
+- `attack1.png`, `attack2.png`, `attack3.png`
+- `skill1.png`, `skill2.png`, `ultimate.png`
+- `hurt.png`, `down.png`, `recover.png`
+- `jump.png`, `doublejump.png`
+
+**Spesifikasi canvas:**
+- Semua sprite kecuali jump/doublejump: canvas **21:9**, 4 pose horizontal (contoh: 2016x864 px)
+- `jump.png` dan `doublejump.png`: canvas **1:1**, hanya 1 pose (contoh: 864x864 px)
 - Background flat MAGENTA `#FF00FF`
-- jump dan doublejump: canvas 1:1, hanya 1 pose
 
-**Scale factor:**
+**Scale factor (pakai saat resize):**
 
 | State | Scale |
 |---|---|
 | idle, walk, crouch | 0.25 |
-| run, attack1-3, skill1-2, ultimate, hurt, down, recover | 0.28 |
+| run, attack1, attack2, attack3, skill1, skill2, ultimate, hurt, down, recover | 0.28 |
 | jump, doublejump | 0.12 |
 
-### AI: Proses Sprite
+---
+
+### 1.3 — Resize & Proses Sprite
+
+Lihat `Panduan_Sprite_Karakter_AI.md` untuk instruksi lengkap resize.
+Setelah resize selesai:
 
 ```powershell
+# Setelah sprite-gen selesai, copy manifest ke root:
 $char = "[nama]"
-$base = "c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\$char"
-
-# Step 1: Resize (lihat Panduan_Sprite_Karakter_AI.md)
-# Step 2: Jalankan sprite-gen
-# Step 3: Copy manifest
+$base = "c:\Users\ACER\Downloads\aether-clash-main\assets\$char"
 Copy-Item "$base\run\manifest.js" "$base\manifest.js"
+Write-Host "manifest.js sudah dikopi ke root folder."
 ```
 
-### AI: Buat File `[nama].js`
+**WAJIB DILAKUKAN SETELAH MANIFEST JADI:**
+Buka file `assets/[nama]/manifest.js` yang baru saja dibuat, cari baris kode untuk `"crouch"`, lalu **ubah angka `"fps"`-nya menjadi `60`** (default generator biasanya terlalu kecil, misal 8 atau 10). 
+Jika ini terlewat, animasi karakter menunduk (*crouch block*) akan super lambat dan tidak responsif.
+Contoh yang benar:
+```json
+      "crouch": {
+        "row": 5,
+        "frames": 4,
+        "fps": 60,
+```
+
+---
+
+### 1.4 — Buat File `[nama].js`
+
+Buat file `assets/[nama]/[nama].js` dengan isi berikut. **Ganti semua placeholder sebelum membuat file.**
 
 ```js
-/* [NAMA] moves: [Deskripsi karakter] */
+/* [NamaDisplay] — [JULUKAN] */
 (() => {
   'use strict';
   const balance = {
     cooldowns: { skill1: 10, skill2: 20, ultimate: 30 },
     castTime: .5,
-    passDamage: 16,
     basicRefund: .05
   };
   const names = ['SERANGAN 1', 'SERANGAN 2', 'SERANGAN 3', 'SKILL I', 'SKILL II', 'ULTIMATE'];
@@ -169,151 +248,160 @@ Copy-Item "$base\run\manifest.js" "$base\manifest.js"
     { damage: 10, knockback: 100, reach: 85,  duration: .44, hitAt: .5 },
     { damage: 15, knockback: 200, reach: 120, duration: .55, hitAt: .55 }
   ];
+
   function move(name, index = 1) {
     if (name === 'attack') return { name: `attack${index}`, type: 'attack', index, ...combo[index - 1] };
-    // A) Skill proyektil:
-    if (name === 'skill1') return { name, type: name, damage: 18, duration: .50, knockback: 80, projectile: true, speed: 900, hitAt: .5 };
-    // B) Skill area/dash:
+    
+    // --- SKILL 1 ---
+    // Pilih sesuai [TipeSkill1]:
+    // A) PROYEKTIL: tembakan yang terbang ke depan
+    // if (name === 'skill1') return { name, type: name, damage: 18, duration: .50, knockback: 80, projectile: true, speed: 900, hitAt: .5 };
+    
+    // B) DASH: karakter melesat maju menabrak musuh (Golden Standard Engine)
+    if (name === 'skill1') return {
+      name, type: name, damage: 18, duration: 0.82, knockback: 80,
+      dash: 850,        // Kecepatan stabil anti-nembus (Sesuai Yanfah)
+      dashFrame: 1,     // Index frame pose "sedang melesat" (0=frame1, 1=frame2, dst)
+      reach: 190,       // Jangkauan deteksi kena musuh (px)
+      hitAt: .60,       // Kapan hit & efek musuh muncul
+      // frameTimes: [0.2, 0.4, 0.2, 0.2], // [Opsional] porsi waktu tiap frame (total harus = 1.0)
+    };
+    
+    // C) AREA: diam di tempat, area serangan di depan
+    // if (name === 'skill1') return { name, type: name, damage: 18, duration: .50, knockback: 80, reach: 150, area: true, hitAt: .5 };
+
+    // --- SKILL 2 ---
     if (name === 'skill2') return { name, type: name, damage: 25, duration: .60, knockback: 280, reach: 180, area: true, hitAt: .7 };
+
+    // --- ULTIMATE ---
     return { name: 'ultimate', type: '[nama]-ult', duration: balance.castTime, damage: 0, hitAt: .4 };
   }
+
   function start(a, name, index = 1) {
     if (a.action || a.state === 'hurt' || a.state === 'down' || a.state === 'recover') return false;
     if (name !== 'attack' && a.cooldowns[name] > 0) return false;
     if (name !== 'attack') a.cooldowns[name] = balance.cooldowns[name];
     a.action = { ...move(name, index), t: 0, fired: false, queued: 0 };
     a.state = a.action.name; a.stateTime = 0;
-    
-    // Play SFX Skill
+
+    // --- MUNCULKAN EFEK VISUAL SKILL DI SINI AGAR TIDAK TELAT ---
+    if (name === 'skill1' && window.__game) {
+      const cfg = window.[NamaClass]?.vfx?.skills?.skill1;
+      if (cfg) {
+        // Delay 0 = efek langsung muncul saat skill dipencet. 
+        setTimeout(() => {
+          window.__game.effects.push({ type: '[nama]-fx', asset: cfg.asset, x: a.x, y: a.y - 80, life: cfg.life || 0.5, maxLife: cfg.life || 0.5, size: cfg.size || 350, facing: a.facing, bindTo: a, offsetX: cfg.x || 0, offsetY: (cfg.y || 0) - 80 });
+          if (cfg.dustAsset) window.__game.effects.push({ type: '[nama]-fx', asset: cfg.dustAsset, x: a.x + a.facing * (cfg.dustX || 0), y: window.__game.config.groundY + (cfg.dustY || 0), life: 0.25, maxLife: 0.25, facing: a.facing, size: cfg.dustSize || 250 });
+        }, 0); 
+      }
+    }
+
     if ((name === 'skill1' || name === 'skill2') && window.[NamaClass].audio[name]) {
       try {
         const el = new Audio(window.[NamaClass].audio[name]);
         const masterMult = typeof window.AUDIO_CONFIG?.master === 'number' ? window.AUDIO_CONFIG.master : 1.0;
         const skillMult = typeof window.AUDIO_CONFIG?.skills?.[nama]?.[name] === 'number' ? window.AUDIO_CONFIG.skills.[nama][name] : 1.0;
-        const sfxVolumeConfig = Number(localStorage.getItem('aether.sfxVolume') || 90) / 100;
-        el.volume = Math.max(0, Math.min(1, sfxVolumeConfig * masterMult * skillMult));
-        el.play().catch(()=>{});
-      } catch (e) {}
+        const sfxVol = Number(localStorage.getItem('aether.sfxVolume') || 90) / 100;
+        el.volume = Math.max(0, Math.min(1, sfxVol * masterMult * skillMult));
+        el.play().catch(() => {});
+      } catch (_) {}
     }
-
     return true;
   }
+
+  function refund(a) {
+    for (const n of Object.keys(balance.cooldowns))
+      a.cooldowns[n] = Math.max(0, a.cooldowns[n] - balance.cooldowns[n] * balance.basicRefund);
+  }
+
+  // ============================================================
+  // VFX — SEMUA PENGATURAN VISUAL DIATUR DI SINI, BUKAN DI game.js
+  // ============================================================
   const vfx = {
-    // scaleOverrides digunakan untuk mengatur ukuran animasi (sprite) di dalam game
-    // tanpa mengubah gambar asli. 1.0 = normal, 1.5 = 50% lebih besar, dll.
-    scaleOverrides: {
-      // jump: 1.2,
-      // run: 1.05
-    },
-    /**
-     * KONFIGURASI EFEK VISUAL (VFX) — WAJIB DIISI DI FILE KARAKTER INI
-     *
-     * PRINSIP UTAMA:
-     * Semua pengaturan visual efek (posisi, ukuran, rotasi) harus didefinisikan
-     * di sini, BUKAN di dalam core/game.js. game.js hanya membaca konfigurasi
-     * ini dan menjalankannya. Ini membuat setiap karakter mudah diatur tanpa
-     * harus menyentuh engine game.
-     *
-     * === ATTACKS ===
-     * Array berisi 3 objek untuk 3 pukulan basic attack.
-     * Setiap objek mendukung properti berikut:
-     *
-     *   asset      : (string) nama key gambar, tanpa prefix "fx-[nama]-"
-     *                Contoh: 'slash' → file fx-[nama]-slash.webp
-     *   size       : (number) ukuran efek dalam piksel
-     *   x          : (number) offset horizontal dari posisi aktor (ke arah hadap)
-     *   y          : (number) offset vertikal. Negatif = ke atas. 0 = setinggi kaki
-     *   flipX      : (number) 1 = normal, -1 = flip horizontal
-     *   rotation   : (number, opsional) rotasi dalam DERAJAT. Contoh: -45, 90
-     *
-     *   --- Untuk pukulan ke-3 yang memunculkan efek tanah (slam) ---
-     *   slamAsset  : (string) nama key gambar efek slam
-     *   slamSize   : (number) ukuran efek slam
-     *   slamX      : (number, opsional) offset horizontal slam dari posisi aktor
-     *   slamY      : (number, opsional) offset vertikal slam dari titik tanah
-     *                Contoh: -40 = efek muncul 40px di atas tanah
-     */
+    // Pengaturan scale per-state jika sprite terasa terlalu kecil/besar
+    // scaleOverrides: { run: 1.0, jump: 1.0, skill1: 1.0 },
+
+    // Efek pukulan biasa (3 serangan combo)
     attacks: [
-      // Pukulan 1: efek slash kiri ke kanan
-      { x: 95,  y: -130, size: 80,  asset: '[nama]-slash', flipX: -1 },
-      // Pukulan 2: efek slash dengan rotasi miring
-      { x: 95,  y: -155, size: 80,  asset: '[nama]-slash', flipX: -1, rotation: -45 },
-      // Pukulan 3 (finisher): hanya slam dari tanah, tanpa efek pukulan biasa
-      // Untuk menambah efek pukulan sekaligus slam, tambah juga 'asset' dan 'size'
-      { slamAsset: '[nama]-slam', slamSize: 170, slamX: 5, slamY: -40 }
+      { x: 100, y: -130, size: 80,  asset: '[nama]-slash' },
+      { x: 110, y: -150, size: 80,  asset: '[nama]-slash', flipX: -1 },
+      { x: 120, y: -100, size: 100, asset: '[nama]-slash', slamAsset: '[nama]-slam', slamSize: 180 }
     ],
 
-    /**
-     * === GUARD / DEFEND ===
-     * Efek yang muncul di depan karakter saat menangkis serangan musuh
-     * sambil dalam posisi crouch (jongkok).
-     *
-     *   guardAsset : (string) nama key gambar efek defend/shield
-     *   guardSize  : (number) ukuran efek guard
-     *   guardX     : (number, opsional) offset horizontal dari posisi karakter
-     *   guardY     : (number, opsional) offset vertikal dari posisi karakter
-     *
-     * Jika tidak ada efek guard, hapus baris ini atau isi null.
-     */
+    // Efek guard/block saat menangkis
     guard: { asset: '[nama]-guard', size: 150, x: 50, y: -70 },
 
-    /**
-     * === JUMP SMOKE ===
-     * Apakah karakter mengeluarkan efek asap/debu saat melompat?
-     *   true  = pakai efek smoke default engine
-     *   false = tidak ada efek jump (karakter punya efek custom sendiri)
-     */
-    hasJumpSmoke: true,
+    // Efek debu lompat (hasJumpSmoke: true = pakai efek global, false = pakai jumpDust di bawah)
+    hasJumpSmoke: false,
+    jumpDust: { asset: '[nama]-dust', size: 100, x: 0, y: 0 },
 
-    /**
-     * === JUMP DUST CUSTOM ===
-     * Jika hasJumpSmoke: false, isi ini untuk efek lompat custom.
-     *
-     *   asset  : (string) nama key gambar efek lompat
-     *   size   : (number) ukuran efek
-     *   x      : (number) offset horizontal
-     *   y      : (number) offset vertikal (0 = setinggi kaki karakter)
-     *
-     * Hapus baris jumpDust jika hasJumpSmoke: true.
-     */
-    // jumpDust: { asset: '[nama]-jumpdust', size: 100, x: 0, y: 0 },
+    // Konfigurasi efek skill
+    skills: {
+      // Skill 1 (contoh: DASH — efek menempel pada tubuh karakter)
+      skill1: {
+        asset: '[nama]-dash',     // Nama efek utama (misal: api/air melilit badan)
+        size: 350,                // Ukuran efek (px)
+        x: 0,                     // Geser kiri-kanan dari pusat karakter
+        y: 0,                     // Geser atas-bawah dari pusat karakter
+        dustAsset: '[nama]-dust', // Efek debu/cipratan saat tolakan kaki
+        dustSize: 250,            // Ukuran efek debu
+        dustX: -30,               // Posisi debu (x dari kaki karakter, negatif = ke belakang)
+        dustY: -10,               // Posisi debu (y dari lantai)
+        life: 0.25                // Lama efek hidup (detik). Sesuaikan agar mati tepat saat dash selesai
+      },
+      // Skill 2 (contoh: AREA GROUND — warning muncul dulu, lalu meledak)
+      skill2: {
+        asset: '[nama]-eruption',    // Efek ledakan utama
+        size: 220,                   // Ukuran efek
+        x: 40,                       // Geser dari posisi musuh
+        y: -60,                      // Geser atas-bawah efek
+        warningAsset: '[nama]-warning', // Efek peringatan
+        warningSize: 280,
+        warningX: 10,
+        warningY: -20
+      }
+    }
   };
+
+  // ============================================================
+  // ULTIMATE
+  // ============================================================
   const ultimate = {
-    start(actor, context) {
+    start(actor, ctx) {
       return {
         t: 0,
-        owner: actor === context.hero ? 'player' : 'enemy',
+        owner: actor === ctx.hero ? 'player' : 'enemy',
         facing: actor.facing,
         casterX: actor.x,
         phase: 'cutin',
         hit: false
       };
     },
-    update(dt, s, context) {
-      if (!s) return null;
+    update(dt, s, ctx) {
       s.t += dt;
-      if (s.phase === 'cutin' && s.t >= 1.2) {
-        s.phase = 'active';
-        // Logika damage/efek ultimate di sini
-        if (s.owner === 'player') context.hitDummy(35, 400, '#ff5555', s.casterX, context.dummy.y - 60, true, true);
-        else context.receiveHit(35, { knockdown: true });
+      if (s.phase === 'cutin' && s.t > .9) s.phase = 'active';
+      if (s.phase === 'active') {
+        // Tambahkan logika ultimate di sini
+        // Contoh efek:
+        // ctx.effects.push({ type: '[nama]-fx', asset: '[nama]-ultaura', x: s.casterX, y: ctx.CONFIG.groundY - 120, life: 1.2, maxLife: 1.2, size: 400 });
+        if (!s.hit) {
+          // Lakukan damage
+          s.hit = true;
+        }
+        if (s.t > 3.0) return null; // Selesai
       }
-      if (s.t >= 3.0) { context.stopVoice('[nama]', s.owner); return null; }
       return s;
     }
   };
-  function refund(a) {
-    for (const n of Object.keys(balance.cooldowns))
-      a.cooldowns[n] = Math.max(0, a.cooldowns[n] - balance.cooldowns[n] * balance.basicRefund);
-  }
+
   window.[NamaClass] = {
+    names, balance, move, start, refund, vfx, ultimate,
     audio: {
-      skill1: null,
-      skill2: null,
+      skill1:   null, // Isi path jika ada: 'assets/[nama]/audio/[nama]-skill1.mp3'
+      skill2:   null, // Isi path jika ada: 'assets/[nama]/audio/[nama]-skill2.mp3'
       ultimate: 'assets/[nama]/audio/[nama]-ultimate.mp3',
-      hit: null
-    },
-    balance, names, combo, vfx, ultimate, move, start, refund
+      hit:      null
+    }
   };
 })();
 ```
@@ -366,9 +454,13 @@ Cari variabel `const fighters = { ... }` di dalam `menu.js`, lalu tambahkan kara
 ...[AB] ? { [nama]: [AB] } : {})
 ```
 
-**Entry 3 — VOICE_NAMES (baris ~136):**
+**Entry 3 - VOICE_NAMES dan Array characters (baris ~144):**
 ```js
+// Tambahkan nama karakter di dalam object VOICE_NAMES:
 [nama]: '[NamaDisplay]',
+
+// TEPAT DI BAWAHNYA, tambahkan ini di dalam deklarasi array `const characters = [...]`:
+...(window.[NamaClass] ? [['[nama]', window.[NamaClass]?.audio?.ultimate || 'assets/[nama]/audio/[nama]-ultimate.mp3']] : [])
 ```
 
 **Entry 4 — CHARACTER_ASSETS (baris ~2759):**
@@ -425,9 +517,91 @@ Ada beberapa tempat yang harus ditambah `[nama]`:
 if (id === '[nama]') return { name: '[NAMA]', cls: '[RAS]', deck: '[NAMA]', title: 'THE [JULUKAN]', portrait: 'assets/[nama]/ui/portrait.webp', names: window.[NamaClass]?.names || [], icons: ['attack', 'skill1', 'skill2', 'ultimate'].map(s => 'assets/[nama]/ui/icon-' + s + '.webp') };
 ```
 
-### AI: Buat Fungsi Ultimate di `core/game.js`
+### AI: Buat Fungsi Logika (Strike & Ultimate) di `core/game.js`
 
-Tambah di dekat `updateValkrenUlt`:
+Pertama, buat fungsi **Strike** untuk membaca VFX serangan & skill. Tambah di dekat `dhylaStrike` atau `valkrenStrike`:
+
+```js
+function [nama]Strike(actor, move) {
+  if (!move) return;
+  const enemy = actor === dummy, target = enemy ? hero : dummy, em = window.[NAMA]_METRICS?.emitters?.[move.name];
+  const ox = actor.x + actor.facing * (em?.x ?? 50), oy = actor.y + (em?.y ?? -80), hy = clamp(oy, actor.y - 170, actor.y - 30);
+  const cfg1 = window.[NamaClass]?.vfx?.skills?.skill1;
+  const cfg2 = window.[NamaClass]?.vfx?.skills?.skill2;
+
+  if (move.type === 'skill1') {
+    const cfg = cfg1 || { asset: '[nama]-projectile', size: 350, x: 0, y: 0 };
+    const reach = move.reach || 190;
+    
+    // PERHATIAN: Efek visual animasi JANGAN di-push di sini karena akan telat (baru jalan pas hitAt)!
+    // Push efek visual di fungsi start() di file [nama].js pakai setTimeout.
+
+    const dx = (target.x - actor.x) * actor.facing;
+    const near = dx > (tB(target) - 2) && dx < reach + tW(target);
+    
+    if (!near || Math.abs(target.y - actor.y) >= 180) { return; }
+    
+    const connected = enemy ? window.__game.receiveHit(move.damage, { spawnImpact: true }) : hitDummy(move.damage, move.knockback, '#[KodeWarnaHex]', actor.x, target.y - 60, false, true, 1, 0, false, 'hit');
+    if (connected && connected !== 'blocked' && !target.isBlocking) sound('hit');
+    return;
+  }
+  
+  if (move.type === 'skill2') {
+    const cfg = cfg2 || { asset: '[nama]-eruption', size: 220, x: 40, y: -60, warningAsset: '[nama]-warning', warningSize: 280, warningX: 10, warningY: -20 };
+    const reach = move.reach || 190;
+    
+    // Efek warning
+    if (cfg.warningAsset) {
+       effects.push({ type: '[nama]-fx', asset: cfg.warningAsset, x: ox + actor.facing * (cfg.warningX || 0), y: CONFIG.groundY + (cfg.warningY || 0), life: .4, maxLife: .4, size: cfg.warningSize || 280, behind: true });
+    }
+    
+    const dx = (target.x - ox) * actor.facing;
+    if (dx > -50 && dx < reach + 50 && Math.abs(target.y - CONFIG.groundY) < 120) {
+      const life = cfg.life || 0.6;
+      effects.push({ type: '[nama]-fx', asset: cfg.asset, x: target.x + actor.facing * (cfg.x || 0), y: CONFIG.groundY + (cfg.y || 0), life: life, maxLife: life, size: cfg.size || 220 });
+      if (enemy) window.__game.receiveHit(move.damage); else hitDummy(move.damage, move.knockback, '#[KodeWarnaHex]', actor.x, target.y + (cfg.y || -60), false, true, 1, 0, false, 'hit');
+    }
+    return;
+  }
+  
+  if (move.type === 'attack') {
+    const vfx = window.[NamaClass]?.vfx?.attacks?.[move.index - 1];
+    if (vfx) {
+      if (vfx.asset) {
+        const vx = actor.x + actor.facing * (vfx.x ?? em?.x ?? 50);
+        const vy = actor.y + (vfx.y ?? em?.y ?? -100);
+        effects.push({ type: '[nama]-fx', asset: vfx.asset, x: vx, y: vy, facing: actor.facing * (vfx.flipX || 1), rotation: vfx.rotation ? (vfx.rotation * Math.PI / 180) : 0, life: .3, maxLife: .3, size: vfx.size || 100 });
+      }
+      if (vfx.slamAsset) {
+        const sx = ox + actor.facing * (vfx.slamX || 0);
+        const sy = (CONFIG.groundY - 30) + (vfx.slamY || 0);
+        effects.push({ type: '[nama]-fx', asset: vfx.slamAsset, x: sx, y: sy, facing: actor.facing, life: .4, maxLife: .4, size: vfx.slamSize || 280 });
+      }
+    }
+  }
+
+  const dx = (target.x - actor.x) * actor.facing;
+  if (dx <= tB(target) || dx >= move.reach + tW(target) || Math.abs(target.y - actor.y) > 115) { sound('whoosh'); return; }
+
+  const connected = enemy ? window.__game.receiveHit(move.damage) : hitDummy(move.damage, move.knockback, '#ffffff', actor.x, hy, false, true);
+  if (connected && move.type === 'attack') {
+    effects.push({ type: '[nama]-fx', asset: '[nama]-hit', x: target.x - actor.facing * 10, y: hy, facing: actor.facing, life: .3, maxLife: .3, size: 150 });
+    if (enemy) window.[NamaClass].refund(dummy);
+    else for (const name of Object.keys(cooldownMax)) { if (hero.cooldowns[name] > 0) rechargePulse[name] = .22; hero.cooldowns[name] = Math.max(0, hero.cooldowns[name] - cooldownMax[name] * BALANCE.basicCooldownRefund); }
+  }
+  if (connected && connected !== 'blocked' && !target.isBlocking) sound(move.index === 3 ? 'heavy' : 'hit');
+}
+```
+
+Kedua, daftarkan `[nama]Strike` ke dalam 3 tempat di `game.js`:
+1. Blok Basic Attack Hero (cari `selectedCharacter === 'valkren'`):
+   `if (selectedCharacter === '[nama]') { const _cls = window.[NamaClass]; if (_cls) [nama]Strike(hero, _cls.move('attack', index)); return; }`
+2. Blok Skill Hero (cari `function fireSkill`):
+   `if (selectedCharacter === '[nama]') { [nama]Strike(hero, action); return; }`
+3. Blok AI Musuh (cari `opponentCharacter === 'valkren'`):
+   `if (opponentCharacter === '[nama]') { [nama]Strike(dummy, a); return; }`
+
+Ketiga, tambahkan fungsi Ultimate di dekat `updateValkrenUlt`:
 
 ```js
 function start[Nama]Ult(actor) {
@@ -474,7 +648,7 @@ update[Nama]Ult(dt, activeUlt.enemy?._charId === '[nama]' ? activeUlt.enemy : nu
 - [ ] `index.html`: `<option>` + 2 `<script>` tag
 - [ ] `game.js` Entry 1: variabel `[AB]` (baris ~22)
 - [ ] `game.js` Entry 2: `KITS` (baris ~24)
-- [ ] `game.js` Entry 3: `VOICE_NAMES` (baris ~136)
+- [ ] `game.js` Entry 3 - VOICE_NAMES dan Array characters:
 - [ ] `game.js` Entry 4: `CHARACTER_ASSETS` (baris ~2759)
 - [ ] `game.js` Entry 5: `startSummon` (baris ~798)
 - [ ] `game.js` Entry 6: `syncPlayerForm` (~baris 1445)
@@ -486,39 +660,41 @@ update[Nama]Ult(dt, activeUlt.enemy?._charId === '[nama]' ? activeUlt.enemy : nu
 
 ---
 
-## Tahap 2 — Efek Visual / FX
+## TAHAP 2 — Efek Visual / FX
 
-### Apa yang dihasilkan:
-Efek visual muncul saat serangan, skill, dan ultimate.
+**Hasil akhir tahap ini:** Efek visual muncul saat basic attack, skill, dan ultimate.
 
-### AI: Buat Folder & Minta File
+### STOP & TANYA — Sebelum mulai Tahap 2
 
-```powershell
-$char = "[nama]"
-$base = "c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\$char"
-New-Item -ItemType Directory -Force -Path "$base\ui\raw-original-skill"
+Tanyakan ini ke developer:
 
-Write-Host "Taruh PNG efek di: $base\ui\raw-original-skill\"
-Write-Host "Nama yang disarankan (sesuaikan dengan skill karakter):"
-Write-Host "  slash.png, hit.png, projectile.png, explosion.png"
-Write-Host "  warning.png, eruption.png, ultaura.png, ultenv.png, guard.png, dust.png"
-Write-Host "Format: PNG transparan, sprite sheet horizontal 4-8 frame, 256x256 atau 512x512 per frame"
+```
+1. "Apakah karakter ini punya efek visual custom untuk serangan/skill, atau tidak perlu?"
+2. "Jika ya, silakan taruh file PNG efek (seperti slash, projectile, explosion, dll) di assets/[nama]/ui/raw-original-skill/"
+3. "Kabari saya jika file PNG efek sudah siap di folder tersebut, atau jika ingin skip tahap ini."
 ```
 
-### AI: Konversi FX
+**STOP. Tunggu konfirmasi developer.** Jika developer skip atau file sudah siap, baru lanjut.
+
+---
+
+### 2.1 — Konversi FX (Jika ada file)
+
+Jika developer menyediakan file FX di folder `ui/raw-original-skill/`, jalankan script ini:
 
 ```powershell
 $char = "[nama]"
-$rawSkill = "c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\$char\ui\raw-original-skill"
+$rawSkill = "c:\Users\ACER\Downloads\aether-clash-main\assets\$char\ui\raw-original-skill"
 
 python -c "
 from PIL import Image
 import pathlib
+import numpy as np
 
 raw = pathlib.Path(r'$rawSkill')
 out = raw.parent
 
-# Sesuaikan mapping dengan file yang benar-benar ada:
+# Mapping file sesuai yang umum dipakai, tambahkan jika ada nama baru
 mapping = {
     'slash.png': 'fx-slash.webp',
     'hit.png': 'fx-hit.webp',
@@ -530,26 +706,53 @@ mapping = {
     'ultenv.png': 'fx-ultenv.webp',
     'guard.png': 'fx-guard.webp',
     'dust.png': 'fx-dust.webp',
+    'dash.png': 'fx-dash.webp',
+    'slam.png': 'fx-slam.webp'
 }
 for src, dst in mapping.items():
     p = raw / src
     if p.exists():
-        Image.open(p).save(out / dst, 'webp', quality=90)
-        print(f'OK: {src} -> {dst}')
+        try:
+            img = Image.open(p).convert('RGBA')
+            r, g, b, a = img.split()
+            # Transparan otomatis (hapus background hitam)
+            arr_r, arr_g, arr_b = np.array(r), np.array(g), np.array(b)
+            arr_a = np.maximum(np.maximum(arr_r, arr_g), arr_b)
+            img.putalpha(Image.fromarray(arr_a))
+            img.save(out / dst, 'webp', quality=90)
+            print(f'OK: {src} -> {dst}')
+        except Exception as e:
+            print(f'ERROR {src}: {e}')
     else:
         print(f'SKIP: {src}')
 "
 ```
 
-Setelah konversi, pastikan `names[]` di `CHARACTER_ASSETS` di `game.js` sudah cocok dengan file yang terbentuk.
+### 2.2 — Update Game Engine
+
+Setelah konversi selesai:
+1. Cek folder `assets/[nama]/ui/`. Catat file `fx-[nama]-...` apa saja yang berhasil dibuat.
+2. Buka `core/game.js`, cari `[nama]` di `CHARACTER_ASSETS`.
+3. Update array `names: []` agar HANYA berisi efek yang benar-benar ada file `.webp`-nya.
+
+Contoh jika yang berhasil dikonversi hanya slash, hit, dash, projectile:
+```js
+[nama]: {
+  sprite: ['[nama]', 'assets/[nama]/run/sprite-sheet-alpha.webp'],
+  fx: {
+    prefix: 'fx-[nama]-',
+    dir: 'assets/[nama]/ui/fx-',
+    names: ['slash', 'hit', 'dash', 'projectile'] // <- WAJIB SINKRON DENGAN FILE YANG ADA
+  }
+}
+```
 
 ### Checklist Tahap 2
 
-- [ ] PNG FX ada di `ui/raw-original-skill/`
-- [ ] File `fx-*.webp` ada di `ui/` (hasil konversi)
-- [ ] `CHARACTER_ASSETS.names[]` di game.js sesuai dengan file yang ada
-- [ ] Blok `vfx` di `[nama].js` sudah dikonfigurasi (posisi, ukuran, rotasi)
-- [ ] Cache di-bump + hard refresh
+- [ ] File `fx-*.webp` berhasil digenerate di `ui/` (jika ada)
+- [ ] `CHARACTER_ASSETS.names[]` di game.js disinkronkan dengan file webp yang ada
+- [ ] Blok `vfx` di `[nama].js` sudah disesuaikan namanya (misal `asset: '[nama]-slash'`)
+- [ ] Cache di-bump + hard refresh browser
 
 ---
 
@@ -642,21 +845,38 @@ Tidak ada cara instan selain trial & error. Tapi gunakan acuan ini:
 
 
 
-## Tahap 3 — UI Karakter
+## TAHAP 3 — UI Karakter
 
-### Apa yang dihasilkan:
-Portrait di HUD, ikon skill, cut-in ultimate.
+**Hasil akhir tahap ini:** Portrait di HUD, ikon skill, dan cut-in ultimate sudah menggunakan aset asli karakter.
 
-### AI: Buat Folder & Copy Placeholder
+### STOP & TANYA — Sebelum mulai Tahap 3
+
+Tanyakan ini ke developer:
+
+```
+1. "Siapkan file PNG berikut dan taruh di folder assets/[nama]/ui/raw-original-ui/ :"
+   - portrait.png (384x384px, close-up wajah menghadap KANAN)
+   - cutin.png (landscape ~1920x400px, pose dramatis)
+   - icon-attack.png, icon-skill1.png, icon-skill2.png, icon-ultimate.png (128x128px)
+2. "Kabari saya jika semua file sudah ditaruh di folder."
+```
+
+**STOP. Tunggu konfirmasi developer bahwa file sudah ada.**
+
+---
+
+### 3.1 — Buat Folder & Copy Placeholder Sementara
+
+Sebelum memproses gambar asli, copy placeholder dari karakter lain (`dhyla`) agar game tidak error selagi diproses:
 
 ```powershell
 $char = "[nama]"
-$base = "c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\$char"
-$ref  = "c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\dhyla"
+$base = "c:\Users\ACER\Downloads\aether-clash-main\assets\$char"
+$ref  = "c:\Users\ACER\Downloads\aether-clash-main\assets\dhyla"
 
 New-Item -ItemType Directory -Force -Path "$base\ui\raw-original-ui"
 
-# Copy placeholder Dhyla dulu agar game tidak crash:
+# Copy placeholder
 Copy-Item "$ref\ui\portrait.webp"      "$base\ui\portrait.webp"      -Force
 Copy-Item "$ref\ui\cutin.webp"         "$base\ui\cutin.webp"         -Force
 Copy-Item "$ref\ui\icon-attack.webp"   "$base\ui\icon-attack.webp"   -Force
@@ -664,20 +884,22 @@ Copy-Item "$ref\ui\icon-skill1.webp"   "$base\ui\icon-skill1.webp"   -Force
 Copy-Item "$ref\ui\icon-skill2.webp"   "$base\ui\icon-skill2.webp"   -Force
 Copy-Item "$ref\ui\icon-ultimate.webp" "$base\ui\icon-ultimate.webp" -Force
 
-Write-Host "Placeholder dikopi! Taruh PNG asli di: $base\ui\raw-original-ui\"
-Write-Host "  portrait.png    - 384x384px, close-up wajah, HADAP KANAN"
-Write-Host "  cutin.png       - landscape ~1920x400px, pose dramatis"
-Write-Host "  icon-attack.png / icon-skill1.png / icon-skill2.png / icon-ultimate.png - 128x128px"
+Write-Host "Placeholder dikopi! Folder raw-original-ui siap."
 ```
 
-### AI: Konversi UI
+### 3.2 — Konversi UI Asli
+
+Jika developer sudah meletakkan gambar aslinya, jalankan konversi:
 
 ```powershell
+$char = "[nama]"
+$rawUi = "c:\Users\ACER\Downloads\aether-clash-main\assets\$char\ui\raw-original-ui"
+
 python -c "
 from PIL import Image
 import pathlib
 
-raw = pathlib.Path(r'c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\[nama]\ui\raw-original-ui')
+raw = pathlib.Path(r'$rawUi')
 out = raw.parent
 
 mapping = {
@@ -702,39 +924,49 @@ for src, (dst, size) in mapping.items():
 
 ### Checklist Tahap 3
 
-- [ ] PNG UI ada di `ui/raw-original-ui/`
-- [ ] `portrait.webp`, `cutin.webp`, 4 `icon-*.webp` ada di `ui/`
-- [ ] Cache di-bump + hard refresh
+- [ ] PNG UI (portrait, cutin, icon) ada di `ui/raw-original-ui/`
+- [ ] Script konversi sukses membuat `portrait.webp`, `cutin.webp`, 4 `icon-*.webp` di `ui/`
+- [ ] Cache di-bump + hard refresh browser
+- [ ] Tanyakan ke developer apakah gambar UI sudah terlihat bagus di game
 
 ---
 
-## Tahap 4 — Audio
+## TAHAP 4 — Audio
 
-### Apa yang dihasilkan:
-Suara ultimate, menang, dan select. Opsional: sfx skill.
+**Hasil akhir tahap ini:** Suara ultimate, menang, dan select (dan opsional sfx skill) aktif.
 
-### AI: Buat Folder & Minta File
+### STOP & TANYA — Sebelum mulai Tahap 4
+
+Tanyakan ini ke developer:
+
+```
+1. "Silakan siapkan file MP3 (44.1kHz, 128kbps) dan taruh di folder assets/[nama]/audio/ :"
+   - [nama]-ultimate.mp3 (suara ulti, 2-4 detik)
+   - [nama]-wins.mp3 (suara menang, 2-3 detik)
+   - select-[nama].mp3 (suara saat dipilih, 1-2 detik)
+   OPSIONAL:
+   - [nama]-skill1.mp3 (sfx skill 1)
+   - [nama]-skill2.mp3 (sfx skill 2)
+2. "Kabari saya jika semua file MP3 sudah siap di folder tersebut."
+```
+
+**STOP. Tunggu konfirmasi developer.**
+
+---
+
+### 4.1 — Buat Folder
 
 ```powershell
 $char = "[nama]"
-$base = "c:\Users\ACER\Downloads\ragnarok-trinity-main\assets\$char"
+$base = "c:\Users\ACER\Downloads\aether-clash-main\assets\$char"
 New-Item -ItemType Directory -Force -Path "$base\audio"
-
-Write-Host "Taruh MP3 di: $base\audio\"
-Write-Host "WAJIB:"
-Write-Host "  ${char}-ultimate.mp3  - voice ultimate (2-4 detik)"
-Write-Host "  ${char}-wins.mp3      - voice menang (2-3 detik)"
-Write-Host "  select-${char}.mp3    - suara dipilih (1-2 detik)"
-Write-Host "OPSIONAL:"
-Write-Host "  ${char}-skill1.mp3   - sfx skill 1 mengenai musuh"
-Write-Host "  ${char}-skill2.mp3   - sfx skill 2 mengenai musuh"
-Write-Host "Format: MP3, 44.1kHz, 128kbps"
+Write-Host "Folder audio disiapkan."
 ```
 
-### AI: Daftarkan Audio
+### 4.2 — Daftarkan Audio
 
 Audio ultimate sudah otomatis terdaftar lewat blok `audio` di `[nama].js`.
-Jika developer juga sediakan sfx skill, update blok `audio` di `[nama].js`:
+Jika developer juga menyediakan sfx skill, update blok `audio` di `[nama].js`:
 
 ```js
 // Update blok audio di window.[NamaClass]:
@@ -746,9 +978,9 @@ audio: {
 },
 ```
 
-Tidak perlu sentuh `game.js` sama sekali untuk audio. Engine membaca otomatis dari blok `audio` ini.
+Tidak perlu menyentuh `game.js` sama sekali untuk audio. Engine membaca otomatis dari blok `audio` ini.
 
-### AI: Daftar Pengaturan Volume Skill di `core/audio-config.js`
+### 4.3 — Daftar Pengaturan Volume Skill di `core/audio-config.js`
 
 Jika karakter menggunakan SFX untuk skill 1 dan skill 2, AI **wajib** mendaftarkannya di `core/audio-config.js` agar volumenya bisa diatur secara spesifik:
 
@@ -767,9 +999,65 @@ Jika karakter menggunakan SFX untuk skill 1 dan skill 2, AI **wajib** mendaftark
 - [ ] 3 file MP3 wajib ada di `audio/` dengan nama yang benar
 - [ ] Blok `audio` di `[nama].js` sudah diisi path yang benar
 - [ ] Jika ada sfx skill, path sudah diupdate di blok `audio`
-- [ ] Logika `new Audio` di dalam `function start()` sudah diterapkan
+- [ ] Logika `new Audio` di dalam `function start()` sudah diterapkan (biasanya dari template Tahap 1)
 - [ ] Volume skill terdaftar di `core/audio-config.js`
 - [ ] Cache di-bump + hard refresh
+
+---
+
+## TAHAP 5 — Balancing & Config
+
+**Hasil akhir tahap ini:** Karakter memiliki stat pergerakan dan *damage* yang terhubung langsung ke sistem keseimbangan (`core/balance.js`) sehingga tidak lagi bergantung pada *hardcode*.
+
+### 5.1 — Tentukan Tipe Karakter
+
+Pilih satu tipe (archetype) yang paling cocok berdasarkan desain visual dan senjatanya:
+
+1. **Heavy (Berat):** Senjata besar, jalan lambat, serangan sakit.
+2. **Agile (Cepat):** Senjata kecil/tangan kosong, jalan cepat, *attack speed* tinggi, *damage* kecil tapi banyak hit.
+3. **All-rounder (Seimbang):** Kecepatan dan serangan yang standar/rata.
+
+### 5.2 — Daftarkan di `core/balance.js`
+
+Buka file `core/balance.js` dan tambahkan karakter baru ke dalam kategori yang tepat (`window.GAME_BALANCE`):
+
+```js
+    [nama]: { // Penjelasan singkat gaya bertarungnya
+        movement: { walkSpeed: 360, runSpeed: 580, attackSpeed: 0.85 }, // attackSpeed < 1.0 berarti lebih cepat
+        combo: [6, 8, 10], // Sesuaikan dengan batas tipe
+        skill1: { damage: 15, cooldown: 10 },
+        skill2: { damage: 19, cooldown: 20 },
+        ultimate: { damage: 40, cooldown: 30 }
+    }
+```
+
+*Catatan: Wajib patuhi batas damage untuk tipe karakter tersebut yang ada di bagian atas `balance.js`!*
+
+### 5.3 — Hubungkan `[nama].js` ke `GAME_BALANCE`
+
+Di file logika karakter (`assets/[nama]/[nama].js`), hapus angka statis dan arahkan *getter* ke `GAME_BALANCE`:
+
+```js
+  const getBal = () => window.GAME_BALANCE?.[nama];
+  const atkSpd = () => getBal()?.movement?.attackSpeed ?? 1.0;
+
+  const balance = {
+    get cooldowns() {
+      return {
+        skill1: getBal()?.skill1?.cooldown ?? 10,
+        skill2: getBal()?.skill2?.cooldown ?? 20,
+        ultimate: getBal()?.ultimate?.cooldown ?? 30
+      };
+    },
+    // ...
+```
+Terapkan *getter* yang sama untuk properti `combo[0]`, `combo[1]`, `combo[2]`, dan properti `damage` di fungsi `move('skill1')`, `move('skill2')`, serta damage ultimate di saat `hitDummy`/`receiveHit`.
+
+### Checklist Tahap 5
+
+- [ ] Karakter didaftarkan di `core/balance.js` dengan angka yang sesuai panduan tipenya.
+- [ ] Logic di `assets/[nama]/[nama].js` di-update untuk mengambil (`get`) konfigurasi dari `GAME_BALANCE`.
+- [ ] Bump cache `core/balance.js` dan `[nama].js` di `index.html`.
 
 ---
 
@@ -827,6 +1115,13 @@ Suara HANYA boleh dipanggil di `if (connected && connected !== 'blocked' && ...)
 2. Buat `start[Nama]Ult()` + `update[Nama]Ult()` → AI defend otomatis
 3. Daftar ke `startSummon()` → engine bisa trigger ult
 4. Tulis blok `audio` di `[nama].js` → suara otomatis terdaftar
+
+> **🚨 WARNING: KESALAHAN FATAL ULTIMATE (WAJIB DIBACA A.I)**
+> 
+> Jika kamu sedang mengimplementasikan fungsi Ultimate di `core/game.js` dan `[nama].js`, **perhatikan 3 hal ini agar game tidak nge-bug/crash**:
+> 1. **Bug Scope (Silent Crash):** Di file `core/game.js`, saat kamu membuat fungsi `start[Nama]Ult(actor)` dan `update[Nama]Ult(dt, s)`, pastikan kamu menaruh fungsi tersebut **DI DALAM BLOK IIFE** (sebelum penutup `})();` di bagian bawah file). Jangan menaruh fungsi tersebut di luar brankas IIFE, karena jika ditaruh di luar, `game.js` tidak bisa menemukannya dan tombol P akan mati!
+> 2. **Bug Cutin Berubah Jadi Arco:** Di file `[nama].js`, baris `const isVoicePlaying = context.isVoicePlaying('...', s.owner);` **WAJIB MENGGUNAKAN ID KARAKTER (HURUF KECIL)** (contoh: `'ramuru'`, `'dhyla'`, `'valkren'`). Jika kamu salah ketik (misalnya *copy-paste* dari `valkren.js` lalu lupa diubah jadi `'ramuru'`), game akan gagal mempause durasi cutin. Akibatnya, di tengah-tengah animasi, cutin tiba-tiba akan tertimpa / berubah menjadi cutin ARCO!
+> 3. **Bug Kebal (IMMUNE):** Di file `[nama].js`, saat memberikan damage Ultimate di fase ledakan/pukulan akhir, kamu **WAJIB menyisipkan `target.invuln = 0;`** tepat di atas baris `if (s.owner === 'enemy') context.receiveHit... else context.hitDummy...`. Jika tidak, Ultimate akan selalu gagal memberikan damage dan muncul teks "IMMUNE".
 
 ---
 

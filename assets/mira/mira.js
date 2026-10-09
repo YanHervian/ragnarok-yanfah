@@ -25,7 +25,7 @@
   function move(name,index=1) {
     if(name==='attack')return {name:`attack${index}`,type:'attack',index,...combo[index-1]};
     if(name==='skill1')return {name,type:name,damage:getBal()?.skill1?.damage ?? 16,duration:.48,knockback:140,projectile:true,speed:760,hitAt:.5};
-    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.68,knockback:220,reach:128,dash:240,hitAt:.56};
+    if(name==='skill2')return {name,type:name,damage:getBal()?.skill2?.damage ?? 24,duration:.82,knockback:220,reach:190,dash:850,hitAt:.60};
     return {name:'ultimate',type:'ultimate',duration:balance.castTime,damage:0,hitAt:1};
   }
   function start(a,name,index=1) {
